@@ -263,6 +263,16 @@ predicates = [
 ]
 ```
 
+3. Return the OMMs for the Starlink satellites that have decayed in the last 10 days:
+
+```julia
+predicates = [
+    "OBJECT_NAME" => "^STARLINK"
+    "EPOCH"       => "now-10--now"
+    "DECAY_DATE"  => "<>null-val"
+]
+```
+
 ## Examples
 
 Create the OMM fetcher by logging in to Space-Track.
