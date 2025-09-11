@@ -450,8 +450,8 @@ function fetch_omms(
         if response.status != 200
             @error """
                 An error occurred during the data request:
-                  HTTP Error Code : $(response.status)
-                  Query URL       : $query_url
+                HTTP Error Code : $(response.status)
+                Query URL       : $query_url
                 """
             return nothing
         end
@@ -472,6 +472,12 @@ function fetch_omms(
 
     catch e
         if e isa HTTP.ExceptionRequest.StatusError
+            if e.status == 401
+                @error "Unauthorized access. The login cookie may have expired. Please create a new fetcher instance to login again."
+                _spacetrack__purge_cookiejar(fetcher.username)
+                return nothing
+            end
+
             @error """
                 An error occurred during the data request:
                   HTTP Error Code : $(e.status)
@@ -516,7 +522,7 @@ _spacetrack__is_cookie_valid(::Nothing) = false
 
 function _spacetrack__is_cookie_valid(cookiejar::HTTP.CookieJar)
     expires = _spacetrack__cookie_expire_date(cookiejar)
-    return expires > Dates.now()
+    return !isnothing(expires) && (expires > Dates.now())
 end
 
 """
@@ -602,6 +608,20 @@ function _spacetrack__login(username::String, password::String)
 
         rethrow(e)
     end
+end
+
+"""
+    _spacetrack__purge_cookiejar(username::String) -> Nothing
+
+Purge the cookiejar file for the given `username` from the scratch space.
+"""
+function _spacetrack__purge_cookiejar(username::String)
+    cache_dir   = @get_scratch!("spacetrack")
+    cookie_file = joinpath(cache_dir, "cookies-$username")
+
+    isfile(cookie_file) && rm(cookie_file; force=true)
+
+    return nothing
 end
 
 """
