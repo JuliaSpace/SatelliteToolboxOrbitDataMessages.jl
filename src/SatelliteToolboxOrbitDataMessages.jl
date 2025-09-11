@@ -22,6 +22,7 @@ include("./types.jl")
 ############################################################################################
 
 include("./printing.jl")
+include("./show.jl")
 
 include("./fetcher/api.jl")
 include("./fetcher/celestrak.jl")

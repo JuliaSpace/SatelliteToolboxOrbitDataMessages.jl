@@ -99,7 +99,8 @@ function _print_level_fields(
     max_level::Int,
     name_field_width::Int,
     value_field_width::Int;
-    indentation::Int = 2
+    indentation::Int = 2,
+    newline::Bool = true
 )
     isempty(fields) && return nothing
 
@@ -109,11 +110,14 @@ function _print_level_fields(
 
     for f in fields
         _print_level_alignment(io, level, level - 1)
-        print(io, unit_pad^max(0, max_level - level))
+        print(io, unit_pad^max(0, max_level - level + 1))
         println(io, _render_field_aligned(f..., name_field_width, value_field_width))
     end
-    _print_level_alignment(io, level, level - 1)
-    println(io)
+
+    if newline
+        _print_level_alignment(io, level, level - 1)
+        println(io)
+    end
 
     return nothing
 end
