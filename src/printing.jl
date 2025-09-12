@@ -143,11 +143,12 @@ function _print_level_opening(
     level::Int;
     has_siblings::Bool = false,
     indentation::Int = 2,
-    initial_padding::Int = 2
+    initial_padding::Int = 2,
+    name_face::StyledStrings.Face = StyledStrings.Face(; foreground = :yellow, weight = :bold)
 )
     sty_vbar_ns = styled"{gray:└}"
     sty_vbar_s  = styled"{gray:├}"
-    sty_name    = styled"{bold, yellow:$name}"
+    sty_name    = styled"{$name_face:$name}"
 
     print(io, " "^initial_padding)
 

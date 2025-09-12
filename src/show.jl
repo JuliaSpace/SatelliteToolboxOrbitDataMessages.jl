@@ -111,15 +111,17 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage{T})
     nfw = _field_name_width(v)
     vfw = _field_value_width(v)
 
+    first_level_face = StyledStrings.Face(; foreground = :magenta, weight = :bold)
+
     # Print Header.
-    _print_level_opening(buf, "Header\n", 1)
+    _print_level_opening(buf, "Header\n", 1; name_face = first_level_face)
     _print_level_fields(buf, header_out, "", 2, 4, nfw, vfw; newline = false)
 
     # Print Body.
-    _print_level_opening(buf, "Body\n", 1)
+    _print_level_opening(buf, "Body\n", 1; name_face = first_level_face)
     _print_level_opening(buf, "Segment\n", 2)
 
-    _print_level_fields(buf, body_metadata_out, "Metadata", 3, 4, nfw, vfw)
+    _print_level_fields(buf, body_metadata_out, "Metadata", 3, 4, nfw, vfw, newline = false)
 
     _print_level_opening(buf, "Data\n", 3; has_siblings = false)
 
