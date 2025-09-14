@@ -24,6 +24,7 @@ include("./types/omm.jl")
 
 include("./printing.jl")
 include("./show.jl")
+include("./xml.jl")
 
 include("./fetcher/api.jl")
 include("./fetcher/celestrak.jl")
@@ -31,5 +32,7 @@ include("./fetcher/spacetrack.jl")
 
 include("./parse/odm.jl")
 include("./parse/omm.jl")
+
+include("./write/omm.jl")
 
 end # module SatelliteToolboxOrbitDataMessages
