@@ -7,10 +7,10 @@
 export parse_odm
 
 """
-    parse_odm(filepath::String) -> Union{Nothing, OrbitDataMessage, Vector{OrbitDataMessage}}
+    parse_odm(str::String) -> Union{Nothing, OrbitDataMessage, Vector{OrbitDataMessage}}
 
-Parse an Orbit Data Message (ODM) file in the path `filepath` and return the parsed
-message(s). The file format must be XML.
+Parse an Orbit Data Message (ODM) string `str` and return the parsed message(s). The input
+format must be XML.
 
     parse_odm(xml::LazyNodes) -> Union{Nothing, OrbitDataMessage, Vector{OrbitDataMessage}}
 
@@ -21,9 +21,9 @@ If the XML contains a single message, a single instance of type `OrbitDataMessag
 returned. If the file contains multiple messages, *i.e.* it is a Navigation Data Message
 (NDM), a vector of instances is returned.
 """
-function parse_odm(filepath::String)
+function parse_odm(str::String)
     # Open the XML file.
-    xml = read(filepath, LazyNode)
+    xml = parse(str, LazyNode)
     return parse_odm(xml)
 end
 

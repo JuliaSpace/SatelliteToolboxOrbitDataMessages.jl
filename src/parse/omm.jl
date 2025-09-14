@@ -7,10 +7,10 @@
 export parse_omm, parse_omms
 
 """
-    parse_omm(filepath::String) -> Union{Nothing, OrbitMeanElementsMessage}
+    parse_omm(str::String) -> Union{Nothing, OrbitMeanElementsMessage}
 
-Parse an Orbit Mean-Elements Message (OMM) file in the path `filepath` and return the
-parsed message. The file format must be XML.
+Parse an Orbit Mean-Elements Message (OMM) in the string `str` and return the parsed
+message. The input format must be XML.
 
     parse_omm(xml::LazyNode) -> Union{Nothing, OrbitMeanElementsMessage}
 
@@ -20,9 +20,9 @@ message.
 If the XML is a Navigation Data Message (NDM), only the first OMM message is returned. If
 the file does not contain an OMM message, `nothing` is returned.
 """
-function parse_omm(filepath::String)
+function parse_omm(str::String)
     # Open the XML file.
-    xml = read(filepath, LazyNode)
+    xml = parse(str, LazyNode)
     return parse_omm(xml)
 end
 
@@ -35,10 +35,10 @@ function parse_omm(xml::LazyNode)
 end
 
 """
-    parse_omms(filepath::String) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
+    parse_omms(str::String) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
 
-Parse a set of Orbit Mean-Elements Messages (OMM) file in the path `filepath` and return the
-parsed messages. The file format must be XML.
+Parse a set of Orbit Mean-Elements Messages (OMM) string `str` and return the parsed
+messages. The input format must be XML.
 
     parse_omms(xml::LazyNode) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
 
@@ -48,9 +48,9 @@ parsed messages.
 If the XML is a Navigation Data Message (NDM), only the OMM messages are returned. If the
 file does not contain an OMM message, `nothing` is returned.
 """
-function parse_omms(filepath::String)
+function parse_omms(str::String)
     # Open the XML file.
-    xml = read(filepath, LazyNode)
+    xml = parse(str, LazyNode)
     return parse_omms(xml)
 end
 
