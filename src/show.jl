@@ -6,17 +6,17 @@
 
 # == OrbitMeanElementsMessage ==============================================================
 
-function Base.show(io::IO, omm::OrbitMeanElementsMessage{T}) where T <: AbstractFloat
+function Base.show(io::IO, omm::OrbitMeanElementsMessage)
     obj_name = omm.body.segment.metadata.object_name
     obj_id   = omm.body.segment.metadata.object_id
     epoch    = omm.body.segment.data.epoch
-    output   = "OMM{$T}: $obj_name [$obj_id] (Epoch = $epoch)"
+    output   = "OMM: $obj_name [$obj_id] (Epoch = $epoch)"
 
     print(io, output)
     return nothing
 end
 
-function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage{T}) where T <: AbstractFloat
+function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
     _po! = _push_output!
 
     # == Header ============================================================================
@@ -104,7 +104,7 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage{T})
 
     buf = IOContext(IOBuffer(), :color => get(stdout, :color, false))
 
-    println(buf, "OrbitMeanElementsMessage{$T}:")
+    println(buf, "OrbitMeanElementsMessage:")
 
     v = vcat(header_out, body_metadata_out, body_kep_out, body_sc_data_out, body_tle_out)
 

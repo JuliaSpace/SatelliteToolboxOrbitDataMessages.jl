@@ -104,12 +104,12 @@ function create_omm_fetcher(
 end
 
 """
-    fetch_omms(fetcher::SpacetrackOmmFetcher; kwargs...) -> Union{Nothing, Vector{OrbitMeanElementsMessage{T}}}
+    fetch_omms(fetcher::SpacetrackOmmFetcher; kwargs...) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
 
 Fetch Orbit Mean-Elements Messages (OMM) from the Spacetrack using `fetch` with the
 parameters in `kwargs...`.
 
-This function returns a `Vector{OrbitMeanElementsMessage{T}}` with the fetched OMMs. If an
+This function returns a `Vector{OrbitMeanElementsMessage}` with the fetched OMMs. If an
 error is found, it returns `nothing`.
 
 !!! warning
@@ -123,9 +123,6 @@ error is found, it returns `nothing`.
 
 # Keywords
 
-- `T::Type`: The floating-point type to use for the OMM fields. It can be any
-    `AbstractFloat`.
-    (**Default**: `Float64`)
 - `interval::Union{Nothing, Tuple{Union{Date, DateTime}, Union{Date, DateTime}}`: A tuple
     with the start and end date of the interval to fetch the OMMs. This interval is appended
     to the predicates using the `EPOCH` field. If `nothing`, no interval is used. Notice
@@ -289,23 +286,22 @@ Fetch all the OMMs for the SCD 1 satellite between June 19 and June 20, 2024.
 
 ```julia-repl
 julia> omm = fetch_omms(f, satellite_name="SCD 1", interval = (Date(2024, 6, 19), Date(2024, 6, 20)))
-3-element Vector{OrbitMeanElementsMessage{Float64}}:
- OMM{Float64}: SCD 1 [1993-009B] (Epoch = 2024-06-19T07:28:48.714816)
- OMM{Float64}: SCD 1 [1993-009B] (Epoch = 2024-06-19T20:30:29.736576)
- OMM{Float64}: SCD 1 [1993-009B] (Epoch = 2024-06-19T22:16:28.479360)
+3-element Vector{OrbitMeanElementsMessage}:
+ OMM: SCD 1 [1993-009B] (Epoch = 2024-06-19T07:28:48.714816)
+ OMM: SCD 1 [1993-009B] (Epoch = 2024-06-19T20:30:29.736576)
+ OMM: SCD 1 [1993-009B] (Epoch = 2024-06-19T22:16:28.479360)
 ```
 
 Fetch the latest OMM for the Amazonia 1 satellite.
 
 ```julia-repl
 julia> omm = fetch_omms(f, satellite_name="Amazonia 1")
-1-element Vector{OrbitMeanElementsMessage{Float64}}:
- OMM{Float64}: AMAZONIA 1 [2021-015A] (Epoch = 2025-09-09T04:34:22.789920)
+1-element Vector{OrbitMeanElementsMessage}:
+ OMM: AMAZONIA 1 [2021-015A] (Epoch = 2025-09-09T04:34:22.789920)
 ```
 """
 function fetch_omms(
     fetcher::SpacetrackOmmFetcher;
-    T::Type{R} = Float64,
     interval::Union{Nothing, Tuple{D1, D2}} = nothing,
     order_by::Union{Nothing, Vector{Pair{String, Symbol}}} = nothing,
     predicates::Union{Nothing, Vector{Pair{String, P}}} = nothing,
@@ -313,7 +309,7 @@ function fetch_omms(
     satellite_name::Union{Nothing, AbstractString} = nothing,
     satellite_number::Union{Nothing, Number} = nothing,
     space_data::Symbol = :gp,
-) where {D1 <: Union{Date, DateTime}, D2 <: Union{Date, DateTime}, P, R <: AbstractFloat}
+) where {D1 <: Union{Date, DateTime}, D2 <: Union{Date, DateTime}, P}
     # Check if the cookie is still valid.
     if !_spacetrack__is_cookie_valid(fetcher.cookiejar)
         @error "The login cookie has expired. Please create a new fetcher instance to login again."
@@ -457,7 +453,7 @@ function fetch_omms(
         end
 
         xml  = parse(String(response.body), LazyNode)
-        omms = parse_omms(xml, T)
+        omms = parse_omms(xml)
 
         if isnothing(omms)
             @error "Could not parse the fetched OMMs."

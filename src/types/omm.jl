@@ -2,6 +2,11 @@
 #
 # Definition of types and constructors for Orbit Mean-Elements Messages (OMM).
 #
+## References ##############################################################################
+#
+# [1] CCSDS 502.0-B-3 (2023). Orbit Data Messages. CCSDS Secretariat, Issue 3. Washington,
+#     DC, USA.
+#
 ############################################################################################
 
 export OrbitMeanElementsMessage
@@ -33,30 +38,30 @@ end
 
 # -- Data ----------------------------------------------------------------------------------
 
-@kwdef struct OmmData{T<:AbstractFloat}
+@kwdef struct OmmData
     # == Mean Keplerian Elements ===========================================================
 
     data_comment::Union{String, Nothing} = nothing
     epoch::NanoDate
-    semi_major_axis::Union{T, Nothing} = nothing
-    mean_motion::Union{T, Nothing} = nothing
-    eccentricity::T
-    inclination::T
-    raan::T
-    arg_of_pericenter::T
-    mean_anomaly::T
-    GM::Union{T, Nothing} = nothing
+    semi_major_axis::Union{Float64, Nothing} = nothing
+    mean_motion::Union{Float64, Nothing} = nothing
+    eccentricity::Float64
+    inclination::Float64
+    raan::Float64
+    arg_of_pericenter::Float64
+    mean_anomaly::Float64
+    GM::Union{Float64, Nothing} = nothing
 
     # == Spacecraft Data ===================================================================
 
     spacecraft_data_comment::Union{String, Nothing} = nothing
-    mass::Union{T, Nothing} = nothing
-    solar_rad_area::Union{T, Nothing} = nothing
-    solar_rad_coeff::Union{T, Nothing} = nothing
-    drag_area::Union{T, Nothing} = nothing
-    drag_coeff::Union{T, Nothing} = nothing
+    mass::Union{Float64, Nothing} = nothing
+    solar_rad_area::Union{Float64, Nothing} = nothing
+    solar_rad_coeff::Union{Float64, Nothing} = nothing
+    drag_area::Union{Float64, Nothing} = nothing
+    drag_coeff::Union{Float64, Nothing} = nothing
 
-    # == TLE Related Parameters ============================================================
+    # == Float64LE Related Parameters ============================================================
 
     tle_parameters_comment::Union{String, Nothing} = nothing
     ephemeris_type::Union{Int, Nothing} = nothing
@@ -64,9 +69,9 @@ end
     norad_cat_id::Union{Int, Nothing} = nothing
     element_set_number::Union{Int, Nothing} = nothing
     rev_at_epoch::Union{Int, Nothing} = nothing
-    bstar::Union{T, Nothing} = nothing
-    mean_motion_dot::Union{T, Nothing} = nothing
-    mean_motion_ddot::Union{T, Nothing} = nothing
+    bstar::Union{Float64, Nothing} = nothing
+    mean_motion_dot::Union{Float64, Nothing} = nothing
+    mean_motion_ddot::Union{Float64, Nothing} = nothing
 
     # == Covariance Matrix =================================================================
 
@@ -79,23 +84,23 @@ end
 
 # -- Segment -------------------------------------------------------------------------------
 
-@kwdef struct OmmSegment{T<:AbstractFloat}
+@kwdef struct OmmSegment
     metadata::OmmMetadata
-    data::OmmData{T}
+    data::OmmData
 end
 
 # -- Body ----------------------------------------------------------------------------------
 
-@kwdef struct OmmBody{T<:AbstractFloat}
+@kwdef struct OmmBody
     segment::OmmSegment
 end
 
 # -- OMM -----------------------------------------------------------------------------------
 
-struct OrbitMeanElementsMessage{T<:AbstractFloat} <: OrbitDataMessage{T}
+struct OrbitMeanElementsMessage <: OrbitDataMessage
     version::VersionNumber
     header::OmmHeader
-    body::OmmBody{T}
+    body::OmmBody
 end
 
 # == Constructors ==========================================================================
@@ -125,23 +130,23 @@ function OrbitMeanElementsMessage(
 
     data_comment::Union{String, Nothing} = nothing,
     epoch::NanoDate,
-    semi_major_axis::Union{T, Nothing} = nothing,
-    mean_motion::Union{T, Nothing} = nothing,
-    eccentricity::T,
-    inclination::T,
-    raan::T,
-    arg_of_pericenter::T,
-    mean_anomaly::T,
-    GM::Union{T, Nothing} = nothing,
+    semi_major_axis::Union{Float64, Nothing} = nothing,
+    mean_motion::Union{Float64, Nothing} = nothing,
+    eccentricity::Float64,
+    inclination::Float64,
+    raan::Float64,
+    arg_of_pericenter::Float64,
+    mean_anomaly::Float64,
+    GM::Union{Float64, Nothing} = nothing,
 
     # -- Spacecraft Data -------------------------------------------------------------------
 
     spacecraft_data_comment::Union{String, Nothing} = nothing,
-    mass::Union{T, Nothing} = nothing,
-    solar_rad_area::Union{T, Nothing} = nothing,
-    solar_rad_coeff::Union{T, Nothing} = nothing,
-    drag_area::Union{T, Nothing} = nothing,
-    drag_coeff::Union{T, Nothing} = nothing,
+    mass::Union{Float64, Nothing} = nothing,
+    solar_rad_area::Union{Float64, Nothing} = nothing,
+    solar_rad_coeff::Union{Float64, Nothing} = nothing,
+    drag_area::Union{Float64, Nothing} = nothing,
+    drag_coeff::Union{Float64, Nothing} = nothing,
 
     # -- TLE Related Parameters ------------------------------------------------------------
 
@@ -151,14 +156,14 @@ function OrbitMeanElementsMessage(
     norad_cat_id::Union{Int, Nothing} = nothing,
     element_set_number::Union{Int, Nothing} = nothing,
     rev_at_epoch::Union{Int, Nothing} = nothing,
-    bstar::Union{T, Nothing} = nothing,
-    mean_motion_dot::Union{T, Nothing} = nothing,
-    mean_motion_ddot::Union{T, Nothing} = nothing,
+    bstar::Union{Float64, Nothing} = nothing,
+    mean_motion_dot::Union{Float64, Nothing} = nothing,
+    mean_motion_ddot::Union{Float64, Nothing} = nothing,
 
     # -- User-Defined Parameters -----------------------------------------------------------
 
     user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}} = nothing
-) where T <: AbstractFloat
+)
     header = OmmHeader(
         ;
         comment = header_comment,
@@ -180,7 +185,7 @@ function OrbitMeanElementsMessage(
         mean_element_theory,
     )
 
-    data = OmmData{T}(
+    data = OmmData(
         ;
         data_comment,
         epoch,
@@ -210,17 +215,14 @@ function OrbitMeanElementsMessage(
         user_defined_parameters,
     )
 
-    segment = OmmSegment{T}(metadata, data)
+    segment = OmmSegment(metadata, data)
 
-    body = OmmBody{T}(segment)
+    body = OmmBody(segment)
 
-    return OrbitMeanElementsMessage{T}(v"3.0", header, body)
+    return OrbitMeanElementsMessage(v"3.0", header, body)
 end
 
-function OrbitMeanElementsMessage(
-    omm::OrbitMeanElementsMessage{T};
-    kwargs...
-) where T <: AbstractFloat
+function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
     return OrbitMeanElementsMessage(
         ;
         # == Header ========================================================================
@@ -289,4 +291,3 @@ end
 # == Fetchers ==============================================================================
 
 abstract type AbstractOmmFetcher end
-

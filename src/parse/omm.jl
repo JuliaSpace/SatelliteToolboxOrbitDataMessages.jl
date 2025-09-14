@@ -7,12 +7,12 @@
 export parse_omm, parse_omms
 
 """
-    parse_omm(filepath::String, T::Type = Float64) -> Union{Nothing, OrbitMeanElementsMessage{T}}
+    parse_omm(filepath::String) -> Union{Nothing, OrbitMeanElementsMessage}
 
 Parse an Orbit Mean-Elements Message (OMM) file in the path `filepath` and return the
 parsed message. The file format must be XML.
 
-    parse_omm(xml::LazyNode, T::Type = Float64) -> Union{Nothing, OrbitMeanElementsMessage{T}}
+    parse_omm(xml::LazyNode) -> Union{Nothing, OrbitMeanElementsMessage}
 
 Parse an Orbit Mean-Elements Message (OMM) from a `LazyNode` `xml` and return the parsed
 message.
@@ -20,27 +20,27 @@ message.
 If the XML is a Navigation Data Message (NDM), only the first OMM message is returned. If
 the file does not contain an OMM message, `nothing` is returned.
 """
-function parse_omm(filepath::String, T::Type = Float64)
+function parse_omm(filepath::String)
     # Open the XML file.
     xml = read(filepath, LazyNode)
-    return parse_omm(xml, T)
+    return parse_omm(xml)
 end
 
-function parse_omm(xml::LazyNode, T::Type = Float64)
+function parse_omm(xml::LazyNode)
     for node in xml
-        tag(node) == "omm" && return _parse_omm(node, T)
+        tag(node) == "omm" && return _parse_omm(node)
     end
 
     return nothing
 end
 
 """
-    parse_omms(filepath::String, T::Type = Float64) -> Union{Nothing, Vector{OrbitMeanElementsMessage{T}}}
+    parse_omms(filepath::String) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
 
 Parse a set of Orbit Mean-Elements Messages (OMM) file in the path `filepath` and return the
 parsed messages. The file format must be XML.
 
-    parse_omms(xml::LazyNode, T::Type = Float64) -> Union{Nothing, Vector{OrbitMeanElementsMessage{T}}}
+    parse_omms(xml::LazyNode) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
 
 Parse a set of Orbit Mean-Elements Messages (OMM) from a `LazyNode` `xml` and return the
 parsed messages.
@@ -48,26 +48,26 @@ parsed messages.
 If the XML is a Navigation Data Message (NDM), only the OMM messages are returned. If the
 file does not contain an OMM message, `nothing` is returned.
 """
-function parse_omms(filepath::String, T::Type = Float64)
+function parse_omms(filepath::String)
     # Open the XML file.
     xml = read(filepath, LazyNode)
-    return parse_omms(xml, T)
+    return parse_omms(xml)
 end
 
-function parse_omms(xml::LazyNode, T::Type = Float64)
-    omms = OrbitMeanElementsMessage{T}[]
+function parse_omms(xml::LazyNode)
+    omms = OrbitMeanElementsMessage[]
     root = children(xml)[end]
     t    = lowercase(tag(root))
 
     if t == "ndm"
         for node in children(root)
-            tag(node) == "omm" && push!(omms, _parse_omm(node, T))
+            tag(node) == "omm" && push!(omms, _parse_omm(node))
         end
 
         return omms
 
     elseif t == "omm"
-        push!(omms, _parse_omm(root, T))
+        push!(omms, _parse_omm(root))
         return omms
     end
 
@@ -79,11 +79,11 @@ end
 ############################################################################################
 
 """
-    _parse_omm(xml::LazyNode, T::Type = Float64) -> OrbitMeanElementsMessage{T}
+    _parse_omm(xml::LazyNode) -> OrbitMeanElementsMessage
 
 Parse an Orbit Mean-Elements Message (OMM) from a `LazyNode` `xml` representation.
 """
-function _parse_omm(xml::LazyNode, T::Type = Float64)
+function _parse_omm(xml::LazyNode)
     lowercase(tag(xml)) != "omm" && throw(
         ArgumentError("The provided XML does not contain an OMM element.")
     )
@@ -117,9 +117,9 @@ function _parse_omm(xml::LazyNode, T::Type = Float64)
 
     isnothing(body_id) && throw(ArgumentError("The OMM element is missing the body."))
 
-    body = _parse_omm_body(nodes[body_id], T)
+    body = _parse_omm_body(nodes[body_id])
 
-    return OrbitMeanElementsMessage{T}(version, header, body)
+    return OrbitMeanElementsMessage(version, header, body)
 end
 
 # == Header Parsing ========================================================================
@@ -176,12 +176,12 @@ end
 # == Body Parsing ==========================================================================
 
 """
-    _parse_omm_body(xml::LazyNode, T::Type = Float64) -> OmmBody{T}
+    _parse_omm_body(xml::LazyNode) -> OmmBody
 
 Parse the body of an Orbit Mean-Elements Message (OMM) from a `LazyNode` `xml`
-representation. The type `T` specifies the floating-point type to use for numerical values.
+representation.
 """
-function _parse_omm_body(xml::LazyNode, T::Type = Float64)
+function _parse_omm_body(xml::LazyNode)
     ch = children(xml)
     segment_ids = findall(n -> lowercase(tag(n)) == "segment", ch)
 
@@ -192,7 +192,7 @@ function _parse_omm_body(xml::LazyNode, T::Type = Float64)
 
     segment = _parse_omm_segment(ch[first(segment_ids)])
 
-    return OmmBody{T}(segment)
+    return OmmBody(segment)
 end
 
 # -- Body Segment Parsing ------------------------------------------------------------------
@@ -311,13 +311,12 @@ function _parse_omm_metadata(xml::LazyNode)
 end
 
 """
-    _parse_omm_data(xml::LazyNode, T::Type = Float64) -> OmmData{T}
+    _parse_omm_data(xml::LazyNode) -> OmmData
 
 Parse the data of the segment body of an Orbit Mean-Elements Message (OMM) from a
-`LazyNode` `xml` representation. The type `T` specifies the floating-point type to use for
-numerical values.
+`LazyNode` `xml` representation.
 """
-function _parse_omm_data(xml::LazyNode, T::Type = Float64)
+function _parse_omm_data(xml::LazyNode)
     ch = children(xml)
 
     data_comment                 = nothing
@@ -368,21 +367,21 @@ function _parse_omm_data(xml::LazyNode, T::Type = Float64)
         if lowercase(t) == "epoch"
             epoch = !isempty(v) ? NanoDate(v) : NanoDate()
         elseif lowercase(t) == "semi_major_axis"
-            semi_major_axis = parse(T, v)
+            semi_major_axis = parse(Float64, v)
         elseif lowercase(t) == "mean_motion"
-            mean_motion = parse(T, v)
+            mean_motion = parse(Float64, v)
         elseif lowercase(t) == "eccentricity"
-            eccentricity = parse(T, v)
+            eccentricity = parse(Float64, v)
         elseif lowercase(t) == "inclination"
-            inclination = parse(T, v)
+            inclination = parse(Float64, v)
         elseif lowercase(t) == "ra_of_asc_node"
-            raan = parse(T, v)
+            raan = parse(Float64, v)
         elseif lowercase(t) == "arg_of_pericenter"
-            arg_of_pericenter = parse(T, v)
+            arg_of_pericenter = parse(Float64, v)
         elseif lowercase(t) == "mean_anomaly"
-            mean_anomaly = parse(T, v)
+            mean_anomaly = parse(Float64, v)
         elseif lowercase(t) == "gm"
-            GM = parse(T, v)
+            GM = parse(Float64, v)
         end
     end
 
@@ -435,15 +434,15 @@ function _parse_omm_data(xml::LazyNode, T::Type = Float64)
                     spacecraft_data_comment = v
                 end
             elseif lowercase(t) == "mass"
-                mass = parse(T, v)
+                mass = parse(Float64, v)
             elseif lowercase(t) == "solar_rad_area"
-                solar_rad_area = parse(T, v)
+                solar_rad_area = parse(Float64, v)
             elseif lowercase(t) == "solar_rad_coeff"
-                solar_rad_coeff = parse(T, v)
+                solar_rad_coeff = parse(Float64, v)
             elseif lowercase(t) == "drag_area"
-                drag_area = parse(T, v)
+                drag_area = parse(Float64, v)
             elseif lowercase(t) == "drag_coeff"
-                drag_coeff = parse(T, v)
+                drag_coeff = parse(Float64, v)
             end
         end
     end
@@ -474,16 +473,16 @@ function _parse_omm_data(xml::LazyNode, T::Type = Float64)
                 classification_type = v[1]
             elseif lowercase(t) == "norad_cat_id"
                 norad_cat_id = parse(Int, v)
-            elseif lowercase(t) == "element_set_number"
+            elseif lowercase(t) == "element_set_no"
                 element_set_number = parse(Int, v)
             elseif lowercase(t) == "rev_at_epoch"
                 rev_at_epoch = parse(Int, v)
             elseif lowercase(t) == "bstar"
-                bstar = parse(T, v)
+                bstar = parse(Float64, v)
             elseif lowercase(t) == "mean_motion_dot"
-                mean_motion_dot = parse(T, v)
+                mean_motion_dot = parse(Float64, v)
             elseif lowercase(t) == "mean_motion_ddot"
-                mean_motion_ddot = parse(T, v)
+                mean_motion_ddot = parse(Float64, v)
             end
         end
     end
@@ -508,7 +507,7 @@ function _parse_omm_data(xml::LazyNode, T::Type = Float64)
         end
     end
 
-    return OmmData{T}(
+    return OmmData(
         data_comment,
         epoch,
         semi_major_axis,

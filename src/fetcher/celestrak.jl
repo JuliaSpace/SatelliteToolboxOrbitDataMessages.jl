@@ -33,7 +33,7 @@ end
 Fetch Orbit Mean-Elements Messages (OMM) from the Celestrak using `fetch` with the
 parameters in `kwargs...`.
 
-This function returns a `Vector{OrbitMeanElementsMessage{T}}` with the fetched OMMs. If an
+This function returns a `Vector{OrbitMeanElementsMessage}` with the fetched OMMs. If an
 error is found, it returns `nothing`.
 """
 function fetch_omms(
@@ -41,7 +41,6 @@ function fetch_omms(
     international_designator::Union{Nothing, AbstractString} = nothing,
     satellite_number::Union{Nothing, Number} = nothing,
     satellite_name::Union{Nothing, AbstractString} = nothing,
-    T::Type = Float64
 )
 
     # Assemble the query string.
@@ -114,7 +113,7 @@ function fetch_omms(
         end
 
         xml  = parse(str, LazyNode)
-        omms = parse_omms(xml, T)
+        omms = parse_omms(xml)
 
         if isnothing(omms)
             @error "Could not parse the fetched OMMs."
