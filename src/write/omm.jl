@@ -16,7 +16,7 @@ function write_omm(io::IO, omm::OrbitMeanElementsMessage)
 
     doc["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
     doc["xsi:noNamespaceSchemaLocation"] =
-        "https://sanaregistry.org/r/ndmxml_unqualified/ndmxml-3.0.0-master-3.0.xsd"
+        "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd"
 
     XML.write(io, doc)
     return nothing
