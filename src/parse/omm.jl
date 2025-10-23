@@ -88,7 +88,7 @@ function _parse_omm(xml::LazyNode)
         ArgumentError("The provided XML does not contain an OMM element.")
     )
 
-    # Extract the version attritube.
+    # Extract the version attribute.
     att = attributes(xml)
 
     (!haskey(att, "id") || lowercase(att["id"]) != "ccsds_omm_vers") && throw(ArgumentError(
@@ -100,6 +100,10 @@ function _parse_omm(xml::LazyNode)
     ))
 
     version = VersionNumber(att["version"])
+
+    # The difference between versions 2 and 3 are negligible for our purposes.
+    !(v"2.0.0" <= version <= v"3.0.0") &&
+        throw(ArgumentError("Unsupported OMM version: $version."))
 
     nodes = children(xml)
 
