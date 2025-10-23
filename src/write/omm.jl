@@ -14,10 +14,6 @@ Write the given `omm` to the provided `io` stream in XML format.
 function write_omm(io::IO, omm::OrbitMeanElementsMessage)
     doc = _omm_to_xml(omm)
 
-    doc["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
-    doc["xsi:noNamespaceSchemaLocation"] =
-        "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd"
-
     XML.write(io, doc)
     return nothing
 end
@@ -32,15 +28,29 @@ end
 Convert the given `omm` to an XML node represented by a `XML.Element`.
 """
 function _omm_to_xml(omm::OrbitMeanElementsMessage)
-    doc = XML.Element("omm")
-    doc["id"] = "CCSDS_OMM_VERS"
-    doc["version"] = "$(omm.version.major).$(omm.version.minor)"
+    doc = XML.Document()
+
+    # XML Declaration.
+    decl = XML.Declaration()
+    decl["version"] = "1.0"
+    decl["encoding"] = "UTF-8"
+    push!(doc, decl)
+
+    root = XML.Element("omm")
+
+    # Our XML is compatible with version 3.
+    root["version"] = "3.0"
+    root["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
+    root["xsi:noNamespaceSchemaLocation"] =
+        "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd"
+
+    push!(doc, root)
 
     # == Header ============================================================================
 
     header = omm.header
     header_node = XML.Element("header")
-    push!(doc, header_node)
+    push!(root, header_node)
 
     _xml_add_tag!(header_node, "COMMENT",        header.comment)
     _xml_add_tag!(header_node, "CLASSIFICATION", header.classification)
@@ -51,7 +61,7 @@ function _omm_to_xml(omm::OrbitMeanElementsMessage)
     # == Body ==============================================================================
 
     body_node = XML.Element("body")
-    push!(doc, body_node)
+    push!(root, body_node)
 
     segment_node = XML.Element("segment")
     push!(body_node, segment_node)
