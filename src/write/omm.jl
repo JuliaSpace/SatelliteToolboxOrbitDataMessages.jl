@@ -12,7 +12,7 @@ export write_omm
 Write the given `omm` to the provided `io` stream in XML format.
 """
 function write_omm(io::IO, omm::OrbitMeanElementsMessage)
-    doc = _omm_to_xml(omm)
+    doc = _omm_to_xml(omm, Val(true))
 
     XML.write(io, doc)
     return nothing
@@ -23,11 +23,17 @@ end
 ############################################################################################
 
 """
-    _omm_to_xml(omm::OrbitMeanElementsMessage) -> XML.Element
+    _omm_to_xml(omm::OrbitMeanElementsMessage, stand_alone::Val{true}) -> XML.Document
 
-Convert the given `omm` to an XML node represented by a `XML.Element`.
+Convert the given `omm` to an XML Document assuming it is a stand-alone document. Hence, the
+XML declaration is included.
+
+    _omm_to_xml(omm::OrbitMeanElementsMessage, stand_alone::Val{false}) -> XML.Element
+
+Convert the given `omm` to an XML Element assuming it is to be embedded within another XML
+document. Hence, the XML declaration is omitted.
 """
-function _omm_to_xml(omm::OrbitMeanElementsMessage)
+function _omm_to_xml(omm::OrbitMeanElementsMessage, stand_alone::Val{true})
     doc = XML.Document()
 
     # XML Declaration.
@@ -46,11 +52,31 @@ function _omm_to_xml(omm::OrbitMeanElementsMessage)
 
     push!(doc, root)
 
+    _add_omm_tags!(root, omm)
+
+    return doc
+end
+
+function _omm_to_xml(omm::OrbitMeanElementsMessage, stand_alone::Val{false})
+    doc = XML.Element("omm")
+    doc["version"] = "3.0"
+
+    _add_omm_tags!(doc, omm)
+
+    return doc
+end
+
+"""
+    _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessage) -> Nothing
+
+Add the OMM tags from the given `omm` message to the `parent` XML node.
+"""
+function _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessage)
     # == Header ============================================================================
 
     header = omm.header
     header_node = XML.Element("header")
-    push!(root, header_node)
+    push!(parent, header_node)
 
     _xml_add_tag!(header_node, "COMMENT",        header.comment)
     _xml_add_tag!(header_node, "CLASSIFICATION", header.classification)
@@ -61,7 +87,7 @@ function _omm_to_xml(omm::OrbitMeanElementsMessage)
     # == Body ==============================================================================
 
     body_node = XML.Element("body")
-    push!(root, body_node)
+    push!(parent, body_node)
 
     segment_node = XML.Element("segment")
     push!(body_node, segment_node)
@@ -147,5 +173,5 @@ function _omm_to_xml(omm::OrbitMeanElementsMessage)
         push!(data_node, user_defined_parameter_nodes)
     end
 
-    return doc
+    return nothing
 end

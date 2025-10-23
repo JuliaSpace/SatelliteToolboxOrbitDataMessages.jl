@@ -17,15 +17,22 @@ Write the set of Orbit Data Messages in the vector `vodm` to the provided `io` s
 format.
 """
 function write_odm(io::IO, odm::OrbitDataMessage)
-    doc = XML.Element("ndm")
+    doc = XML.Document()
 
-    doc["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
-    doc["xsi:noNamespaceSchemaLocation"] =
+    decl = XML.Declaration()
+    decl["version"] = "1.0"
+    decl["encoding"] = "UTF-8"
+    push!(doc, decl)
+
+    root = XML.Element("ndm")
+    root["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
+    root["xsi:noNamespaceSchemaLocation"] =
         "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd"
+    push!(doc, root)
 
     if odm isa OrbitMeanElementsMessage
-        omm = _omm_to_xml(odm)
-        push!(doc, omm)
+        omm = _omm_to_xml(odm, Val(false))
+        push!(root, omm)
     end
 
     XML.write(io, doc)
@@ -33,16 +40,23 @@ function write_odm(io::IO, odm::OrbitDataMessage)
 end
 
 function write_odm(io::IO, vodm::AbstractVector{T}) where T<:OrbitDataMessage
-    doc = XML.Element("ndm")
+    doc = XML.Document()
 
-    doc["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
-    doc["xsi:noNamespaceSchemaLocation"] =
-        "https://sanaregistry.org/r/ndmxml_unqualified/ndmxml-3.0.0-master-3.0.xsd"
+    decl = XML.Declaration()
+    decl["version"] = "1.0"
+    decl["encoding"] = "UTF-8"
+    push!(doc, decl)
+
+    root = XML.Element("ndm")
+    root["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
+    root["xsi:noNamespaceSchemaLocation"] =
+        "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd"
+    push!(doc, root)
 
     for odm in vodm
         if odm isa OrbitMeanElementsMessage
-            omm = _omm_to_xml(odm)
-            push!(doc, omm)
+            omm = _omm_to_xml(odm, Val(false))
+            push!(root, omm)
         end
     end
 
