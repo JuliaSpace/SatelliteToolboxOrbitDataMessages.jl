@@ -105,7 +105,7 @@ function fetch_omms(
         # Check if some error occurred.
         if !isnothing(match(r"No GP data found", str))
             @warn "No OMM found."
-            return OrbitMeanElementsMessage{T}[]
+            return OrbitMeanElementsMessage[]
 
         elseif !isnothing(match(r"Invalid query", str))
             throw(ErrorException("Invalid query: $query"))
