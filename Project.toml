@@ -13,10 +13,17 @@ StyledStrings = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
 URIs = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
 XML = "72c71f33-b9b6-44de-8c94-c961784809e2"
 
+[weakdeps]
+SatelliteToolboxTle = "b55e6483-6c06-4ce6-b98e-b0016b2a3e7a"
+
+[extensions]
+SatelliteToolboxTleExt = "SatelliteToolboxTle"
+
 [compat]
 Dates = "1.11.0"
 HTTP = "1.10.17"
 NanoDates = "1.0.3"
+SatelliteToolboxTle = "0.2"
 Scratch = "1.3.0"
 Serialization = "1.11.0"
 StyledStrings = "1.11.0"
