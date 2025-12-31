@@ -102,7 +102,7 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     # == Print Output ======================================================================
 
-    buf = IOContext(IOBuffer(), :color => get(stdout, :color, false))
+    buf = IOContext(IOBuffer(), :color => get(io, :color, false))
 
     println(buf, "OrbitMeanElementsMessage:")
 
