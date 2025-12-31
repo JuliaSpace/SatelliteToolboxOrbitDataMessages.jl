@@ -203,5 +203,5 @@ function _render_field_aligned(
         field_value * sty_unit :
         rpad(field_value, field_value_width) * " " * sty_unit
 
-    return str
+    return string(rstrip(str))
 end
