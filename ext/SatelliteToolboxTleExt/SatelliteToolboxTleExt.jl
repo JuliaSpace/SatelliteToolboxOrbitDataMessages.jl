@@ -42,6 +42,10 @@ function convert(::Type{TLE}, omm::OrbitMeanElementsMessage)
         mean_motion = √(GM / a^3) / (2π) * 86400
     end
 
+    # TODO: The specification is not clear if the fields in OMM are already adjusted
+    # according to the SGP4 algorithm. By fetching OMMs from Celestrak and Spacetrack, I
+    # noticed that the provided values are already divided by the necessary factors. So, for
+    # now, we assume they are already adjusted. This may need to be revisited later.
     dn_o2  = something(data.mean_motion_dot,  0.0)
     ddn_o6 = something(data.mean_motion_ddot, 0.0)
 
