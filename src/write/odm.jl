@@ -42,6 +42,8 @@ function write_odm(io::IO, odm::OrbitDataMessage)
     if odm isa OrbitMeanElementsMessage
         omm = _omm_to_xml(odm, Val(false))
         push!(root, omm)
+    else
+        @warn "Skipping unsupported message of type $(typeof(odm)) during ODM writing."
     end
 
     XML.write(io, doc)
@@ -66,6 +68,8 @@ function write_odm(io::IO, vodm::AbstractVector{T}) where T<:OrbitDataMessage
         if odm isa OrbitMeanElementsMessage
             omm = _omm_to_xml(odm, Val(false))
             push!(root, omm)
+        else
+            @warn "Skipping unsupported message of type $(typeof(odm)) during ODM writing."
         end
     end
 
