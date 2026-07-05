@@ -151,6 +151,9 @@ function _parse_omm_header(xml::LazyNode)
         elseif lowercase(t) == "classification"
             classification = v
         elseif lowercase(t) == "creation_date"
+            # If the creation date is empty, fall back to the current instant. This keeps
+            # the required-field check below reachable, since the field is considered
+            # provided even when the tag value is empty.
             creation_date = !isempty(v) ? NanoDate(v) : NanoDate()
         elseif lowercase(t) == "originator"
             originator = v
@@ -161,11 +164,11 @@ function _parse_omm_header(xml::LazyNode)
 
     # Check if all required fields are present.
     if isnothing(creation_date)
-        error("OMM header is missing required field `CREATION_DATE`.")
+        throw(ArgumentError("OMM header is missing required field `CREATION_DATE`."))
     end
 
     if isnothing(originator)
-        error("OMM header is missing required field `ORIGINATOR`.")
+        throw(ArgumentError("OMM header is missing required field `ORIGINATOR`."))
     end
 
     return OmmHeader(
@@ -269,6 +272,7 @@ function _parse_omm_metadata(xml::LazyNode)
         elseif lowercase(t) == "ref_frame"
             ref_frame = v
         elseif lowercase(t) == "ref_frame_epoch"
+            # If the ref. frame epoch is empty, fall back to the current instant.
             ref_frame_epoch = !isempty(v) ? NanoDate(v) : NanoDate()
         elseif lowercase(t) == "time_system"
             time_system = v
@@ -369,6 +373,7 @@ function _parse_omm_data(xml::LazyNode)
         v  = isempty(ch) ? "" : value(first(ch))
 
         if lowercase(t) == "epoch"
+            # If the epoch is empty, fall back to the current instant.
             epoch = !isempty(v) ? NanoDate(v) : NanoDate()
         elseif lowercase(t) == "semi_major_axis"
             semi_major_axis = parse(Float64, v)
@@ -474,7 +479,7 @@ function _parse_omm_data(xml::LazyNode)
             elseif lowercase(t) == "ephemeris_type"
                 ephemeris_type = parse(Int, v)
             elseif lowercase(t) == "classification_type"
-                classification_type = v[1]
+                classification_type = isempty(v) ? nothing : v[1]
             elseif lowercase(t) == "norad_cat_id"
                 norad_cat_id = parse(Int, v)
             elseif lowercase(t) == "element_set_no"

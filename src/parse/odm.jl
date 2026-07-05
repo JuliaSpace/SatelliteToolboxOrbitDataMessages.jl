@@ -19,7 +19,8 @@ message(s).
 
 If the XML contains a single message, a single instance of type `OrbitDataMessage` is
 returned. If the file contains multiple messages, *i.e.* it is a Navigation Data Message
-(NDM), a vector of instances is returned.
+(NDM), a vector of instances is returned. If the root tag is not recognized, `nothing` is
+returned. If the NDM does not contain any OMM, an empty vector is returned.
 """
 function parse_odm(str::String)
     # Open the XML file.
