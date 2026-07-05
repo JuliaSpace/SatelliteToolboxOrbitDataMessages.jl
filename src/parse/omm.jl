@@ -69,6 +69,14 @@ function parse_omms(xml::LazyNode)
     elseif t == "omm"
         push!(omms, _parse_omm(root))
         return omms
+    elseif t == "opm"
+        @warn "We do not support Orbit Parameter Messages (OPM) yet."
+    elseif t == "oem"
+        @warn "We do not support Orbit Ephemeris Messages (OEM) yet."
+    elseif t == "ocm"
+        @warn "We do not support Orbit Comprehensive Messages (OCM) yet."
+    else
+        throw(ArgumentError("The root tag `$t` is not recognized."))
     end
 
     return nothing
