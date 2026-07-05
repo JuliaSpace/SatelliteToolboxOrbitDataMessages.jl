@@ -81,16 +81,18 @@ function create_omm_fetcher(
     cookiejar = _spacetrack__load_cookiejar(username)
 
     if !_spacetrack__is_cookie_valid(cookiejar) || force_login
-        # If the password is empty, request the user to input it.
+        # Normalize the password into a SecretBuffer so the plaintext is held in a
+        # shred-able buffer for as short a time as possible. If the password is empty,
+        # prompt the user via getpass, which already returns a SecretBuffer.
         if isempty(password)
-            password = Base.getpass("Space-Track password")
+            password_sb = Base.getpass("Space-Track password")
             println()
+        else
+            password_sb = Base.SecretBuffer(password)
         end
 
-        # Try to login.
-        password_str = read(password, String)
-        Base.shred!(password)
-        success, cookiejar = _spacetrack__login(username, password_str)
+        # Try to login. The plaintext is materialized only inside _spacetrack__login.
+        success, cookiejar = _spacetrack__login(username, password_sb)
 
         if !success || isnothing(cookiejar)
             @error "Could not login to Space-Track. Please check your credentials."
@@ -556,17 +558,24 @@ function _spacetrack__load_cookiejar(username::String)
 end
 
 """
-    _spacetrack__login(username::String, password::String) -> Bool
+    _spacetrack__login(username::String, password::Base.SecretBuffer) -> Bool
 
-Login to the Space-Track service using the provided `username` and `password`. If the login
-is successful, it saves the cookies to the scratch space and returns `true`. If the login
+Login to the Space-Track service using the provided `username` and `password`. The
+`password` is a `Base.SecretBuffer`; its plaintext is materialized only inside this
+function and shredded immediately after the request body is built. If the login is
+successful, it saves the cookies to the scratch space and returns `true`. If the login
 fails, it returns `false`.
 """
-function _spacetrack__login(username::String, password::String)
+function _spacetrack__login(username::String, password::Base.SecretBuffer)
     try
+        # Materialize the plaintext only to build the URL-encoded body, then shred the
+        # buffer so the secret does not outlive this expression.
+        password_str = read(password, String)
+        Base.shred!(password)
+
         login_data =
             "identity=$(URIs.escapeuri(username))&" *
-            "password=$(URIs.escapeuri(password))"
+            "password=$(URIs.escapeuri(password_str))"
 
         cookiejar = HTTP.CookieJar()
 
