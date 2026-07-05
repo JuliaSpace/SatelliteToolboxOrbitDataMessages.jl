@@ -1,0 +1,54 @@
+## Description #############################################################################
+#
+# T6 — User-defined parameters edge cases.
+#
+############################################################################################
+
+@testset "T6: User-defined parameters" verbose = true begin
+    # == T6.1: No userDefinedParameters section -> nothing ==============================
+
+    @testset "T6.1: No section" begin
+        xml = _minimal_omm_xml()
+        omm = parse_omm(xml)
+        @test !isnothing(omm)
+        @test isnothing(omm.body.segment.data.user_defined_parameters)
+    end
+
+    # == T6.2: Missing parameter attribute -> fallback key ==============================
+
+    @testset "T6.2: Missing parameter attribute" begin
+        ud_xml = "<userDefinedParameters><USER_DEFINED>my_value</USER_DEFINED></userDefinedParameters>"
+        xml = _minimal_omm_xml(user_defined_xml=ud_xml)
+        omm = parse_omm(xml)
+
+        @test !isnothing(omm)
+        udp = omm.body.segment.data.user_defined_parameters
+        @test !isnothing(udp)
+        @test length(udp) == 1
+        @test first(udp).second == "my_value"
+        # The fallback key should be "User Defined Parameter" (note: corrected typo).
+        @test first(udp).first == "User Defined Parameter"
+    end
+
+    # == T6.3: Duplicate keys preserved =================================================
+
+    @testset "T6.3: Duplicate keys" begin
+        ud_xml = """
+        <userDefinedParameters>
+          <USER_DEFINED parameter="KEY">val1</USER_DEFINED>
+          <USER_DEFINED parameter="KEY">val2</USER_DEFINED>
+        </userDefinedParameters>
+        """
+        xml = _minimal_omm_xml(user_defined_xml=ud_xml)
+        omm = parse_omm(xml)
+
+        @test !isnothing(omm)
+        udp = omm.body.segment.data.user_defined_parameters
+        @test !isnothing(udp)
+        @test length(udp) == 2
+        @test udp[1].first == "KEY"
+        @test udp[1].second == "val1"
+        @test udp[2].first == "KEY"
+        @test udp[2].second == "val2"
+    end
+end
