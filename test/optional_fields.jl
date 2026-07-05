@@ -1,13 +1,13 @@
 ## Description #############################################################################
 #
-# T5 — Optional fields tests.
+# Optional fields tests.
 #
 ############################################################################################
 
-@testset "T5: Optional fields" verbose = true begin
-    # == T5.1: Minimal OMM (required fields only) =======================================
+@testset "Optional fields" verbose = true begin
+    # == Minimal OMM (required fields only) ================================================
 
-    @testset "T5.1: Minimal OMM" begin
+    @testset "Minimal OMM" begin
         xml = _minimal_omm_xml()
         omm = parse_omm(xml)
 
@@ -30,9 +30,9 @@
         @test omm.body.segment.data.user_defined_parameters === nothing
     end
 
-    # == T5.2: semi_major_axis without mean_motion ======================================
+    # == semi_major_axis without mean_motion ===============================================
 
-    @testset "T5.2: semi_major_axis without mean_motion" begin
+    @testset "semi_major_axis without mean_motion" begin
         xml = _minimal_omm_xml(semi_major_axis="7134.084", mean_motion="")
         omm = parse_omm(xml)
 
@@ -41,9 +41,9 @@
         @test isnothing(omm.body.segment.data.mean_motion)
     end
 
-    # == T5.3: mean_motion without semi_major_axis ======================================
+    # == mean_motion without semi_major_axis ===============================================
 
-    @testset "T5.3: mean_motion without semi_major_axis" begin
+    @testset "mean_motion without semi_major_axis" begin
         xml = _minimal_omm_xml(mean_motion="14.40772474")
         omm = parse_omm(xml)
 
@@ -52,9 +52,9 @@
         @test isnothing(omm.body.segment.data.semi_major_axis)
     end
 
-    # == T5.4: ref_frame_epoch set ======================================================
+    # == ref_frame_epoch set ===============================================================
 
-    @testset "T5.4: ref_frame_epoch set" begin
+    @testset "ref_frame_epoch set" begin
         xml = _minimal_omm_xml(ref_frame_epoch="2000-01-01T12:00:00")
         omm = parse_omm(xml)
 

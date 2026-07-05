@@ -12,38 +12,37 @@ include("_helpers.jl")
     @testset "Parsing ODMs" verbose = true begin
         include("omm_parsing.jl")
         include("odm_parsing.jl")
-        include("t1_round_trip.jl")
-        include("t2_ndm_container.jl")
-        include("t3_parsing_errors.jl")
-        include("t4_case_insensitivity.jl")
-        include("t5_optional_fields.jl")
-        include("t6_user_defined_params.jl")
+        include("round_trip.jl")
+        include("ndm_container.jl")
+        include("parsing_errors.jl")
+        include("case_insensitivity.jl")
+        include("optional_fields.jl")
+        include("user_defined_params.jl")
     end
 
     @testset "Constructors" verbose = true begin
-        include("t7_constructors.jl")
+        include("constructors.jl")
     end
 
     @testset "Display" verbose = true begin
-        include("omm_display.jl")
-        include("t8_display_variations.jl")
+        include("display.jl")
     end
 
     @testset "Write" verbose = true begin
-        include("t9_write_structure.jl")
+        include("write.jl")
     end
 
     @testset "Fetchers" verbose = true begin
-        include("t10_celestrak.jl")
-        include("t11_spacetrack_offline.jl")
-        include("t12_spacetrack_online.jl")
+        include("fetcher/celestrak.jl")
+        include("fetcher/spacetrack_offline.jl")
+        include("fetcher/spacetrack_online.jl")
     end
 
     @testset "TLE Extension" verbose = true begin
-        include("t13_tle_extension.jl")
+        include("tle_extension.jl")
     end
 
-    @testset "Regression" verbose = true begin
-        include("t14_regression.jl")
+    @testset "Issues" verbose = true begin
+        include("issues.jl")
     end
 end

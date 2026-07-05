@@ -1,15 +1,15 @@
 ## Description #############################################################################
 #
-# T9 — Write output structure tests.
+# Write output structure tests.
 #
 ############################################################################################
 
-@testset "T9: Write structure" verbose = true begin
+@testset "Write structure" verbose = true begin
     omm = read_omm(_FIXTURE_FILE)
 
-    # == T9.1: XML declaration ===========================================================
+    # == XML declaration ===================================================================
 
-    @testset "T9.1: XML declaration" begin
+    @testset "XML declaration" begin
         buf = IOBuffer()
         write_omm(buf, omm)
         out = String(take!(buf))
@@ -17,9 +17,9 @@
         @test occursin("encoding=\"UTF-8\"", out)
     end
 
-    # == T9.2: OMM root version ==========================================================
+    # == OMM root version ==================================================================
 
-    @testset "T9.2: OMM root version" begin
+    @testset "OMM root version" begin
         buf = IOBuffer()
         write_omm(buf, omm)
         out = String(take!(buf))
@@ -28,9 +28,9 @@
         @test occursin("id=\"CCSDS_OMM_VERS\"", out)
     end
 
-    # == T9.3: NDM wrapper schema (write_odm) ===========================================
+    # == NDM wrapper schema (write_odm) ====================================================
 
-    @testset "T9.3: NDM wrapper schema" begin
+    @testset "NDM wrapper schema" begin
         buf = IOBuffer()
         write_odm(buf, omm)
         out = String(take!(buf))
@@ -38,9 +38,9 @@
         @test occursin("xsi:noNamespaceSchemaLocation", out)
     end
 
-    # == T9.4: Vector form ===============================================================
+    # == Vector form =======================================================================
 
-    @testset "T9.4: Vector form" begin
+    @testset "Vector form" begin
         buf = IOBuffer()
         write_odm(buf, [omm, omm])
         out = String(take!(buf))
@@ -49,9 +49,9 @@
         @test count_omms == 2
     end
 
-    # == T9.5: Minimal XML (no optional sections) =======================================
+    # == Minimal XML (no optional sections) ================================================
 
-    @testset "T9.5: Minimal XML" begin
+    @testset "Minimal XML" begin
         minimal = OrbitMeanElementsMessage(;
             creation_date        = NanoDate("2025-01-01T00:00:00"),
             originator           = "T",
@@ -79,9 +79,9 @@
         @test !occursin("userDefinedParameters", out)
     end
 
-    # == T9.6: user_defined attributes ==================================================
+    # == user_defined attributes ===========================================================
 
-    @testset "T9.6: user_defined attributes" begin
+    @testset "user_defined attributes" begin
         minimal = OrbitMeanElementsMessage(;
             creation_date        = NanoDate("2025-01-01T00:00:00"),
             originator           = "T",

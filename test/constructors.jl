@@ -1,17 +1,17 @@
 ## Description #############################################################################
 #
-# T7 — OrbitMeanElementsMessage constructor tests.
+# OrbitMeanElementsMessage constructor tests.
 #
 ############################################################################################
 
-@testset "T7: Constructors" verbose = true begin
+@testset "Constructors" verbose = true begin
     # Common required fields.
     creation_date  = NanoDate("2025-12-30T23:36:37")
     epoch          = NanoDate("2025-12-30T18:12:04.533984")
 
-    # == T7.1: Full keyword constructor -> v3.0 ==========================================
+    # == Full keyword constructor -> v3.0 ==================================================
 
-    @testset "T7.1: Full keyword constructor" begin
+    @testset "Full keyword constructor" begin
         omm = OrbitMeanElementsMessage(;
             header_comment   = "Test header",
             classification   = "UNCLASSIFIED",
@@ -47,9 +47,9 @@
         @test omm.body.segment.data.norad_cat_id == 12345
     end
 
-    # == T7.2: Minimal keyword constructor ===============================================
+    # == Minimal keyword constructor =======================================================
 
-    @testset "T7.2: Minimal keyword constructor" begin
+    @testset "Minimal keyword constructor" begin
         omm = OrbitMeanElementsMessage(;
             creation_date        = creation_date,
             originator           = "TEST",
@@ -79,9 +79,9 @@
         @test omm.body.segment.data.user_defined_parameters === nothing
     end
 
-    # == T7.3: Reconstruction override one field =========================================
+    # == Reconstruction override one field =================================================
 
-    @testset "T7.3: Reconstruction override one field" begin
+    @testset "Reconstruction override one field" begin
         omm = OrbitMeanElementsMessage(;
             creation_date        = creation_date,
             originator           = "TEST",
@@ -109,9 +109,9 @@
         @test omm2.body.segment.data.eccentricity == omm.body.segment.data.eccentricity
     end
 
-    # == T7.4: Reconstruction override multiple fields ====================================
+    # == Reconstruction override multiple fields ===========================================
 
-    @testset "T7.4: Reconstruction override multiple fields" begin
+    @testset "Reconstruction override multiple fields" begin
         omm = OrbitMeanElementsMessage(;
             creation_date        = creation_date,
             originator           = "TEST",

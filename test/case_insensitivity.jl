@@ -1,10 +1,10 @@
 ## Description #############################################################################
 #
-# T4 — Tag case-insensitivity tests.
+# Tag case-insensitivity tests.
 #
 ############################################################################################
 
-@testset "T4: Tag case-insensitivity" verbose = true begin
+@testset "Tag case-insensitivity" verbose = true begin
     # Build three variants of the same minimal OMM with different tag casings.
     # The parser should treat all tags case-insensitively.
 
@@ -69,7 +69,7 @@
         """
     end
 
-    @testset "T4.1: UPPERCASE tags" begin
+    @testset "UPPERCASE tags" begin
         xml = _build_omm(:upper)
         omm = parse_omm(xml)
         @test !isnothing(omm)
@@ -78,7 +78,7 @@
         @test omm.body.segment.data.mean_motion ≈ 14.40772474 atol = 1e-6
     end
 
-    @testset "T4.2: Mixed-case tags" begin
+    @testset "Mixed-case tags" begin
         xml = _build_omm(:mixed)
         omm = parse_omm(xml)
         @test !isnothing(omm)

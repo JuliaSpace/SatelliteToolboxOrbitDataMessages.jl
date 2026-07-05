@@ -1,23 +1,23 @@
 ## Description #############################################################################
 #
-# T14 — Regression snapshot tests.
+# Regression snapshot tests.
 #
 ############################################################################################
 
-@testset "T14: Regression snapshots" verbose = true begin
+@testset "Issues" verbose = true begin
     omm = read_omm(_FIXTURE_FILE)
 
-    # == T14.1: Display snapshot (covered by omm_display.jl, kept for reference) =========
+    # == Display snapshot (covered by display.jl, kept for reference) ======================
 
-    @testset "T14.1: Display snapshot" begin
+    @testset "Display snapshot" begin
         result = sprint(show, MIME("text/plain"), omm)
-        @test occursin("OrbitMeanElementsMessage:", result)
+        @test occursin("OrbitMeanElementsMessage", result)
         @test occursin("AMAZONIA 1", result)
     end
 
-    # == T14.2: write_omm XML snapshot ===================================================
+    # == write_omm XML snapshot ============================================================
 
-    @testset "T14.2: write_omm XML snapshot" begin
+    @testset "write_omm XML snapshot" begin
         buf = IOBuffer()
         write_omm(buf, omm)
         out = String(take!(buf))

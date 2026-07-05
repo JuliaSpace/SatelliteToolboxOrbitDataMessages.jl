@@ -1,18 +1,18 @@
 ## Description #############################################################################
 #
-# T12 — Spacetrack fetcher online tests (gated behind HAS_SPACETRACK env var).
+# Spacetrack fetcher online tests (gated behind HAS_SPACETRACK env var).
 #
 ############################################################################################
 
-@testset "T12: Spacetrack fetcher (online)" verbose = true begin
+@testset "Spacetrack fetcher (online)" verbose = true begin
     if !haskey(ENV, "HAS_SPACETRACK")
         @test_skip "Set HAS_SPACETRACK=1 to run online Spacetrack tests"
         return
     end
 
-    # == T12.1: Bad credentials ==========================================================
+    # == Bad credentials ===================================================================
 
-    @testset "T12.1: Bad credentials" begin
+    @testset "Bad credentials" begin
         f = create_omm_fetcher(
             SpacetrackOmmFetcher;
             username = "bad_user_$(randstring(8))",
@@ -22,9 +22,9 @@
         @test isnothing(f)
     end
 
-    # == T12.2: Fetch by satellite name ==================================================
+    # == Fetch by satellite name ===========================================================
 
-    @testset "T12.2: Fetch AMAZONIA 1" begin
+    @testset "Fetch AMAZONIA 1" begin
         f = create_omm_fetcher(SpacetrackOmmFetcher)
 
         if !isnothing(f)
@@ -40,9 +40,9 @@
         end
     end
 
-    # == T12.3: Fetch by satellite_number + interval ====================================
+    # == Fetch by satellite_number + interval ==============================================
 
-    @testset "T12.3: Fetch by number + interval" begin
+    @testset "Fetch by number + interval" begin
         f = create_omm_fetcher(SpacetrackOmmFetcher)
 
         if !isnothing(f)
@@ -63,9 +63,9 @@
         end
     end
 
-    # == T12.4: Complex predicates =======================================================
+    # == Complex predicates ================================================================
 
-    @testset "T12.4: Complex predicates" begin
+    @testset "Complex predicates" begin
         f = create_omm_fetcher(SpacetrackOmmFetcher)
 
         if !isnothing(f)

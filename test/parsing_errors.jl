@@ -1,27 +1,27 @@
 ## Description #############################################################################
 #
-# T3 — Parsing error path tests.
+# Parsing error path tests.
 #
 ############################################################################################
 
-@testset "T3: Parsing errors" verbose = true begin
-    # == T3.1: Missing id attribute =====================================================
+@testset "Errors" verbose = true begin
+    # == Missing id attribute ==============================================================
 
-    @testset "T3.1: Missing id attribute" begin
+    @testset "Missing id attribute" begin
         xml = replace(_minimal_omm_xml(), "id=\"CCSDS_OMM_VERS\" " => "")
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == T3.2: Unsupported version ======================================================
+    # == Unsupported version ===============================================================
 
-    @testset "T3.2: Unsupported version" begin
+    @testset "Unsupported version" begin
         xml = _minimal_omm_xml(omm_version="1.0")
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == T3.3: Missing header ===========================================================
+    # == Missing header ====================================================================
 
-    @testset "T3.3: Missing header" begin
+    @testset "Missing header" begin
         xml = """
         <?xml version="1.0" encoding="UTF-8"?>
         <omm id="CCSDS_OMM_VERS" version="3.0">
@@ -46,9 +46,9 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == T3.4: Missing body =============================================================
+    # == Missing body ======================================================================
 
-    @testset "T3.4: Missing body" begin
+    @testset "Missing body" begin
         xml = """
         <?xml version="1.0" encoding="UTF-8"?>
         <omm id="CCSDS_OMM_VERS" version="3.0">
@@ -61,9 +61,9 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == T3.5: Missing segment ==========================================================
+    # == Missing segment ===================================================================
 
-    @testset "T3.5: Missing segment" begin
+    @testset "Missing segment" begin
         xml = """
         <?xml version="1.0" encoding="UTF-8"?>
         <omm id="CCSDS_OMM_VERS" version="3.0">
@@ -77,9 +77,9 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == T3.6: Multiple segments ========================================================
+    # == Multiple segments =================================================================
 
-    @testset "T3.6: Multiple segments" begin
+    @testset "Multiple segments" begin
         seg = "<segment><metadata>
             <OBJECT_NAME>AMAZONIA 1</OBJECT_NAME>
             <OBJECT_ID>2021-015A</OBJECT_ID>
@@ -110,30 +110,30 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == T3.7: Missing OBJECT_NAME ======================================================
+    # == Missing OBJECT_NAME ===============================================================
 
-    @testset "T3.7: Missing OBJECT_NAME" begin
+    @testset "Missing OBJECT_NAME" begin
         xml = _minimal_omm_xml(object_name="")
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == T3.8: Missing EPOCH ============================================================
+    # == Missing EPOCH =====================================================================
 
-    @testset "T3.8: Missing EPOCH" begin
+    @testset "Missing EPOCH" begin
         xml = _minimal_omm_xml(epoch="")
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == T3.9: Missing both SEMI_MAJOR_AXIS and MEAN_MOTION =============================
+    # == Missing both SEMI_MAJOR_AXIS and MEAN_MOTION ======================================
 
-    @testset "T3.9: Missing SEMI_MAJOR_AXIS and MEAN_MOTION" begin
+    @testset "Missing SEMI_MAJOR_AXIS and MEAN_MOTION" begin
         xml = _minimal_omm_xml(semi_major_axis="", mean_motion="")
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == T3.10: Empty CLASSIFICATION_TYPE ===============================================
+    # == Empty CLASSIFICATION_TYPE =========================================================
 
-    @testset "T3.10: Empty CLASSIFICATION_TYPE" begin
+    @testset "Empty CLASSIFICATION_TYPE" begin
         tle_xml = "<tleParameters><CLASSIFICATION_TYPE></CLASSIFICATION_TYPE></tleParameters>"
         xml = _minimal_omm_xml(tle_params_xml=tle_xml)
         omm = parse_omm(xml)
@@ -141,9 +141,9 @@
         @test isnothing(omm.body.segment.data.classification_type)
     end
 
-    # == T3.11: Unknown root tag ========================================================
+    # == Unknown root tag ==================================================================
 
-    @testset "T3.11: Unknown root tag" begin
+    @testset "Unknown root tag" begin
         xml = """
         <?xml version="1.0" encoding="UTF-8"?>
         <foo><bar/></foo>

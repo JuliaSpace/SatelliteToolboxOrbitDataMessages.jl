@@ -1,6 +1,6 @@
 ## Description #############################################################################
 #
-# T11 — Spacetrack fetcher offline tests.
+# Spacetrack fetcher offline tests.
 #
 ############################################################################################
 
@@ -20,10 +20,10 @@ function _valid_spacetrack_cookiejar()
     return cookiejar
 end
 
-@testset "T11: Spacetrack fetcher (offline)" verbose = true begin
-    # == T11.2: Invalid space_data ========================================================
+@testset "Spacetrack fetcher (offline)" verbose = true begin
+    # == Invalid space_data ================================================================
 
-    @testset "T11.2: Invalid space_data" begin
+    @testset "Invalid space_data" begin
         fetcher = SpacetrackOmmFetcher("test", _valid_spacetrack_cookiejar())
 
         @test_throws ArgumentError fetch_omms(
@@ -33,9 +33,9 @@ end
         )
     end
 
-    # == T11.3: Bad interval (start >= end) ===============================================
+    # == Bad interval (start >= end) =======================================================
 
-    @testset "T11.3: Bad interval" begin
+    @testset "Bad interval" begin
         fetcher = SpacetrackOmmFetcher("test", _valid_spacetrack_cookiejar())
 
         @test_throws ArgumentError fetch_omms(
@@ -45,9 +45,9 @@ end
         )
     end
 
-    # == T11.4: Bad order_by direction ====================================================
+    # == Bad order_by direction ============================================================
 
-    @testset "T11.4: Bad order_by" begin
+    @testset "Bad order_by" begin
         fetcher = SpacetrackOmmFetcher("test", _valid_spacetrack_cookiejar())
 
         @test_throws ArgumentError fetch_omms(
@@ -57,9 +57,9 @@ end
         )
     end
 
-    # == T11.5: query_limits = 0 ==========================================================
+    # == query_limits = 0 ==================================================================
 
-    @testset "T11.5: query_limits = 0" begin
+    @testset "query_limits = 0" begin
         fetcher = SpacetrackOmmFetcher("test", _valid_spacetrack_cookiejar())
 
         @test_throws ArgumentError fetch_omms(
@@ -69,9 +69,9 @@ end
         )
     end
 
-    # == T11.6: query_limits = 5:3 (empty range) =========================================
+    # == query_limits = 5:3 (empty range) ==================================================
 
-    @testset "T11.6: Empty query_limits range" begin
+    @testset "Empty query_limits range" begin
         fetcher = SpacetrackOmmFetcher("test", _valid_spacetrack_cookiejar())
 
         @test_throws ArgumentError fetch_omms(
@@ -81,15 +81,15 @@ end
         )
     end
 
-    # == T11.9: _spacetrack__is_cookie_valid(nothing) =====================================
+    # == _spacetrack__is_cookie_valid(nothing) =============================================
 
-    @testset "T11.9: Cookie validity (nothing)" begin
+    @testset "Cookie validity (nothing)" begin
         @test !SatelliteToolboxOrbitDataMessages._spacetrack__is_cookie_valid(nothing)
     end
 
-    # == T11.10: Expired cookie ===========================================================
+    # == Expired cookie ====================================================================
 
-    @testset "T11.10: Expired cookie" begin
+    @testset "Expired cookie" begin
         cookiejar = HTTP.CookieJar()
         host = "www.space-track.org"
         cookie_path = host * ";/;chocolatechip"
@@ -103,9 +103,9 @@ end
         @test !SatelliteToolboxOrbitDataMessages._spacetrack__is_cookie_valid(cookiejar)
     end
 
-    # == T11.11: Valid cookie =============================================================
+    # == Valid cookie ======================================================================
 
-    @testset "T11.11: Valid cookie" begin
+    @testset "Valid cookie" begin
         cookiejar = _valid_spacetrack_cookiejar()
         @test SatelliteToolboxOrbitDataMessages._spacetrack__is_cookie_valid(cookiejar)
     end

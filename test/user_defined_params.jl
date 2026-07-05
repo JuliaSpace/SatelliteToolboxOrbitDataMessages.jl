@@ -1,22 +1,22 @@
 ## Description #############################################################################
 #
-# T6 — User-defined parameters edge cases.
+# User-defined parameters edge cases.
 #
 ############################################################################################
 
-@testset "T6: User-defined parameters" verbose = true begin
-    # == T6.1: No userDefinedParameters section -> nothing ==============================
+@testset "User-defined parameters" verbose = true begin
+    # == No userDefinedParameters section -> nothing =======================================
 
-    @testset "T6.1: No section" begin
+    @testset "No section" begin
         xml = _minimal_omm_xml()
         omm = parse_omm(xml)
         @test !isnothing(omm)
         @test isnothing(omm.body.segment.data.user_defined_parameters)
     end
 
-    # == T6.2: Missing parameter attribute -> fallback key ==============================
+    # == Missing parameter attribute -> fallback key =======================================
 
-    @testset "T6.2: Missing parameter attribute" begin
+    @testset "Missing parameter attribute" begin
         ud_xml = "<userDefinedParameters><USER_DEFINED>my_value</USER_DEFINED></userDefinedParameters>"
         xml = _minimal_omm_xml(user_defined_xml=ud_xml)
         omm = parse_omm(xml)
@@ -30,9 +30,9 @@
         @test first(udp).first == "User Defined Parameter"
     end
 
-    # == T6.3: Duplicate keys preserved =================================================
+    # == Duplicate keys preserved ==========================================================
 
-    @testset "T6.3: Duplicate keys" begin
+    @testset "Duplicate keys" begin
         ud_xml = """
         <userDefinedParameters>
           <USER_DEFINED parameter="KEY">val1</USER_DEFINED>
