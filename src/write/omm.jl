@@ -44,6 +44,9 @@ XML declaration is included.
 
 Convert the given `omm` to an XML Element assuming it is to be embedded within another XML
 document. Hence, the XML declaration is omitted.
+
+The written version is always `3.0`, regardless of the version stored in the `omm`. This
+matches the schema against which the output is validated.
 """
 function _omm_to_xml(omm::OrbitMeanElementsMessage, stand_alone::Val{true})
     doc = XML.Document()

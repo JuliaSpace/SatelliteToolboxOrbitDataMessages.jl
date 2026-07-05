@@ -95,7 +95,7 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
     _po!(buf_fields, ("Element Set Number",  data.element_set_number,     ""))
     _po!(buf_fields, ("Rev at Epoch",        data.rev_at_epoch,           ""))
     _po!(buf_fields, ("Bstar",               data.bstar,                  ""))
-    _po!(buf_fields, (" ∂(Mean Motion)/∂t ", data.mean_motion_dot,        "rev/day²"))
+    _po!(buf_fields, ("∂(Mean Motion)/∂t",  data.mean_motion_dot,        "rev/day²"))
     _po!(buf_fields, ("∂²(Mean Motion)/∂t²", data.mean_motion_ddot,       "rev/day³"))
     push!(section_ranges, start_idx:length(buf_fields))
 

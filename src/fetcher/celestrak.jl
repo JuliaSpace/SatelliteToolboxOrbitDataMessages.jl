@@ -11,13 +11,13 @@ struct CelestrakOmmFetcher <: AbstractOmmFetcher
 end
 
 """
-    create_omm_fetcher(::Type{CelestrakTleFetcher}; kwargs...) -> CelestrakOmmFetcher
+    create_omm_fetcher(::Type{CelestrakOmmFetcher}; kwargs...) -> CelestrakOmmFetcher
 
 Create an Orbit Mean-Elements Message (OMM) fetcher from Celestrak service.
 
 # Keywords
 
-- `url::String`: Default PHP webpage address that will be used to perform the queries.
+- `url::String`: Default URL of the Celestrak PHP query endpoint.
   (**Default**: "https://celestrak.org/NORAD/elements/gp.php")
 """
 function create_omm_fetcher(
@@ -28,13 +28,14 @@ function create_omm_fetcher(
 end
 
 """
-    fetch_omms(fetcher::CelestrakOmmFetcher; kwargs...) -> Union{Nothing, Vector{OrbitMeanElementsMessage{T}}}
+    fetch_omms(fetcher::CelestrakOmmFetcher; kwargs...) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
 
 Fetch Orbit Mean-Elements Messages (OMM) from the Celestrak using `fetch` with the
 parameters in `kwargs...`.
 
-This function returns a `Vector{OrbitMeanElementsMessage}` with the fetched OMMs. If an
-error is found, it returns `nothing`.
+This function returns a `Vector{OrbitMeanElementsMessage}` with the fetched OMMs. If no
+matching OMM is found, an empty vector is returned. If an error prevents the request from
+succeeding, it returns `nothing`.
 """
 function fetch_omms(
     fetcher::CelestrakOmmFetcher;

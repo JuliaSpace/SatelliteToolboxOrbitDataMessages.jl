@@ -61,7 +61,7 @@ end
     drag_area::Union{Float64, Nothing} = nothing
     drag_coeff::Union{Float64, Nothing} = nothing
 
-    # == Float64LE Related Parameters ============================================================
+    # == TLE Related Parameters ===========================================================
 
     tle_parameters_comment::Union{String, Nothing} = nothing
     ephemeris_type::Union{Int, Nothing} = nothing
@@ -280,7 +280,7 @@ function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
         mean_motion_dot        = omm.body.segment.data.mean_motion_dot,
         mean_motion_ddot       = omm.body.segment.data.mean_motion_ddot,
 
-        # -- User-Defined Parameters -----------------------------------------------------------
+        # -- User-Defined Parameters ------------------------------------------------------------
 
         user_defined_parameters = omm.body.segment.data.user_defined_parameters,
 

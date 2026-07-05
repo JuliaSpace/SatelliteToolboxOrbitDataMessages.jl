@@ -518,7 +518,7 @@ function _parse_omm_data(xml::LazyNode)
 
             if lt == "user_defined"
                 att = attributes(node)
-                key = get(att, "parameter", "User Defined Paremeter")
+                key = get(att, "parameter", "User Defined Parameter")
                 push!(user_defined_parameters, Pair(key, v))
             end
         end

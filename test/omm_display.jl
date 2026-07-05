@@ -48,7 +48,7 @@ OrbitMeanElementsMessage:
       │    Element Set Number : 999
       │          Rev at Epoch : 25439
       │                 Bstar : 0.0001533
-      │    ∂(Mean Motion)/∂t  : 4.47e-6     rev/day²
+      │     ∂(Mean Motion)/∂t : 4.47e-6     rev/day²
       │   ∂²(Mean Motion)/∂t² : 0.0         rev/day³
       │ 
       ├─User-Defined Parameters

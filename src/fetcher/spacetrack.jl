@@ -33,7 +33,7 @@ end
 ############################################################################################
 
 """
-    create_omm_fetcher(::Type{SpacetrackTleFetcher}; kwargs...) -> SpacetrackOmmFetcher
+    create_omm_fetcher(::Type{SpacetrackOmmFetcher}; kwargs...) -> SpacetrackOmmFetcher
 
 Create an Orbit Mean-Elements Message (OMM) fetcher from Spacetrack service.
 
@@ -126,8 +126,9 @@ error is found, it returns `nothing`.
 - `interval::Union{Nothing, Tuple{Union{Date, DateTime}, Union{Date, DateTime}}`: A tuple
     with the start and end date of the interval to fetch the OMMs. This interval is appended
     to the predicates using the `EPOCH` field. If `nothing`, no interval is used. Notice
-    that if the space data is `gp` and an interval is specified, the space data is
-    automatically changed to `gp_history`.
+    that if the space data is `:gp` and an interval is specified, the space data is
+    automatically changed to `:gp_history`; if the space data is already `:gp_history`, no
+    change occurs.
     (**Default**: `nothing`)
 - `order_by::Union{Nothing, Vector{Pair{String, Symbol}}}`: A vector of
     `Pair{String, Symbol}` with the fields to order the results by. The first element of
@@ -158,10 +159,11 @@ error is found, it returns `nothing`.
     (**Default**: `nothing`)
 - `space_data::Symbol`: The space data to fetch the OMMs from. It can be either `:gp` or
     `:gp_history`. If `:gp`, the latest OMM for each satellite is fetched. If `:gp_history`,
-    all the OMMs that match the predicates are fetched. If an interval is specified, the
-    space data is automatically changed to `:gp_history`. For more information, see the
+    all the OMMs that match the predicates are fetched. If an interval is specified and the
+    space data is `:gp`, it is automatically changed to `:gp_history`. For more information,
+    see the
     [Space-Track API documentation](https://www.space-track.org/documentation#/api).
-    (**Default**: `"gp"`)
+    (**Default**: `:gp`)
 
 # Extended Help
 
