@@ -28,7 +28,8 @@ end
 
 function parse_omm(xml::LazyNode)
     for node in xml
-        tag(node) == "omm" && return _parse_omm(node)
+        t = tag(node)
+        !isnothing(t) && lowercase(t) == "omm" && return _parse_omm(node)
     end
 
     return nothing
@@ -61,7 +62,7 @@ function parse_omms(xml::LazyNode)
 
     if t == "ndm"
         for node in children(root)
-            tag(node) == "omm" && push!(omms, _parse_omm(node))
+            lowercase(tag(node)) == "omm" && push!(omms, _parse_omm(node))
         end
 
         return omms

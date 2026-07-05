@@ -147,7 +147,7 @@ end
 Wrap one or more OMM XML strings in an <ndm> container. Each argument should be a complete
 <omm>...</omm> element (without the XML declaration).
 """
-function _ndm_xml(omm_xmls::String...)
+function _ndm_xml(omm_xmls::AbstractString...)
     inner = join(omm_xmls)
     return """
     <?xml version="1.0" encoding="UTF-8"?>

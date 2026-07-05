@@ -11,6 +11,8 @@ include("_helpers.jl")
         include("omm_parsing.jl")
         include("odm_parsing.jl")
         include("t1_round_trip.jl")
+        include("t2_ndm_container.jl")
+        include("t4_case_insensitivity.jl")
     end
 
     @testset "Display" verbose = true begin

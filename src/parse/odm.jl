@@ -33,7 +33,7 @@ function parse_odm(xml::LazyNode)
     root_node = children(xml)[end]
 
     # Process the root node.
-    t = tag(root_node)
+    t = lowercase(tag(root_node))
 
     if t == "opm"
         @warn "We do not support Orbit Parameter Messages (OPM) yet."
@@ -66,7 +66,7 @@ function _parse_ndm(xml::LazyNode)
     messages = OrbitDataMessage[]
 
     for node in children(xml)
-        tag(node) == "omm" && push!(messages, _parse_omm(node))
+        lowercase(tag(node)) == "omm" && push!(messages, _parse_omm(node))
     end
 
     return messages
