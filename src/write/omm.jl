@@ -10,11 +10,23 @@ export write_omm
     write_omm(io::IO, omm::OrbitMeanElementsMessage) -> Nothing
 
 Write the given `omm` to the provided `io` stream in XML format.
+
+    write_omm(file::AbstractString, omm::OrbitMeanElementsMessage) -> Nothing
+
+Write the given `omm` to the file at `file` in XML format, overwriting its contents.
 """
 function write_omm(io::IO, omm::OrbitMeanElementsMessage)
     doc = _omm_to_xml(omm, Val(true))
 
     XML.write(io, doc)
+    return nothing
+end
+
+function write_omm(file::AbstractString, omm::OrbitMeanElementsMessage)
+    open(file, "w") do io
+        write_omm(io, omm)
+    end
+
     return nothing
 end
 

@@ -15,6 +15,15 @@ Write the given `odm` to the provided `io` stream in XML format.
 
 Write the set of Orbit Data Messages in the vector `vodm` to the provided `io` stream in XML
 format.
+
+    write_odm(file::AbstractString, odm::OrbitDataMessage) -> Nothing
+
+Write the given `odm` to the file at `file` in XML format, overwriting its contents.
+
+    write_odm(file::AbstractString, vodm::AbstractVector{T}) where T<:OrbitDataMessage -> Nothing
+
+Write the set of Orbit Data Messages in the vector `vodm` to the file at `file` in XML
+format, overwriting its contents.
 """
 function write_odm(io::IO, odm::OrbitDataMessage)
     doc = XML.Document()
@@ -61,5 +70,21 @@ function write_odm(io::IO, vodm::AbstractVector{T}) where T<:OrbitDataMessage
     end
 
     XML.write(io, doc)
+    return nothing
+end
+
+function write_odm(file::AbstractString, odm::OrbitDataMessage)
+    open(file, "w") do io
+        write_odm(io, odm)
+    end
+
+    return nothing
+end
+
+function write_odm(file::AbstractString, vodm::AbstractVector{T}) where T<:OrbitDataMessage
+    open(file, "w") do io
+        write_odm(io, vodm)
+    end
+
     return nothing
 end
