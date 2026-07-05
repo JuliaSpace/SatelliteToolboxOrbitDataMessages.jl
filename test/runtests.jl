@@ -18,7 +18,20 @@ include("_helpers.jl")
         include("t6_user_defined_params.jl")
     end
 
+    @testset "Constructors" verbose = true begin
+        include("t7_constructors.jl")
+    end
+
     @testset "Display" verbose = true begin
         include("omm_display.jl")
+        include("t8_display_variations.jl")
+    end
+
+    @testset "Write" verbose = true begin
+        include("t9_write_structure.jl")
+    end
+
+    @testset "Regression" verbose = true begin
+        include("t14_regression.jl")
     end
 end
