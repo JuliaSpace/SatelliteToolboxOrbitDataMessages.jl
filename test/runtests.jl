@@ -36,6 +36,7 @@ include("_helpers.jl")
     @testset "Fetchers" verbose = true begin
         include("t10_celestrak.jl")
         include("t11_spacetrack_offline.jl")
+        include("t12_spacetrack_online.jl")
     end
 
     @testset "TLE Extension" verbose = true begin
