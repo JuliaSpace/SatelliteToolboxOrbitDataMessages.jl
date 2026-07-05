@@ -363,7 +363,7 @@ function fetch_omms(
 
             dir_str = direction == :ascending ? "asc" : "desc"
             order_by_predicate *=
-                isempty(order_by_predicate) ? "$field%20$dir_str" : ",$field $dir_str"
+                isempty(order_by_predicate) ? "$field $dir_str" : ",$field $dir_str"
         end
 
         !isempty(order_by_predicate) &&
@@ -424,7 +424,7 @@ function fetch_omms(
         raw_query *= "/$key/$v"
     end
 
-    isnothing(raw_query) && return nothing
+    isempty(raw_query) && return nothing
 
     space_data_str = string(space_data)
 
