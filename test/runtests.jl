@@ -4,6 +4,7 @@ using Dates
 using HTTP
 using NanoDates
 using SatelliteToolboxOrbitDataMessages
+using SatelliteToolboxTle
 
 include("_helpers.jl")
 
@@ -35,6 +36,10 @@ include("_helpers.jl")
     @testset "Fetchers" verbose = true begin
         include("t10_celestrak.jl")
         include("t11_spacetrack_offline.jl")
+    end
+
+    @testset "TLE Extension" verbose = true begin
+        include("t13_tle_extension.jl")
     end
 
     @testset "Regression" verbose = true begin
