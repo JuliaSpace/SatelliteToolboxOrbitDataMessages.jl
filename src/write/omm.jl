@@ -60,6 +60,7 @@ function _omm_to_xml(omm::OrbitMeanElementsMessage, stand_alone::Val{true})
     root = XML.Element("omm")
 
     # Our XML is compatible with version 3.
+    root["id"] = "CCSDS_OMM_VERS"
     root["version"] = "3.0"
     root["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
     root["xsi:noNamespaceSchemaLocation"] =
@@ -74,6 +75,7 @@ end
 
 function _omm_to_xml(omm::OrbitMeanElementsMessage, stand_alone::Val{false})
     doc = XML.Element("omm")
+    doc["id"] = "CCSDS_OMM_VERS"
     doc["version"] = "3.0"
 
     _add_omm_tags!(doc, omm)

@@ -1,13 +1,19 @@
 using Test
 
+using Dates
 using NanoDates
 using SatelliteToolboxOrbitDataMessages
 
-@testset "Parsing ODMs" verbose = true begin
-    include("omm_parsing.jl")
-    include("odm_parsing.jl")
-end
+include("_helpers.jl")
 
-@testset "Display" verbose = true begin
-    include("omm_display.jl")
+@testset "SatelliteToolboxOrbitDataMessages" begin
+    @testset "Parsing ODMs" verbose = true begin
+        include("omm_parsing.jl")
+        include("odm_parsing.jl")
+        include("t1_round_trip.jl")
+    end
+
+    @testset "Display" verbose = true begin
+        include("omm_display.jl")
+    end
 end
