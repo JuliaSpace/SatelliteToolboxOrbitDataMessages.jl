@@ -1,6 +1,7 @@
 using Test
 
 using Dates
+using HTTP
 using NanoDates
 using SatelliteToolboxOrbitDataMessages
 
@@ -29,6 +30,11 @@ include("_helpers.jl")
 
     @testset "Write" verbose = true begin
         include("t9_write_structure.jl")
+    end
+
+    @testset "Fetchers" verbose = true begin
+        include("t10_celestrak.jl")
+        include("t11_spacetrack_offline.jl")
     end
 
     @testset "Regression" verbose = true begin
