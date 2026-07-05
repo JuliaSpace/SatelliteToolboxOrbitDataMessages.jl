@@ -5,11 +5,11 @@
 ############################################################################################
 
 """
-    _field_name_width(vfields::Vector{NTuple{3, String}}) -> Int
+    _field_name_width(vfields::AbstractVector{NTuple{3, String}}) -> Int
 
 Compute the maximum width of the field names in `vfields`.
 """
-function _field_name_width(vfields::Vector{NTuple{3, String}})
+function _field_name_width(vfields::AbstractVector{NTuple{3, String}})
     max_width = 0
 
     for field in vfields
@@ -21,11 +21,11 @@ function _field_name_width(vfields::Vector{NTuple{3, String}})
 end
 
 """
-    _field_value_width(vfields::Vector{NTuple{3, String}}) -> Int
+    _field_value_width(vfields::AbstractVector{NTuple{3, String}}) -> Int
 
 Compute the maximum width of the field values in `vfields`.
 """
-function _field_value_width(vfields::Vector{NTuple{3, String}})
+function _field_value_width(vfields::AbstractVector{NTuple{3, String}})
     max_width = 0
 
     for field in vfields
@@ -93,7 +93,7 @@ used to align the values properly.
 """
 function _print_level_fields(
     io::IO,
-    fields::Vector{NTuple{3, String}},
+    fields::AbstractVector{NTuple{3, String}},
     title::String,
     level::Int,
     max_level::Int,
@@ -175,7 +175,10 @@ end
 Push to `vector` the `field` if its value is not `nothing`. The field is a tuple of
 `(name::String, value::Any, unit::String)`, where `value` is converted to a string.
 """
-function _push_output!(vector::Vector{NTuple{3, String}}, field::Tuple{String, Any, String})
+function _push_output!(
+    vector::AbstractVector{NTuple{3, String}},
+    field::Tuple{String, Any, String}
+)
     isnothing(field[2]) && return nothing
     push!(vector, (field[1], escape_string(string(field[2])), field[3]))
     return nothing

@@ -142,22 +142,22 @@ function _parse_omm_header(xml::LazyNode)
     message_id     = nothing
 
     for node in children(xml)
-        t  = tag(node)
-        ch = children(node)
-        v  = isempty(ch) ? "" : value(first(ch))
+        lt = lowercase(tag(node))
+        nc = children(node)
+        v  = isempty(nc) ? "" : value(first(nc))
 
-        if lowercase(t) == "comment"
+        if lt == "comment"
             comment = v
-        elseif lowercase(t) == "classification"
+        elseif lt == "classification"
             classification = v
-        elseif lowercase(t) == "creation_date"
+        elseif lt == "creation_date"
             # If the creation date is empty, fall back to the current instant. This keeps
             # the required-field check below reachable, since the field is considered
             # provided even when the tag value is empty.
             creation_date = !isempty(v) ? NanoDate(v) : NanoDate()
-        elseif lowercase(t) == "originator"
+        elseif lt == "originator"
             originator = v
-        elseif lowercase(t) == "message_id"
+        elseif lt == "message_id"
             message_id = v
         end
     end
@@ -257,26 +257,26 @@ function _parse_omm_metadata(xml::LazyNode)
     mean_element_theory = nothing
 
     for node in ch
-        t  = tag(node)
-        ch = children(node)
-        v  = isempty(ch) ? "" : value(first(ch))
+        lt = lowercase(tag(node))
+        nc = children(node)
+        v  = isempty(nc) ? "" : value(first(nc))
 
-        if lowercase(t) == "comment"
+        if lt == "comment"
             comment = v
-        elseif lowercase(t) == "object_name"
+        elseif lt == "object_name"
             object_name = v
-        elseif lowercase(t) == "object_id"
+        elseif lt == "object_id"
             object_id = v
-        elseif lowercase(t) == "center_name"
+        elseif lt == "center_name"
             center_name = v
-        elseif lowercase(t) == "ref_frame"
+        elseif lt == "ref_frame"
             ref_frame = v
-        elseif lowercase(t) == "ref_frame_epoch"
+        elseif lt == "ref_frame_epoch"
             # If the ref. frame epoch is empty, fall back to the current instant.
             ref_frame_epoch = !isempty(v) ? NanoDate(v) : NanoDate()
-        elseif lowercase(t) == "time_system"
+        elseif lt == "time_system"
             time_system = v
-        elseif lowercase(t) == "mean_element_theory"
+        elseif lt == "mean_element_theory"
             mean_element_theory = v
         end
     end
@@ -334,20 +334,20 @@ function _parse_omm_data(xml::LazyNode)
     user_defined_parameter_nodes = nothing
 
     for node in ch
-        t  = tag(node)
-        ch = children(node)
+        lt = lowercase(tag(node))
+        nc = children(node)
 
-        if lowercase(t) == "comment"
-            v  = isempty(ch) ? "" : value(first(ch))
+        if lt == "comment"
+            v  = isempty(nc) ? "" : value(first(nc))
             data_comment = v
-        elseif lowercase(t) == "meanelements"
-            mean_elements_nodes = ch
-        elseif lowercase(t) == "spacecraftparameters"
-            spacecraft_parameters_nodes = ch
-        elseif lowercase(t) == "tleparameters"
-            tle_parameters_nodes = ch
-        elseif lowercase(t) == "userdefinedparameters"
-            user_defined_parameter_nodes = ch
+        elseif lt == "meanelements"
+            mean_elements_nodes = nc
+        elseif lt == "spacecraftparameters"
+            spacecraft_parameters_nodes = nc
+        elseif lt == "tleparameters"
+            tle_parameters_nodes = nc
+        elseif lt == "userdefinedparameters"
+            user_defined_parameter_nodes = nc
         end
     end
 
@@ -368,28 +368,28 @@ function _parse_omm_data(xml::LazyNode)
     GM                = nothing
 
     for node in mean_elements_nodes
-        t  = tag(node)
-        ch = children(node)
-        v  = isempty(ch) ? "" : value(first(ch))
+        lt = lowercase(tag(node))
+        nc = children(node)
+        v  = isempty(nc) ? "" : value(first(nc))
 
-        if lowercase(t) == "epoch"
+        if lt == "epoch"
             # If the epoch is empty, fall back to the current instant.
             epoch = !isempty(v) ? NanoDate(v) : NanoDate()
-        elseif lowercase(t) == "semi_major_axis"
+        elseif lt == "semi_major_axis"
             semi_major_axis = parse(Float64, v)
-        elseif lowercase(t) == "mean_motion"
+        elseif lt == "mean_motion"
             mean_motion = parse(Float64, v)
-        elseif lowercase(t) == "eccentricity"
+        elseif lt == "eccentricity"
             eccentricity = parse(Float64, v)
-        elseif lowercase(t) == "inclination"
+        elseif lt == "inclination"
             inclination = parse(Float64, v)
-        elseif lowercase(t) == "ra_of_asc_node"
+        elseif lt == "ra_of_asc_node"
             raan = parse(Float64, v)
-        elseif lowercase(t) == "arg_of_pericenter"
+        elseif lt == "arg_of_pericenter"
             arg_of_pericenter = parse(Float64, v)
-        elseif lowercase(t) == "mean_anomaly"
+        elseif lt == "mean_anomaly"
             mean_anomaly = parse(Float64, v)
-        elseif lowercase(t) == "gm"
+        elseif lt == "gm"
             GM = parse(Float64, v)
         end
     end
@@ -434,23 +434,23 @@ function _parse_omm_data(xml::LazyNode)
 
     if !isnothing(spacecraft_parameters_nodes)
         for node in spacecraft_parameters_nodes
-            t  = tag(node)
-            ch = children(node)
-            v  = isempty(ch) ? "" : value(first(ch))
+            lt = lowercase(tag(node))
+            nc = children(node)
+            v  = isempty(nc) ? "" : value(first(nc))
 
-            if lowercase(t) == "comment"
+            if lt == "comment"
                 if isnothing(spacecraft_data_comment)
                     spacecraft_data_comment = v
                 end
-            elseif lowercase(t) == "mass"
+            elseif lt == "mass"
                 mass = parse(Float64, v)
-            elseif lowercase(t) == "solar_rad_area"
+            elseif lt == "solar_rad_area"
                 solar_rad_area = parse(Float64, v)
-            elseif lowercase(t) == "solar_rad_coeff"
+            elseif lt == "solar_rad_coeff"
                 solar_rad_coeff = parse(Float64, v)
-            elseif lowercase(t) == "drag_area"
+            elseif lt == "drag_area"
                 drag_area = parse(Float64, v)
-            elseif lowercase(t) == "drag_coeff"
+            elseif lt == "drag_coeff"
                 drag_coeff = parse(Float64, v)
             end
         end
@@ -470,27 +470,27 @@ function _parse_omm_data(xml::LazyNode)
 
     if !isnothing(tle_parameters_nodes)
         for node in tle_parameters_nodes
-            t  = tag(node)
-            ch = children(node)
-            v  = isempty(ch) ? "" : value(first(ch))
+            lt = lowercase(tag(node))
+            nc = children(node)
+            v  = isempty(nc) ? "" : value(first(nc))
 
-            if lowercase(t) == "comment"
+            if lt == "comment"
                 tle_parameters_comment = v
-            elseif lowercase(t) == "ephemeris_type"
+            elseif lt == "ephemeris_type"
                 ephemeris_type = parse(Int, v)
-            elseif lowercase(t) == "classification_type"
+            elseif lt == "classification_type"
                 classification_type = isempty(v) ? nothing : v[1]
-            elseif lowercase(t) == "norad_cat_id"
+            elseif lt == "norad_cat_id"
                 norad_cat_id = parse(Int, v)
-            elseif lowercase(t) == "element_set_no"
+            elseif lt == "element_set_no"
                 element_set_number = parse(Int, v)
-            elseif lowercase(t) == "rev_at_epoch"
+            elseif lt == "rev_at_epoch"
                 rev_at_epoch = parse(Int, v)
-            elseif lowercase(t) == "bstar"
+            elseif lt == "bstar"
                 bstar = parse(Float64, v)
-            elseif lowercase(t) == "mean_motion_dot"
+            elseif lt == "mean_motion_dot"
                 mean_motion_dot = parse(Float64, v)
-            elseif lowercase(t) == "mean_motion_ddot"
+            elseif lt == "mean_motion_ddot"
                 mean_motion_ddot = parse(Float64, v)
             end
         end
@@ -504,11 +504,11 @@ function _parse_omm_data(xml::LazyNode)
         user_defined_parameters = Pair{String, String}[]
 
         for node in user_defined_parameter_nodes
-            t  = tag(node)
-            ch = children(node)
-            v  = isempty(ch) ? "" : value(first(ch))
+            lt = lowercase(tag(node))
+            nc = children(node)
+            v  = isempty(nc) ? "" : value(first(nc))
 
-            if lowercase(t) == "user_defined"
+            if lt == "user_defined"
                 att = attributes(node)
                 key = get(att, "parameter", "User Defined Paremeter")
                 push!(user_defined_parameters, Pair(key, v))
