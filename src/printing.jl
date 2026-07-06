@@ -5,206 +5,143 @@
 ############################################################################################
 
 """
-    _field_name_width(vfields::AbstractVector{NTuple{3, String}}) -> Int
+    _register_faces() -> Nothing
 
-Compute the maximum width of the field names in `vfields`.
+Register the named `StyledStrings` faces used to render the orbit data messages. This
+function is idempotent: faces already registered are not overwritten.
+
+The registered faces are:
+
+- `:satellitetoolbox_odm_title`: Structure name (e.g., `OrbitMeanElementsMessage:`).
+- `:satellitetoolbox_odm_section`: Top-level sections (`Header` and `Body`).
+- `:satellitetoolbox_odm_node`: Tree nodes (`Segment`, `Metadata`, `Data`, and the data
+    subsection titles).
+- `:satellitetoolbox_odm_tree`: Tree rails and connectors.
+- `:satellitetoolbox_odm_field`: Field names.
+- `:satellitetoolbox_odm_unit`: Field units.
 """
-function _field_name_width(vfields::AbstractVector{NTuple{3, String}})
+function _register_faces()
+    faces = [
+        :satellitetoolbox_odm_title   => StyledStrings.Face(; weight = :bold),
+        :satellitetoolbox_odm_section =>
+            StyledStrings.Face(; foreground = :magenta, weight = :bold),
+        :satellitetoolbox_odm_node  =>
+            StyledStrings.Face(; foreground = :yellow, weight = :bold),
+        :satellitetoolbox_odm_tree  => StyledStrings.Face(; foreground = :gray),
+        :satellitetoolbox_odm_field => StyledStrings.Face(; weight = :bold),
+        :satellitetoolbox_odm_unit  => StyledStrings.Face(; foreground = :gray),
+    ]
+
+    for (name, face) in faces
+        # Do not overwrite a face that the user (or a previous call) already defined.
+        haskey(StyledStrings.FACES.default, name) && continue
+        StyledStrings.addface!(name => face)
+    end
+
+    return nothing
+end
+
+"""
+    _format_value(value) -> String
+
+Convert `value` to its display `String`. This function is the single formatting seam for
+field values, allowing consistent formatting across every message.
+
+The default method uses `string`, which for `AbstractFloat` yields the shortest
+representation that round-trips exactly (e.g., `7134.084`, `4.47e-6`), avoiding any loss of
+precision in the orbital elements.
+"""
+_format_value(value) = string(value)
+
+"""
+    _field_name_width(fields::AbstractVector{NTuple{3, String}}) -> Int
+
+Compute the maximum width of the field names in `fields`.
+"""
+function _field_name_width(fields::AbstractVector{NTuple{3, String}})
     max_width = 0
 
-    for field in vfields
-        w = textwidth(field[1])
-        max_width = max(max_width, w)
+    for field in fields
+        max_width = max(max_width, textwidth(field[1]))
     end
 
     return max_width
 end
 
 """
-    _field_value_width(vfields::AbstractVector{NTuple{3, String}}) -> Int
-
-Compute the maximum width of the field values in `vfields`.
-"""
-function _field_value_width(vfields::AbstractVector{NTuple{3, String}})
-    max_width = 0
-
-    for field in vfields
-        isempty(field[3]) && continue
-
-        w = textwidth(field[2])
-        max_width = max(max_width, w)
-    end
-
-    return max_width
-end
-
-"""
-    _print_level_alignment(io::IO, level::Int, tree_level::Int; kwargs...) -> Nothing
-
-Print to `io` the alignment for a given `level` in the tree, drawing the tree in the level
-`tree_level`.
-
-# Keywords
-
-- `indentation::Int`: Indentation per level in spaces.
-    (**Default**: 2)
-- `initial_padding::Int`: Initial padding in spaces before printing the tree.
-    (**Default**: 2)
-"""
-function _print_level_alignment(
-    io::IO,
-    level::Int,
-    tree_level::Int;
-    indentation::Int = 2,
-    initial_padding::Int = 2
-)
-    indentation = max(2, indentation)
-    level       = max(0, level)
-    unit_pad    = " "^indentation
-    sty_bar     = styled"{gray:│}"
-
-    print(io, " "^initial_padding)
-
-    if level <= tree_level
-        print(io, unit_pad^level)
-        return nothing
-    end
-
-    str  = unit_pad^max(0, tree_level - 1) * sty_bar
-    str *= chop(unit_pad^(level - tree_level), tail = 0, head = 1)
-
-    print(io, str)
-
-    return nothing
-end
-
-"""
-    _print_level_fields(io::IO, fields::Vector{NTuple{3, String}}, title::String, level::Int, max_level::Int, name_field_width::Int, value_field_width::Int; kwargs...) -> Nothing
-
-Print to `io` the `fields` at the specified `level` in the tree, with the given `title`.
-`max_level` is the maximum level in the tree, used to compute the indentation.
-`name_field_width` and is used to align the field names properly. `value_field_width` is
-used to align the values properly.
-
-# Keywords
-
-- `indentation::Int`: Indentation per level in spaces.
-    (**Default**: `2`)
-"""
-function _print_level_fields(
-    io::IO,
-    fields::AbstractVector{NTuple{3, String}},
-    title::String,
-    level::Int,
-    max_level::Int,
-    name_field_width::Int,
-    value_field_width::Int;
-    indentation::Int = 2,
-    newline::Bool = true
-)
-    isempty(fields) && return nothing
-
-    unit_pad = " "^indentation
-
-    !isempty(title) && _print_level_opening(io, title * "\n", level; has_siblings = true)
-
-    for f in fields
-        _print_level_alignment(io, level, level - 1)
-        print(io, unit_pad^max(0, max_level - level + 1))
-        println(io, _render_field_aligned(f..., name_field_width, value_field_width))
-    end
-
-    if newline
-        _print_level_alignment(io, level, level - 1)
-        println(io)
-    end
-
-    return nothing
-end
-
-"""
-    _print_level_opening(io::IO, name::String, level::Int; kwargs...) -> Nothing
-
-Print to `io` the opening of a level in the tree with the given `name` at the specified
-`level`.
-
-# Keywords
-
-- `has_siblings::Bool`: Whether the level has siblings or not.
-    (**Default**: `false`)
-- `indentation::Int`: Indentation per level in spaces.
-    (**Default**: `2`)
-- `initial_padding::Int`: Initial padding in spaces before printing the tree.
-    (**Default**: `2`)
-"""
-function _print_level_opening(
-    io::IO,
-    name::String,
-    level::Int;
-    has_siblings::Bool = false,
-    indentation::Int = 2,
-    initial_padding::Int = 2,
-    name_face::StyledStrings.Face = StyledStrings.Face(; foreground = :yellow, weight = :bold)
-)
-    sty_vbar_ns = styled"{gray:└}"
-    sty_vbar_s  = styled"{gray:├}"
-    sty_name    = styled"{$name_face:$name}"
-
-    print(io, " "^initial_padding)
-
-    if level <= 1
-        print(io, sty_name)
-        return nothing
-    end
-
-    indentation = max(2, indentation)
-    unit_pad    = " "^indentation
-    sty_hbar    = styled"{gray:$(\"─\"^(indentation - 1))}"
-
-    str  = unit_pad^max(0, level - 2)
-    str *= (has_siblings ? sty_vbar_s : sty_vbar_ns) * sty_hbar
-
-    print(io, str * sty_name)
-
-    return nothing
-end
-
-"""
-    _push_output!(vector::Vector{NTuple{3, String}}, field::Tuple{String, Any, String}) -> Nothing
+    _push_output!(vector::AbstractVector{NTuple{3, String}}, field::Tuple{String, Any, String}) -> Nothing
 
 Push to `vector` the `field` if its value is not `nothing`. The field is a tuple of
-`(name::String, value::Any, unit::String)`, where `value` is converted to a string.
+`(name::String, value::Any, unit::String)`, where `value` is converted to a string using
+[`_format_value`](@ref).
 """
 function _push_output!(
     vector::AbstractVector{NTuple{3, String}},
     field::Tuple{String, Any, String}
 )
     isnothing(field[2]) && return nothing
-    push!(vector, (field[1], escape_string(string(field[2])), field[3]))
+    push!(vector, (field[1], escape_string(_format_value(field[2])), field[3]))
     return nothing
 end
 
 """
-    _render_field_aligned(field_name::String, field_value::String, unit::String, field_name_width::Int, field_value_width::Int) -> String
+    _render_field(field_name::String, field_value::String, unit::String, name_width::Int) -> String
 
-Render a field with its name `field_name`, value `field_value`, and `unit` aligned according
-to the specified widths for the field name `field_name_width` and field value
-`field_value_width`.
+Render a single field row `<name> : <value> <unit>`, left-aligning `field_name` to
+`name_width`. The `unit` is appended inline separated by a space, except for the degree unit
+`"°"`, which hugs the value. The returned string has no trailing whitespace.
 """
-function _render_field_aligned(
+function _render_field(
     field_name::String,
     field_value::String,
     unit::String,
-    field_name_width::Int,
-    field_value_width::Int
+    name_width::Int
 )
-    sty_unit = styled"{gray:$unit}"
-    sty_name = styled"{bold:$field_name}"
+    sty_name = styled"{satellitetoolbox_odm_field:$field_name}"
 
-    str  = lpad(sty_name, field_name_width) * " : "
-    str *= unit == "°" ?
-        field_value * sty_unit :
-        rpad(field_value, field_value_width) * " " * sty_unit
+    str = rpad(sty_name, name_width) * " : " * field_value
+
+    if !isempty(unit)
+        sty_unit = styled"{satellitetoolbox_odm_unit:$unit}"
+        str *= unit == "°" ? sty_unit : " " * sty_unit
+    end
 
     return string(rstrip(str))
+end
+
+"""
+    _print_node(io::IO, name::String, rail::String, connector::String, face::Symbol) -> Nothing
+
+Print to `io` a tree node opening with the given `name` styled with `face`, preceded by
+`rail` (the ancestor tree rails) and `connector` (e.g., `"├─ "`, `"└─ "`, or `""` for a
+top-level heading).
+"""
+function _print_node(io::IO, name::String, rail::String, connector::String, face::Symbol)
+    sty_conn = styled"{satellitetoolbox_odm_tree:$connector}"
+    sty_name = styled"{$face:$name}"
+    println(io, styled"{satellitetoolbox_odm_tree:$rail}", sty_conn, sty_name)
+    return nothing
+end
+
+"""
+    _print_fields(io::IO, fields::AbstractVector{NTuple{3, String}}, rail::String) -> Nothing
+
+Print to `io` the `fields`, each preceded by `rail` (the tree rails drawn before the field
+name). The field names are left-aligned to the widest name in `fields`.
+"""
+function _print_fields(
+    io::IO,
+    fields::AbstractVector{NTuple{3, String}},
+    rail::String
+)
+    isempty(fields) && return nothing
+
+    name_width = _field_name_width(fields)
+    sty_rail   = styled"{satellitetoolbox_odm_tree:$rail}"
+
+    for f in fields
+        println(io, sty_rail, _render_field(f..., name_width))
+    end
+
+    return nothing
 end

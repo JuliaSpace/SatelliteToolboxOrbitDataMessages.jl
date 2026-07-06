@@ -10,6 +10,15 @@ struct CelestrakOmmFetcher <: AbstractOmmFetcher
     url::String
 end
 
+############################################################################################
+#                                        Julia API                                         #
+############################################################################################
+
+function Base.show(io::IO, fetcher::CelestrakOmmFetcher)
+    print(io, "CelestrakOmmFetcher: $(fetcher.url)")
+    return nothing
+end
+
 """
     create_omm_fetcher(::Type{CelestrakOmmFetcher}; kwargs...) -> CelestrakOmmFetcher
 

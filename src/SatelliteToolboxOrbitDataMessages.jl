@@ -39,4 +39,13 @@ include("./read/omm.jl")
 include("./write/odm.jl")
 include("./write/omm.jl")
 
+############################################################################################
+#                                       Initialize                                         #
+############################################################################################
+
+function __init__()
+    _register_faces()
+    return nothing
+end
+
 end # module SatelliteToolboxOrbitDataMessages
