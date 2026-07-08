@@ -97,6 +97,25 @@ end
 
 # -- OMM -----------------------------------------------------------------------------------
 
+"""
+    struct OrbitMeanElementsMessage <: OrbitDataMessage
+
+Orbit Mean-Elements Message (OMM) as defined by the CCSDS 502.0-B-3 standard.
+
+The structure follows the nested hierarchy of the standard: a `header`, and a `body` that
+contains a segment with the metadata and data sections. The individual fields can be
+accessed through this hierarchy, for example `omm.body.segment.metadata.object_name` or
+`omm.body.segment.data.epoch`.
+
+To create a message, use the keyword constructor `OrbitMeanElementsMessage(; kwargs...)`,
+which assembles all the internal sections automatically.
+
+# Fields
+
+- `version::VersionNumber`: OMM format version (2.0 or 3.0).
+- `header::OmmHeader`: Message header (creation date, originator, etc.).
+- `body::OmmBody`: Message body containing the metadata and the mean elements data.
+"""
 struct OrbitMeanElementsMessage <: OrbitDataMessage
     version::VersionNumber
     header::OmmHeader
@@ -105,6 +124,104 @@ end
 
 # == Constructors ==========================================================================
 
+"""
+    OrbitMeanElementsMessage(; kwargs...) -> OrbitMeanElementsMessage
+
+Create an Orbit Mean-Elements Message (OMM) from the keyword arguments `kwargs...`.
+
+This constructor assembles the internal header, metadata, and data sections defined by the
+CCSDS 502.0-B-3 standard, returning a message compatible with version 3.0. The required
+keywords are the message originator, the object identification, the reference frame and
+time system, and the mean Keplerian elements. All angular quantities (`inclination`,
+`raan`, `arg_of_pericenter`, and `mean_anomaly`) are expressed in **degrees**.
+
+The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be provided as
+`NanoDate` objects so that the sub-second precision is preserved.
+
+# Keywords
+
+- `header_comment::Union{String, Nothing}`: Comment for the header section.
+    (**Default**: `nothing`)
+- `classification::Union{String, Nothing}`: Message classification.
+    (**Default**: `nothing`)
+- `creation_date::NanoDate`: Message creation date (**required**).
+- `originator::String`: Message originator (**required**).
+- `message_id::Union{String, Nothing}`: Unique message identifier.
+    (**Default**: `nothing`)
+- `metadata_comment::Union{String, Nothing}`: Comment for the metadata section.
+    (**Default**: `nothing`)
+- `object_name::String`: Spacecraft name (**required**).
+- `object_id::String`: International designator, usually in the format `YYYY-NNNP`
+    (**required**).
+- `center_name::String`: Origin of the reference frame (**required**).
+- `ref_frame::String`: Reference frame of the mean elements (**required**).
+- `ref_frame_epoch::Union{NanoDate, Nothing}`: Epoch of the reference frame, if it is not
+    intrinsic to its definition.
+    (**Default**: `nothing`)
+- `time_system::String`: Time system used for the message (**required**).
+- `mean_element_theory::String`: Theory describing the mean elements, e.g. `"SGP4"`
+    (**required**).
+- `data_comment::Union{String, Nothing}`: Comment for the mean elements section.
+    (**Default**: `nothing`)
+- `epoch::NanoDate`: Epoch of the mean Keplerian elements (**required**).
+- `semi_major_axis::Union{Float64, Nothing}`: Semi-major axis [km]. Either this keyword or
+    `mean_motion` must be provided.
+    (**Default**: `nothing`)
+- `mean_motion::Union{Float64, Nothing}`: Mean motion [rev/day]. Either this keyword or
+    `semi_major_axis` must be provided.
+    (**Default**: `nothing`)
+- `eccentricity::Float64`: Eccentricity (**required**).
+- `inclination::Float64`: Inclination [deg] (**required**).
+- `raan::Float64`: Right ascension of the ascending node [deg] (**required**).
+- `arg_of_pericenter::Float64`: Argument of pericenter [deg] (**required**).
+- `mean_anomaly::Float64`: Mean anomaly [deg] (**required**).
+- `GM::Union{Float64, Nothing}`: Gravitational coefficient [km³/s²].
+    (**Default**: `nothing`)
+- `spacecraft_data_comment::Union{String, Nothing}`: Comment for the spacecraft data
+    section.
+    (**Default**: `nothing`)
+- `mass::Union{Float64, Nothing}`: Spacecraft mass [kg].
+    (**Default**: `nothing`)
+- `solar_rad_area::Union{Float64, Nothing}`: Effective area for solar radiation pressure
+    [m²].
+    (**Default**: `nothing`)
+- `solar_rad_coeff::Union{Float64, Nothing}`: Solar radiation pressure coefficient.
+    (**Default**: `nothing`)
+- `drag_area::Union{Float64, Nothing}`: Effective area for atmospheric drag [m²].
+    (**Default**: `nothing`)
+- `drag_coeff::Union{Float64, Nothing}`: Atmospheric drag coefficient.
+    (**Default**: `nothing`)
+- `tle_parameters_comment::Union{String, Nothing}`: Comment for the TLE-related parameters
+    section.
+    (**Default**: `nothing`)
+- `ephemeris_type::Union{Int, Nothing}`: Default ephemeris type associated with the TLE.
+    (**Default**: `nothing`)
+- `classification_type::Union{Char, Nothing}`: Classification type, e.g. `'U'` for
+    unclassified.
+    (**Default**: `nothing`)
+- `norad_cat_id::Union{Int, Nothing}`: NORAD catalog number.
+    (**Default**: `nothing`)
+- `element_set_number::Union{Int, Nothing}`: Element set number.
+    (**Default**: `nothing`)
+- `rev_at_epoch::Union{Int, Nothing}`: Revolution number at epoch.
+    (**Default**: `nothing`)
+- `bstar::Union{Float64, Nothing}`: SGP4 drag term (B*) [1/earth radii].
+    (**Default**: `nothing`)
+- `mean_motion_dot::Union{Float64, Nothing}`: First time derivative of the mean motion
+    [rev/day²].
+    (**Default**: `nothing`)
+- `mean_motion_ddot::Union{Float64, Nothing}`: Second time derivative of the mean motion
+    [rev/day³].
+    (**Default**: `nothing`)
+- `user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}}`: User-defined
+    parameters as a vector of `key => value` pairs.
+    (**Default**: `nothing`)
+
+    OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...) -> OrbitMeanElementsMessage
+
+Create a copy of `omm`, overriding the fields specified in `kwargs...`. Any keyword accepted
+by the main constructor can be used; the remaining fields are copied from `omm`.
+"""
 function OrbitMeanElementsMessage(
     ;
     # == Header ============================================================================

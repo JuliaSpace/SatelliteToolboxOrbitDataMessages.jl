@@ -11,6 +11,22 @@ const _SPACETRACK__URL         = "https://" * _SPACETRACK__HOST
 const _SPACETRACK__LOGIN_URL   = _SPACETRACK__URL * "/ajaxauth/login"
 const _SPACETRACK__COOKIE_NAME = "chocolatechip"
 
+"""
+    struct SpacetrackOmmFetcher <: AbstractOmmFetcher
+
+Fetcher that retrieves Orbit Mean-Elements Messages (OMM) from the
+[Space-Track](https://www.space-track.org) service.
+
+Create an instance with
+[`create_omm_fetcher(SpacetrackOmmFetcher)`](@ref create_omm_fetcher) and query the service
+with [`fetch_omms`](@ref). Space-Track requires a (free) registered account; the login
+cookie is cached locally and reused until it expires.
+
+# Fields
+
+- `username::String`: Space-Track username used to authenticate the requests.
+- `cookiejar::HTTP.CookieJar`: Cookie jar holding the authentication cookie for the session.
+"""
 struct SpacetrackOmmFetcher <: AbstractOmmFetcher
     username::String
     cookiejar::HTTP.CookieJar

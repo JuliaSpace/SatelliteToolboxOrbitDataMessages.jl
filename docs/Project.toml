@@ -1,0 +1,10 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+NanoDates = "46f1a544-deae-4307-8689-c12aa3c955c6"
+SatelliteToolboxOrbitDataMessages = "8a75e93c-a5f1-4885-96e0-0415d9bb1562"
+SatelliteToolboxTle = "7ff27aeb-5fff-4337-a9ee-a9fe6b7ed35e"
+
+[compat]
+Documenter = "1"
+NanoDates = "1"
+SatelliteToolboxTle = "1"

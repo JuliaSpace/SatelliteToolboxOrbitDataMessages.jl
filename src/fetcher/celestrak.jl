@@ -6,6 +6,21 @@
 
 export CelestrakOmmFetcher
 
+"""
+    struct CelestrakOmmFetcher <: AbstractOmmFetcher
+
+Fetcher that retrieves Orbit Mean-Elements Messages (OMM) from the
+[Celestrak](https://celestrak.org) service.
+
+Create an instance with
+[`create_omm_fetcher(CelestrakOmmFetcher)`](@ref create_omm_fetcher) and query the service
+with [`fetch_omms`](@ref). Celestrak provides publicly available data and does not require
+authentication.
+
+# Fields
+
+- `url::String`: Address of the Celestrak endpoint used to perform the queries.
+"""
 struct CelestrakOmmFetcher <: AbstractOmmFetcher
     url::String
 end
