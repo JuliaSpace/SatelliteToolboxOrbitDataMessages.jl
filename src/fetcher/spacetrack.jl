@@ -585,9 +585,15 @@ fails, it returns `false`.
 function _spacetrack__login(username::String, password::Base.SecretBuffer)
     try
         # Materialize the plaintext only to build the URL-encoded body, then shred the
-        # buffer so the secret does not outlive this expression.
-        password_str = read(password, String)
-        Base.shred!(password)
+        # buffer so the secret does not outlive this expression. Use try/finally to
+        # guarantee shredding even if read fails.
+        local password_str
+
+        try
+            password_str = read(password, String)
+        finally
+            Base.shred!(password)
+        end
 
         login_data =
             "identity=$(URIs.escapeuri(username))&" *

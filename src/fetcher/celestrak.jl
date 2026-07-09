@@ -81,15 +81,21 @@ function fetch_omms(
     elseif !isnothing(international_designator)
         # The international designator must be a string with the form:
         #
-        #   YYYY-NNN
+        #   YYYY-NNN[P]
         #
-        # where `YYYY` is the launch year, and `NNN` is the launch number.
+        # where `YYYY` is the launch year, `NNN` is the launch number (1 to 3 digits),
+        # and `P` is an optional piece letter.
 
-        isnothing(match(r"^[0-9]{4}-[0-9]{3}$", international_designator)) &&
-            throw(ArgumentError("The international designator must have the format `YYYY-NNN`."))
+        m = match(r"^(\d{4})-(\d{1,3})([A-Z]*)$", international_designator)
+
+        isnothing(m) && return throw(ArgumentError(
+            "The international designator must have the format `YYYY-NNN` or `YYYY-NNNP`."
+        ))
+
+        # Pad the launch number to 3 digits as expected by Celestrak's INTDES parameter.
+        query_value = string(m.captures[1], "-", lpad(m.captures[2], 3, "0"), m.captures[3])
 
         query_type  = "international designator"
-        query_value = international_designator
         query_param = "INTDES=" * URIs.escapeuri(query_value)
 
     elseif !isnothing(satellite_name)
@@ -133,8 +139,7 @@ function fetch_omms(
             return OrbitMeanElementsMessage[]
 
         elseif !isnothing(match(r"Invalid query", str))
-            throw(ErrorException("Invalid query: $query"))
-            return nothing
+            return throw(ErrorException("Invalid query: $query"))
         end
 
         xml  = parse(str, LazyNode)
