@@ -85,6 +85,36 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
     _po!(tle_fields, ("∂(Mean Motion)/∂t",  data.mean_motion_dot,        "rev/day²"))
     _po!(tle_fields, ("∂²(Mean Motion)/∂t²", data.mean_motion_ddot,       "rev/day³"))
 
+    # -- Covariance Matrix -----------------------------------------------------------------
+
+    cov_fields = NTuple{3, String}[]
+    if !isnothing(data.covariance_matrix)
+        cov = data.covariance_matrix
+        _po!(cov_fields, ("Comment",       cov.comment,       ""))
+        _po!(cov_fields, ("Ref. Frame",    cov.cov_ref_frame, ""))
+        _po!(cov_fields, ("CX_X",          cov.cx_x,          "km²"))
+        _po!(cov_fields, ("CY_X",          cov.cy_x,          "km²"))
+        _po!(cov_fields, ("CY_Y",          cov.cy_y,          "km²"))
+        _po!(cov_fields, ("CZ_X",          cov.cz_x,          "km²"))
+        _po!(cov_fields, ("CZ_Y",          cov.cz_y,          "km²"))
+        _po!(cov_fields, ("CZ_Z",          cov.cz_z,          "km²"))
+        _po!(cov_fields, ("CX_DOT_X",      cov.cx_dot_x,      "km²/s"))
+        _po!(cov_fields, ("CX_DOT_Y",      cov.cx_dot_y,      "km²/s"))
+        _po!(cov_fields, ("CX_DOT_Z",      cov.cx_dot_z,      "km²/s"))
+        _po!(cov_fields, ("CX_DOT_X_DOT",  cov.cx_dot_x_dot,  "km²/s²"))
+        _po!(cov_fields, ("CY_DOT_X",      cov.cy_dot_x,      "km²/s"))
+        _po!(cov_fields, ("CY_DOT_Y",      cov.cy_dot_y,      "km²/s"))
+        _po!(cov_fields, ("CY_DOT_Z",      cov.cy_dot_z,      "km²/s"))
+        _po!(cov_fields, ("CY_DOT_X_DOT",  cov.cy_dot_x_dot,  "km²/s²"))
+        _po!(cov_fields, ("CY_DOT_Y_DOT",  cov.cy_dot_y_dot,  "km²/s²"))
+        _po!(cov_fields, ("CZ_DOT_X",      cov.cz_dot_x,      "km²/s"))
+        _po!(cov_fields, ("CZ_DOT_Y",      cov.cz_dot_y,      "km²/s"))
+        _po!(cov_fields, ("CZ_DOT_Z",      cov.cz_dot_z,      "km²/s"))
+        _po!(cov_fields, ("CZ_DOT_X_DOT",  cov.cz_dot_x_dot,  "km²/s²"))
+        _po!(cov_fields, ("CZ_DOT_Y_DOT",  cov.cz_dot_y_dot,  "km²/s²"))
+        _po!(cov_fields, ("CZ_DOT_Z_DOT",  cov.cz_dot_z_dot,  "km²/s²"))
+    end
+
     # -- User-Defined Parameters -----------------------------------------------------------
 
     user_fields = NTuple{3, String}[]
@@ -132,6 +162,7 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
             ("Mean Keplerian Elements", mean_elements_fields),
             ("Spacecraft Parameters",   spacecraft_fields),
             ("TLE Related Parameters",  tle_fields),
+            ("Covariance Matrix",       cov_fields),
             ("User-Defined Parameters", user_fields),
         ]
     )

@@ -43,6 +43,10 @@ Build a minimal valid OMM XML string. Optional tags can be provided via keyword 
 - `arg_of_pericenter::String = "97.3772"`
 - `mean_anomaly::String = "262.7545"`
 - `gm::String = ""`
+- `spacecraft_params_xml::String = ""` (raw XML for spacecraftParameters)
+- `tle_params_xml::String = ""` (raw XML for tleParameters)
+- `covariance_matrix_xml::String = ""` (raw XML for covarianceMatrix)
+- `user_defined_xml::String = ""` (raw XML for userDefinedParameters)
 - `extra_inner::String = ""` (raw XML inserted inside <omm>, e.g. extra segments)
 
 The `extra_inner` keyword allows inserting raw XML inside the <omm> element (e.g. for
@@ -76,6 +80,7 @@ function _minimal_omm_xml(;
     gm::String = "",
     spacecraft_params_xml::String = "",
     tle_params_xml::String = "",
+    covariance_matrix_xml::String = "",
     user_defined_xml::String = "",
     extra_inner::String = "",
 )
@@ -120,6 +125,7 @@ function _minimal_omm_xml(;
         "<meanElements>$(mean_elements_inner)</meanElements>",
         spacecraft_params_xml,
         tle_params_xml,
+        covariance_matrix_xml,
         user_defined_xml,
     ]))
 

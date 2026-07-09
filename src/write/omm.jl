@@ -175,6 +175,39 @@ function _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessa
 
     isempty(tle_params_node.children) || push!(data_node, tle_params_node)
 
+    # .. Covariance Matrix ................................................................
+
+    if !isnothing(data.covariance_matrix)
+        cov = data.covariance_matrix
+        cov_node = XML.Element("covarianceMatrix")
+
+        _xml_add_tag!(cov_node, "COMMENT",       cov.comment)
+        _xml_add_tag!(cov_node, "COV_REF_FRAME",  cov.cov_ref_frame)
+        _xml_add_tag!(cov_node, "CX_X",           cov.cx_x)
+        _xml_add_tag!(cov_node, "CY_X",           cov.cy_x)
+        _xml_add_tag!(cov_node, "CY_Y",           cov.cy_y)
+        _xml_add_tag!(cov_node, "CZ_X",           cov.cz_x)
+        _xml_add_tag!(cov_node, "CZ_Y",           cov.cz_y)
+        _xml_add_tag!(cov_node, "CZ_Z",           cov.cz_z)
+        _xml_add_tag!(cov_node, "CX_DOT_X",       cov.cx_dot_x)
+        _xml_add_tag!(cov_node, "CX_DOT_Y",       cov.cx_dot_y)
+        _xml_add_tag!(cov_node, "CX_DOT_Z",       cov.cx_dot_z)
+        _xml_add_tag!(cov_node, "CX_DOT_X_DOT",   cov.cx_dot_x_dot)
+        _xml_add_tag!(cov_node, "CY_DOT_X",       cov.cy_dot_x)
+        _xml_add_tag!(cov_node, "CY_DOT_Y",       cov.cy_dot_y)
+        _xml_add_tag!(cov_node, "CY_DOT_Z",       cov.cy_dot_z)
+        _xml_add_tag!(cov_node, "CY_DOT_X_DOT",   cov.cy_dot_x_dot)
+        _xml_add_tag!(cov_node, "CY_DOT_Y_DOT",   cov.cy_dot_y_dot)
+        _xml_add_tag!(cov_node, "CZ_DOT_X",       cov.cz_dot_x)
+        _xml_add_tag!(cov_node, "CZ_DOT_Y",       cov.cz_dot_y)
+        _xml_add_tag!(cov_node, "CZ_DOT_Z",       cov.cz_dot_z)
+        _xml_add_tag!(cov_node, "CZ_DOT_X_DOT",   cov.cz_dot_x_dot)
+        _xml_add_tag!(cov_node, "CZ_DOT_Y_DOT",   cov.cz_dot_y_dot)
+        _xml_add_tag!(cov_node, "CZ_DOT_Z_DOT",   cov.cz_dot_z_dot)
+
+        push!(data_node, cov_node)
+    end
+
     # .. User-Defined Parameters ...........................................................
 
     if !isnothing(data.user_defined_parameters)

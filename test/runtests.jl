@@ -18,6 +18,7 @@ include("helpers.jl")
         include("case_insensitivity.jl")
         include("optional_fields.jl")
         include("user_defined_params.jl")
+        include("covariance_matrix.jl")
     end
 
     @testset "Constructors" verbose = true begin

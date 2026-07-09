@@ -38,6 +38,68 @@ end
 
 # -- Data ----------------------------------------------------------------------------------
 
+"""
+    struct OmmCovarianceMatrix
+
+Covariance matrix of an Orbit Mean-Elements Message (OMM) as defined by the CCSDS 502.0-B-3
+standard.
+
+The matrix is symmetric, so only the upper-triangular 21 elements are stored. The elements
+follow the CCSDS naming convention where `CX_X` is the (1,1) entry, `CY_X` is the (2,1)
+entry, etc.
+
+# Fields
+
+- `comment::Union{String, Nothing}`: Comment for the covariance matrix section.
+- `cov_ref_frame::Union{String, Nothing}`: Reference frame of the covariance matrix.
+- `cx_x::Float64`: (1,1) element [km²].
+- `cy_x::Float64`: (2,1) element [km²].
+- `cy_y::Float64`: (2,2) element [km²].
+- `cz_x::Float64`: (3,1) element [km²].
+- `cz_y::Float64`: (3,2) element [km²].
+- `cz_z::Float64`: (3,3) element [km²].
+- `cx_dot_x::Float64`: (4,1) element [km²/s].
+- `cx_dot_y::Float64`: (4,2) element [km²/s].
+- `cx_dot_z::Float64`: (4,3) element [km²/s].
+- `cx_dot_x_dot::Float64`: (4,4) element [km²/s²].
+- `cy_dot_x::Float64`: (5,1) element [km²/s].
+- `cy_dot_y::Float64`: (5,2) element [km²/s].
+- `cy_dot_z::Float64`: (5,3) element [km²/s].
+- `cy_dot_x_dot::Float64`: (5,4) element [km²/s²].
+- `cy_dot_y_dot::Float64`: (5,5) element [km²/s²].
+- `cz_dot_x::Float64`: (6,1) element [km²/s].
+- `cz_dot_y::Float64`: (6,2) element [km²/s].
+- `cz_dot_z::Float64`: (6,3) element [km²/s].
+- `cz_dot_x_dot::Float64`: (6,4) element [km²/s²].
+- `cz_dot_y_dot::Float64`: (6,5) element [km²/s²].
+- `cz_dot_z_dot::Float64`: (6,6) element [km²/s²].
+"""
+@kwdef struct OmmCovarianceMatrix
+    comment::Union{String, Nothing} = nothing
+    cov_ref_frame::Union{String, Nothing} = nothing
+    cx_x::Float64
+    cy_x::Float64
+    cy_y::Float64
+    cz_x::Float64
+    cz_y::Float64
+    cz_z::Float64
+    cx_dot_x::Float64
+    cx_dot_y::Float64
+    cx_dot_z::Float64
+    cx_dot_x_dot::Float64
+    cy_dot_x::Float64
+    cy_dot_y::Float64
+    cy_dot_z::Float64
+    cy_dot_x_dot::Float64
+    cy_dot_y_dot::Float64
+    cz_dot_x::Float64
+    cz_dot_y::Float64
+    cz_dot_z::Float64
+    cz_dot_x_dot::Float64
+    cz_dot_y_dot::Float64
+    cz_dot_z_dot::Float64
+end
+
 @kwdef struct OmmData
     # == Mean Keplerian Elements ===========================================================
 
@@ -75,7 +137,7 @@ end
 
     # == Covariance Matrix =================================================================
 
-    # TODO: Support covariance matrix.
+    covariance_matrix::Union{OmmCovarianceMatrix, Nothing} = nothing
 
     # == User-Defined Parameters ===========================================================
 
@@ -277,6 +339,10 @@ function OrbitMeanElementsMessage(
     mean_motion_dot::Union{Float64, Nothing} = nothing,
     mean_motion_ddot::Union{Float64, Nothing} = nothing,
 
+    # -- Covariance Matrix ----------------------------------------------------------------
+
+    covariance_matrix::Union{OmmCovarianceMatrix, Nothing} = nothing,
+
     # -- User-Defined Parameters -----------------------------------------------------------
 
     user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}} = nothing
@@ -329,6 +395,7 @@ function OrbitMeanElementsMessage(
         bstar,
         mean_motion_dot,
         mean_motion_ddot,
+        covariance_matrix,
         user_defined_parameters,
     )
 
@@ -397,7 +464,11 @@ function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
         mean_motion_dot        = omm.body.segment.data.mean_motion_dot,
         mean_motion_ddot       = omm.body.segment.data.mean_motion_ddot,
 
-        # -- User-Defined Parameters ------------------------------------------------------------
+        # -- Covariance Matrix -------------------------------------------------------------
+
+        covariance_matrix      = omm.body.segment.data.covariance_matrix,
+
+        # -- User-Defined Parameters -------------------------------------------------------
 
         user_defined_parameters = omm.body.segment.data.user_defined_parameters,
 

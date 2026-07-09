@@ -355,6 +355,7 @@ function _parse_omm_data(xml::LazyNode)
     mean_elements_nodes          = nothing
     spacecraft_parameters_nodes  = nothing
     tle_parameters_nodes         = nothing
+    covariance_matrix_nodes      = nothing
     user_defined_parameter_nodes = nothing
 
     for node in ch
@@ -370,6 +371,8 @@ function _parse_omm_data(xml::LazyNode)
             spacecraft_parameters_nodes = nc
         elseif lt == "tleparameters"
             tle_parameters_nodes = nc
+        elseif lt == "covariancematrix"
+            covariance_matrix_nodes = nc
         elseif lt == "userdefinedparameters"
             user_defined_parameter_nodes = nc
         end
@@ -520,6 +523,145 @@ function _parse_omm_data(xml::LazyNode)
         end
     end
 
+    # == Covariance Matrix ================================================================
+
+    covariance_matrix = nothing
+
+    if !isnothing(covariance_matrix_nodes)
+        cov_comment      = nothing
+        cov_ref_frame    = nothing
+        cx_x             = nothing
+        cy_x             = nothing
+        cy_y             = nothing
+        cz_x             = nothing
+        cz_y             = nothing
+        cz_z             = nothing
+        cx_dot_x         = nothing
+        cx_dot_y         = nothing
+        cx_dot_z         = nothing
+        cx_dot_x_dot     = nothing
+        cy_dot_x         = nothing
+        cy_dot_y         = nothing
+        cy_dot_z         = nothing
+        cy_dot_x_dot     = nothing
+        cy_dot_y_dot     = nothing
+        cz_dot_x         = nothing
+        cz_dot_y         = nothing
+        cz_dot_z         = nothing
+        cz_dot_x_dot     = nothing
+        cz_dot_y_dot     = nothing
+        cz_dot_z_dot     = nothing
+
+        for node in covariance_matrix_nodes
+            lt = lowercase(tag(node))
+            nc = children(node)
+            v  = isempty(nc) ? "" : value(first(nc))
+
+            if lt == "comment"
+                cov_comment = v
+            elseif lt == "cov_ref_frame"
+                cov_ref_frame = v
+            elseif lt == "cx_x"
+                cx_x = parse(Float64, v)
+            elseif lt == "cy_x"
+                cy_x = parse(Float64, v)
+            elseif lt == "cy_y"
+                cy_y = parse(Float64, v)
+            elseif lt == "cz_x"
+                cz_x = parse(Float64, v)
+            elseif lt == "cz_y"
+                cz_y = parse(Float64, v)
+            elseif lt == "cz_z"
+                cz_z = parse(Float64, v)
+            elseif lt == "cx_dot_x"
+                cx_dot_x = parse(Float64, v)
+            elseif lt == "cx_dot_y"
+                cx_dot_y = parse(Float64, v)
+            elseif lt == "cx_dot_z"
+                cx_dot_z = parse(Float64, v)
+            elseif lt == "cx_dot_x_dot"
+                cx_dot_x_dot = parse(Float64, v)
+            elseif lt == "cy_dot_x"
+                cy_dot_x = parse(Float64, v)
+            elseif lt == "cy_dot_y"
+                cy_dot_y = parse(Float64, v)
+            elseif lt == "cy_dot_z"
+                cy_dot_z = parse(Float64, v)
+            elseif lt == "cy_dot_x_dot"
+                cy_dot_x_dot = parse(Float64, v)
+            elseif lt == "cy_dot_y_dot"
+                cy_dot_y_dot = parse(Float64, v)
+            elseif lt == "cz_dot_x"
+                cz_dot_x = parse(Float64, v)
+            elseif lt == "cz_dot_y"
+                cz_dot_y = parse(Float64, v)
+            elseif lt == "cz_dot_z"
+                cz_dot_z = parse(Float64, v)
+            elseif lt == "cz_dot_x_dot"
+                cz_dot_x_dot = parse(Float64, v)
+            elseif lt == "cz_dot_y_dot"
+                cz_dot_y_dot = parse(Float64, v)
+            elseif lt == "cz_dot_z_dot"
+                cz_dot_z_dot = parse(Float64, v)
+            end
+        end
+
+        # Check if all 21 required matrix elements are present.
+        for (name, val) in (
+            ("CX_X",             cx_x),
+            ("CY_X",             cy_x),
+            ("CY_Y",             cy_y),
+            ("CZ_X",             cz_x),
+            ("CZ_Y",             cz_y),
+            ("CZ_Z",             cz_z),
+            ("CX_DOT_X",         cx_dot_x),
+            ("CX_DOT_Y",         cx_dot_y),
+            ("CX_DOT_Z",         cx_dot_z),
+            ("CX_DOT_X_DOT",     cx_dot_x_dot),
+            ("CY_DOT_X",         cy_dot_x),
+            ("CY_DOT_Y",         cy_dot_y),
+            ("CY_DOT_Z",         cy_dot_z),
+            ("CY_DOT_X_DOT",     cy_dot_x_dot),
+            ("CY_DOT_Y_DOT",     cy_dot_y_dot),
+            ("CZ_DOT_X",         cz_dot_x),
+            ("CZ_DOT_Y",         cz_dot_y),
+            ("CZ_DOT_Z",         cz_dot_z),
+            ("CZ_DOT_X_DOT",     cz_dot_x_dot),
+            ("CZ_DOT_Y_DOT",     cz_dot_y_dot),
+            ("CZ_DOT_Z_DOT",     cz_dot_z_dot),
+        )
+            isnothing(val) && throw(ArgumentError(
+                "OMM covariance matrix is missing required element `$name`."
+            ))
+        end
+
+        covariance_matrix = OmmCovarianceMatrix(
+            cov_comment,
+            cov_ref_frame,
+            cx_x,
+            cy_x,
+            cy_y,
+            cz_x,
+            cz_y,
+            cz_z,
+            cx_dot_x,
+            cx_dot_y,
+            cx_dot_z,
+            cx_dot_x_dot,
+            cy_dot_x,
+            cy_dot_y,
+            cy_dot_z,
+            cy_dot_x_dot,
+            cy_dot_y_dot,
+            cz_dot_x,
+            cz_dot_y,
+            cz_dot_z,
+            cz_dot_x_dot,
+            cz_dot_y_dot,
+            cz_dot_z_dot
+        )
+    end
+
     # == User-Defined Parameters ===========================================================
 
     user_defined_parameters = nothing
@@ -568,6 +710,7 @@ function _parse_omm_data(xml::LazyNode)
         bstar,
         mean_motion_dot,
         mean_motion_ddot,
+        covariance_matrix,
         user_defined_parameters
     )
 end

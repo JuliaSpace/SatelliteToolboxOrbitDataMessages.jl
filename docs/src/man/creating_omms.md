@@ -175,6 +175,44 @@ The following table lists all keywords accepted by the constructor. Fields marke
 | `bstar`                    | `Float64`                         | TLE Parameters    |              |
 | `mean_motion_dot`          | `Float64`                         | TLE Parameters    |              |
 | `mean_motion_ddot`         | `Float64`                         | TLE Parameters    |              |
+| `covariance_matrix`        | `OmmCovarianceMatrix`             | Covariance Matrix |              |
 | `user_defined_parameters`  | `Vector{Pair{String, String}}`    | User-Defined      |              |
 
 [^1]: At least one of `semi_major_axis` or `mean_motion` must be provided.
+
+## Covariance Matrix
+
+The OMM standard defines an optional covariance matrix section. It is represented by the
+`OmmCovarianceMatrix` type, which stores the 21 unique upper-triangular elements of the
+symmetric 6×6 matrix, along with an optional comment and reference frame:
+
+```@repl creating
+cov = OmmCovarianceMatrix(;
+    cov_ref_frame = "ITRF",
+    cx_x           = 1.0,
+    cy_x           = 2.0,
+    cy_y           = 3.0,
+    cz_x           = 4.0,
+    cz_y           = 5.0,
+    cz_z           = 6.0,
+    cx_dot_x       = 7.0,
+    cx_dot_y       = 8.0,
+    cx_dot_z       = 9.0,
+    cx_dot_x_dot   = 10.0,
+    cy_dot_x       = 11.0,
+    cy_dot_y       = 12.0,
+    cy_dot_z       = 13.0,
+    cy_dot_x_dot   = 14.0,
+    cy_dot_y_dot   = 15.0,
+    cz_dot_x       = 16.0,
+    cz_dot_y       = 17.0,
+    cz_dot_z       = 18.0,
+    cz_dot_x_dot   = 19.0,
+    cz_dot_y_dot   = 20.0,
+    cz_dot_z_dot   = 21.0,
+)
+
+omm = OrbitMeanElementsMessage(omm; covariance_matrix = cov)
+
+omm.body.segment.data.covariance_matrix.cov_ref_frame
+```
