@@ -19,6 +19,7 @@ include("helpers.jl")
         include("optional_fields.jl")
         include("user_defined_params.jl")
         include("covariance_matrix.jl")
+        include("date_formats.jl")
     end
 
     @testset "Constructors" verbose = true begin

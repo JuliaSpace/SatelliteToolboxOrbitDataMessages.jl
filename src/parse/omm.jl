@@ -178,7 +178,7 @@ function _parse_omm_header(xml::LazyNode)
             # If the creation date is empty, fall back to the current instant. This keeps
             # the required-field check below reachable, since the field is considered
             # provided even when the tag value is empty.
-            creation_date = !isempty(v) ? NanoDate(v) : NanoDate()
+            creation_date = !isempty(v) ? _parse_ndm_date(v) : NanoDate()
         elseif lt == "originator"
             originator = v
         elseif lt == "message_id"
@@ -297,7 +297,7 @@ function _parse_omm_metadata(xml::LazyNode)
             ref_frame = v
         elseif lt == "ref_frame_epoch"
             # If the ref. frame epoch is empty, fall back to the current instant.
-            ref_frame_epoch = !isempty(v) ? NanoDate(v) : NanoDate()
+            ref_frame_epoch = !isempty(v) ? _parse_ndm_date(v) : NanoDate()
         elseif lt == "time_system"
             time_system = v
         elseif lt == "mean_element_theory"
@@ -401,7 +401,7 @@ function _parse_omm_data(xml::LazyNode)
 
         if lt == "epoch"
             # If the epoch is empty, fall back to the current instant.
-            epoch = !isempty(v) ? NanoDate(v) : NanoDate()
+            epoch = !isempty(v) ? _parse_ndm_date(v) : NanoDate()
         elseif lt == "semi_major_axis"
             semi_major_axis = parse(Float64, v)
         elseif lt == "mean_motion"
