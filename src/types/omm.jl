@@ -9,7 +9,7 @@
 #
 ############################################################################################
 
-export OrbitMeanElementsMessage
+export OrbitMeanElementsMessage, OmmCovarianceMatrix
 
 # == Types =================================================================================
 
