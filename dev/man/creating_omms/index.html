@@ -174,6 +174,63 @@ Hint: a global variable of this name also exists in Dates.</code></pre><h2 id="M
            cz_dot_x_dot   = 19.0,
            cz_dot_y_dot   = 20.0,
            cz_dot_z_dot   = 21.0,
-       )</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: `OmmCovarianceMatrix` not defined in `Main`
-Suggestion: check for spelling errors or missing imports.</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; omm = OrbitMeanElementsMessage(omm; covariance_matrix = cov)</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: `cov` not defined in `Main`
-Suggestion: add an appropriate import or assignment. This global was declared but not assigned.</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; omm.body.segment.data.covariance_matrix.cov_ref_frame</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: FieldError: type Nothing has no field `cov_ref_frame`; Nothing has no fields at all.</code></pre><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>At least one of <code>semi_major_axis</code> or <code>mean_motion</code> must be provided.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../quick_start/">« Quick Start</a><a class="docs-footer-nextpage" href="../parsing/">Parsing Messages »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 9 July 2026 21:38">Thursday 9 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+       )</code><code class="nohighlight hljs ansi" style="display:block;">OmmCovarianceMatrix(nothing, &quot;ITRF&quot;, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; omm = OrbitMeanElementsMessage(omm; covariance_matrix = cov)</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr1">OrbitMeanElementsMessage:</span>
+<span class="sgr90">  </span><span class="sgr35"><span class="sgr1">Header</span></span>
+<span class="sgr90">    </span><span class="sgr1">Creation Date</span> : 2025-12-30T23:36:37
+<span class="sgr90">    </span><span class="sgr1">Originator</span>    : 18 SPCS
+<span class="sgr90">  </span><span class="sgr35"><span class="sgr1">Body</span></span>
+<span class="sgr90">  └─ </span><span class="sgr33"><span class="sgr1">Segment</span></span>
+<span class="sgr90">     ├─ </span><span class="sgr33"><span class="sgr1">Metadata</span></span>
+<span class="sgr90">     │    </span><span class="sgr1">Object Name</span>         : AMAZONIA 1
+<span class="sgr90">     │    </span><span class="sgr1">Object ID</span>           : 2021-015A
+<span class="sgr90">     │    </span><span class="sgr1">Center Name</span>         : EARTH
+<span class="sgr90">     │    </span><span class="sgr1">Ref. Frame</span>          : TEME
+<span class="sgr90">     │    </span><span class="sgr1">Time System</span>         : UTC
+<span class="sgr90">     │    </span><span class="sgr1">Mean Element Theory</span> : SGP4
+<span class="sgr90">     └─ </span><span class="sgr33"><span class="sgr1">Data</span></span>
+<span class="sgr90">        ├─ </span><span class="sgr33"><span class="sgr1">Mean Keplerian Elements</span></span>
+<span class="sgr90">        │    </span><span class="sgr1">Epoch</span>              : 2025-12-30T18:12:04.533984
+<span class="sgr90">        │    </span><span class="sgr1">Mean Motion</span>        : 14.40772474 <span class="sgr90">rev/day</span>
+<span class="sgr90">        │    </span><span class="sgr1">Eccentricity</span>       : 0.0001124
+<span class="sgr90">        │    </span><span class="sgr1">Inclination</span>        : 98.3721<span class="sgr90">°</span>
+<span class="sgr90">        │    </span><span class="sgr1">RA of Asc. Node</span>    : 75.0877<span class="sgr90">°</span>
+<span class="sgr90">        │    </span><span class="sgr1">Arg. of Pericenter</span> : 97.3772<span class="sgr90">°</span>
+<span class="sgr90">        │    </span><span class="sgr1">Mean Anomaly</span>       : 262.7545<span class="sgr90">°</span>
+<span class="sgr90">        ├─ </span><span class="sgr33"><span class="sgr1">Spacecraft Parameters</span></span>
+<span class="sgr90">        │    </span><span class="sgr1">Mass</span>             : 640.0 <span class="sgr90">kg</span>
+<span class="sgr90">        │    </span><span class="sgr1">Drag Area</span>        : 8.5 <span class="sgr90">m²</span>
+<span class="sgr90">        │    </span><span class="sgr1">Drag Coefficient</span> : 2.2
+<span class="sgr90">        ├─ </span><span class="sgr33"><span class="sgr1">TLE Related Parameters</span></span>
+<span class="sgr90">        │    </span><span class="sgr1">Classification Type</span> : U
+<span class="sgr90">        │    </span><span class="sgr1">NORAD Cat ID</span>        : 47699
+<span class="sgr90">        │    </span><span class="sgr1">Element Set Number</span>  : 999
+<span class="sgr90">        │    </span><span class="sgr1">Rev at Epoch</span>        : 25439
+<span class="sgr90">        │    </span><span class="sgr1">Bstar</span>               : 0.0001533
+<span class="sgr90">        │    </span><span class="sgr1">∂(Mean Motion)/∂t</span>   : 4.47e-6 <span class="sgr90">rev/day²</span>
+<span class="sgr90">        │    </span><span class="sgr1">∂²(Mean Motion)/∂t²</span> : 0.0 <span class="sgr90">rev/day³</span>
+<span class="sgr90">        ├─ </span><span class="sgr33"><span class="sgr1">Covariance Matrix</span></span>
+<span class="sgr90">        │    </span><span class="sgr1">Ref. Frame</span>   : ITRF
+<span class="sgr90">        │    </span><span class="sgr1">CX_X</span>         : 1.0 <span class="sgr90">km²</span>
+<span class="sgr90">        │    </span><span class="sgr1">CY_X</span>         : 2.0 <span class="sgr90">km²</span>
+<span class="sgr90">        │    </span><span class="sgr1">CY_Y</span>         : 3.0 <span class="sgr90">km²</span>
+<span class="sgr90">        │    </span><span class="sgr1">CZ_X</span>         : 4.0 <span class="sgr90">km²</span>
+<span class="sgr90">        │    </span><span class="sgr1">CZ_Y</span>         : 5.0 <span class="sgr90">km²</span>
+<span class="sgr90">        │    </span><span class="sgr1">CZ_Z</span>         : 6.0 <span class="sgr90">km²</span>
+<span class="sgr90">        │    </span><span class="sgr1">CX_DOT_X</span>     : 7.0 <span class="sgr90">km²/s</span>
+<span class="sgr90">        │    </span><span class="sgr1">CX_DOT_Y</span>     : 8.0 <span class="sgr90">km²/s</span>
+<span class="sgr90">        │    </span><span class="sgr1">CX_DOT_Z</span>     : 9.0 <span class="sgr90">km²/s</span>
+<span class="sgr90">        │    </span><span class="sgr1">CX_DOT_X_DOT</span> : 10.0 <span class="sgr90">km²/s²</span>
+<span class="sgr90">        │    </span><span class="sgr1">CY_DOT_X</span>     : 11.0 <span class="sgr90">km²/s</span>
+<span class="sgr90">        │    </span><span class="sgr1">CY_DOT_Y</span>     : 12.0 <span class="sgr90">km²/s</span>
+<span class="sgr90">        │    </span><span class="sgr1">CY_DOT_Z</span>     : 13.0 <span class="sgr90">km²/s</span>
+<span class="sgr90">        │    </span><span class="sgr1">CY_DOT_X_DOT</span> : 14.0 <span class="sgr90">km²/s²</span>
+<span class="sgr90">        │    </span><span class="sgr1">CY_DOT_Y_DOT</span> : 15.0 <span class="sgr90">km²/s²</span>
+<span class="sgr90">        │    </span><span class="sgr1">CZ_DOT_X</span>     : 16.0 <span class="sgr90">km²/s</span>
+<span class="sgr90">        │    </span><span class="sgr1">CZ_DOT_Y</span>     : 17.0 <span class="sgr90">km²/s</span>
+<span class="sgr90">        │    </span><span class="sgr1">CZ_DOT_Z</span>     : 18.0 <span class="sgr90">km²/s</span>
+<span class="sgr90">        │    </span><span class="sgr1">CZ_DOT_X_DOT</span> : 19.0 <span class="sgr90">km²/s²</span>
+<span class="sgr90">        │    </span><span class="sgr1">CZ_DOT_Y_DOT</span> : 20.0 <span class="sgr90">km²/s²</span>
+<span class="sgr90">        │    </span><span class="sgr1">CZ_DOT_Z_DOT</span> : 21.0 <span class="sgr90">km²/s²</span>
+<span class="sgr90">        └─ </span><span class="sgr33"><span class="sgr1">User-Defined Parameters</span></span>
+<span class="sgr90">             </span><span class="sgr1">COUNTRY_CODE</span> : BRAZ
+<span class="sgr90">             </span><span class="sgr1">LAUNCH_DATE</span>  : 2021-02-28</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; omm.body.segment.data.covariance_matrix.cov_ref_frame</code><code class="nohighlight hljs ansi" style="display:block;">&quot;ITRF&quot;</code></pre><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>At least one of <code>semi_major_axis</code> or <code>mean_motion</code> must be provided.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../quick_start/">« Quick Start</a><a class="docs-footer-nextpage" href="../parsing/">Parsing Messages »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 9 July 2026 21:42">Thursday 9 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
