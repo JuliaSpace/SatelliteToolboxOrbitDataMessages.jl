@@ -475,11 +475,6 @@ function fetch_omms(
         xml  = parse(String(response.body), LazyNode)
         omms = parse_omms(xml)
 
-        if isnothing(omms)
-            @error "Could not parse the fetched OMMs."
-            return nothing
-        end
-
         # If the request is successful, we need to save the cookiejar because the expire
         # period may have been updated.
         _spacetrack__save_cookiejar(fetcher.cookiejar, fetcher.username)

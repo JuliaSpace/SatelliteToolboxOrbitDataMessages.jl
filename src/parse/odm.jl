@@ -7,20 +7,20 @@
 export parse_odm
 
 """
-    parse_odm(str::String) -> Union{Nothing, Vector{OrbitDataMessage}}
+    parse_odm(str::String) -> Vector{OrbitDataMessage}
 
 Parse an Orbit Data Message (ODM) from the string `str`, which must contain a complete XML
 document, and return the parsed message(s).
 
-    parse_odm(xml::LazyNode) -> Union{Nothing, Vector{OrbitDataMessage}}
+    parse_odm(xml::LazyNode) -> Vector{OrbitDataMessage}
 
 Parse an Orbit Data Message (ODM) from the `LazyNode` `xml` and return the parsed
 message(s).
 
 The return value is always a `Vector{OrbitDataMessage}`: a single-element vector for a
 stand-alone message, or a multi-element vector for a Navigation Data Message (NDM) wrapping
-multiple messages. If the root tag is not recognized, `nothing` is returned. If the NDM
-does not contain any OMM, an empty vector is returned.
+multiple messages. Unsupported message types (OPM, OEM, OCM) are skipped with a warning,
+returning an empty vector. If the root tag is not recognized, an `ArgumentError` is thrown.
 """
 function parse_odm(str::String)
     # Open the XML file.
@@ -37,19 +37,20 @@ function parse_odm(xml::LazyNode)
 
     if t == "opm"
         @warn "We do not support Orbit Parameter Messages (OPM) yet."
+        return OrbitDataMessage[]
     elseif t == "omm"
         return OrbitDataMessage[_parse_omm(root_node)]
     elseif t == "oem"
         @warn "We do not support Orbit Ephemeris Messages (OEM) yet."
+        return OrbitDataMessage[]
     elseif t == "ocm"
         @warn "We do not support Orbit Comprehensive Messages (OCM) yet."
+        return OrbitDataMessage[]
     elseif t == "ndm"
         return _parse_ndm(root_node)
     else
-        throw(ArgumentError("The root tag `$t` is not recognized."))
+        return throw(ArgumentError("The root tag `$t` is not recognized."))
     end
-
-    return nothing
 end
 
 ############################################################################################
@@ -66,7 +67,17 @@ function _parse_ndm(xml::LazyNode)
     messages = OrbitDataMessage[]
 
     for node in children(xml)
-        lowercase(tag(node)) == "omm" && push!(messages, _parse_omm(node))
+        lt = lowercase(tag(node))
+
+        if lt == "omm"
+            push!(messages, _parse_omm(node))
+        elseif lt == "opm"
+            @warn "We do not support Orbit Parameter Messages (OPM) yet."
+        elseif lt == "oem"
+            @warn "We do not support Orbit Ephemeris Messages (OEM) yet."
+        elseif lt == "ocm"
+            @warn "We do not support Orbit Comprehensive Messages (OCM) yet."
+        end
     end
 
     return messages

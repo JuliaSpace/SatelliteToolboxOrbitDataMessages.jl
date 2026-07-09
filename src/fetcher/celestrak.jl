@@ -145,11 +145,6 @@ function fetch_omms(
         xml  = parse(str, LazyNode)
         omms = parse_omms(xml)
 
-        if isnothing(omms)
-            @error "Could not parse the fetched OMMs."
-            return nothing
-        end
-
         return omms
 
     catch e

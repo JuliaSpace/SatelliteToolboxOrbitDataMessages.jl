@@ -36,18 +36,20 @@ function parse_omm(xml::LazyNode)
 end
 
 """
-    parse_omms(str::String) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
+    parse_omms(str::String) -> Vector{OrbitMeanElementsMessage}
 
 Parse a set of Orbit Mean-Elements Messages (OMM) string `str` and return the parsed
 messages. The input format must be XML.
 
-    parse_omms(xml::LazyNode) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
+    parse_omms(xml::LazyNode) -> Vector{OrbitMeanElementsMessage}
 
 Parse a set of Orbit Mean-Elements Messages (OMM) from a `LazyNode` `xml` and return the
 parsed messages.
 
-If the XML is a Navigation Data Message (NDM), only the OMM messages are returned. If the
-file does not contain an OMM message, `nothing` is returned.
+If the XML is a Navigation Data Message (NDM), only the OMM messages are returned; other
+message types (OPM, OEM, OCM) are skipped with a warning. If the document does not contain
+an OMM message, an empty vector is returned. If the root tag is not recognized, an
+`ArgumentError` is thrown.
 """
 function parse_omms(str::String)
     # Open the XML file.
@@ -62,7 +64,17 @@ function parse_omms(xml::LazyNode)
 
     if t == "ndm"
         for node in children(root)
-            lowercase(tag(node)) == "omm" && push!(omms, _parse_omm(node))
+            lt = lowercase(tag(node))
+
+            if lt == "omm"
+                push!(omms, _parse_omm(node))
+            elseif lt == "opm"
+                @warn "We do not support Orbit Parameter Messages (OPM) yet."
+            elseif lt == "oem"
+                @warn "We do not support Orbit Ephemeris Messages (OEM) yet."
+            elseif lt == "ocm"
+                @warn "We do not support Orbit Comprehensive Messages (OCM) yet."
+            end
         end
 
         return omms
@@ -72,15 +84,18 @@ function parse_omms(xml::LazyNode)
         return omms
     elseif t == "opm"
         @warn "We do not support Orbit Parameter Messages (OPM) yet."
+        return omms
     elseif t == "oem"
         @warn "We do not support Orbit Ephemeris Messages (OEM) yet."
+        return omms
     elseif t == "ocm"
         @warn "We do not support Orbit Comprehensive Messages (OCM) yet."
+        return omms
     else
-        throw(ArgumentError("The root tag `$t` is not recognized."))
+        return throw(ArgumentError("The root tag `$t` is not recognized."))
     end
 
-    return nothing
+    return omms
 end
 
 ############################################################################################
