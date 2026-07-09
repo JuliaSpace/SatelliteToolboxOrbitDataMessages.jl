@@ -8,7 +8,7 @@ using SatelliteToolboxTle
 
 include("helpers.jl")
 
-@testset "SatelliteToolboxOrbitDataMessages" begin
+@testset "SatelliteToolboxOrbitDataMessages" verbose = true begin
     @testset "Parsing ODMs" verbose = true begin
         include("omm_parsing.jl")
         include("odm_parsing.jl")
