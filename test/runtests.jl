@@ -6,7 +6,7 @@ using NanoDates
 using SatelliteToolboxOrbitDataMessages
 using SatelliteToolboxTle
 
-include("_helpers.jl")
+include("helpers.jl")
 
 @testset "SatelliteToolboxOrbitDataMessages" begin
     @testset "Parsing ODMs" verbose = true begin
