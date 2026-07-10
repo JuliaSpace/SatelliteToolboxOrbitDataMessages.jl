@@ -52,7 +52,10 @@ function create_omm_fetcher(
 end
 
 """
-    fetch_omms(fetcher::CelestrakOmmFetcher; kwargs...) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
+    fetch_omms(
+        fetcher::CelestrakOmmFetcher;
+        kwargs...
+    ) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
 
 Fetch Orbit Mean-Elements Messages (OMM) from the Celestrak using `fetch` with the
 parameters in `kwargs...`.
@@ -64,15 +67,26 @@ succeeding, it returns `nothing`.
 function fetch_omms(
     fetcher::CelestrakOmmFetcher;
     international_designator::Union{Nothing, AbstractString} = nothing,
-    satellite_number::Union{Nothing, Number} = nothing,
+    satellite_number::Union{Nothing, Integer} = nothing,
     satellite_name::Union{Nothing, AbstractString} = nothing,
 )
+
+    selector_count = count(!isnothing, (
+        satellite_number,
+        international_designator,
+        satellite_name,
+    ))
+    selector_count == 1 || throw(ArgumentError(
+        "Exactly one query selector must be provided."
+    ))
 
     # Assemble the query string.
     if !isnothing(satellite_number)
 
         # The satellite number must be positive.
-        satellite_number < 0 && throw(ArgumentError("The satellite number must be positive."))
+        satellite_number <= 0 && throw(ArgumentError(
+            "The satellite number must be positive."
+        ))
 
         query_type  = "satellite number"
         query_value = string(satellite_number)
@@ -110,7 +124,7 @@ function fetch_omms(
 
     end
 
-    @info "Fetch Orbit Mean-Elements Messages (OMMs) from Celestrak using $query_type: \"$query_value\" ..."
+    @info "Fetch OMMs from Celestrak using $query_type: \"$query_value\" ..."
 
     # Assemble the URL.
     query = "?" * query_param * "&FORMAT=xml"
@@ -143,17 +157,22 @@ function fetch_omms(
         end
 
         xml  = parse(str, LazyNode)
-        omms = parse_omms(xml)
+        # Celestrak currently emits empty required OMM 2.0 header values.
+        omms = parse_omms(xml; strict = false)
 
         return omms
 
     catch e
-        if e isa HTTP.ExceptionRequest.StatusError
-            @error """
-                An error occurred during the data request:
-                  HTTP Error Code : $(e.status)
-                  Query URL       : $url
-                """
+        if e isa HTTP.Exceptions.HTTPError
+            if e isa HTTP.Exceptions.StatusError
+                @error """
+                    An error occurred during the data request:
+                      HTTP Error Code : $(e.status)
+                      Query URL       : $url
+                    """
+            else
+                @error "The Celestrak request failed." query_url = url exception = e
+            end
 
             return nothing
         end
