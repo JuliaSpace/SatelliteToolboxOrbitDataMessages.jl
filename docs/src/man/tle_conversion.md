@@ -80,9 +80,13 @@ the `OBJECT_ID` (e.g. `2021-015A`) into the TLE international designator format 
   n = \frac{1}{2\pi}\sqrt{\frac{GM}{a^3}} \times 86400
   ```
 
-- **Optional fields.** Fields that are absent in the OMM (such as `bstar`,
-  `mean_motion_dot`, `norad_cat_id`, or `rev_at_epoch`) default to zero or to the standard
-  TLE placeholder values during the conversion.
+- **Required TLE fields.** Conversion requires `classification_type`, `norad_cat_id`,
+  `element_set_number`, `rev_at_epoch`, `bstar`, `mean_motion_dot`, and
+  `mean_motion_ddot`. Missing fields raise an error; they do not receive placeholder values.
+- **Unsupported alternatives.** OMM TLE parameters may represent drag with either `bstar` or
+  `bterm`, and the second derivative slot with either `mean_motion_ddot` or `agom`. A classic
+  TLE conversion requires `bstar` and `mean_motion_ddot`; conversion rejects `bterm` and
+  `agom` because they have no direct TLE representation.
 
 !!! warning
 

@@ -83,7 +83,8 @@ This is convenient, for example, to persist the full set of messages returned by
 
 !!! note
 
-    The generated XML declares compatibility with version 3.0 of the standard and targets
-    the NDM/XML schema. Optional sections (spacecraft parameters, TLE-related parameters,
-    and user-defined parameters) are only written when the corresponding fields are present
-    in the message.
+    OMM elements are always written with version `3.0`, regardless of the version stored in
+    the parsed message, and target the NDM/XML schema. `NanoDate` values are written with
+    nine fractional digits, preserving nanosecond precision. Optional sections (spacecraft
+    parameters, TLE-related parameters, and user-defined parameters) are only written when
+    the corresponding fields are present in the message.
