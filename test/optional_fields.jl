@@ -12,17 +12,18 @@
         omm = parse_omm(xml)
 
         @test !isnothing(omm)
-        @test omm.header.comment           === nothing
+        @test isempty(omm.header.comments)
         @test omm.header.classification    === nothing
         @test omm.header.message_id        === nothing
-        @test omm.body.segment.metadata.comment          === nothing
+        @test isempty(omm.body.segment.metadata.comments)
         @test omm.body.segment.metadata.ref_frame_epoch === nothing
-        @test omm.body.segment.data.data_comment         === nothing
+        @test isempty(omm.body.segment.data.comments)
+        @test isempty(omm.body.segment.data.mean_elements_comments)
         @test omm.body.segment.data.semi_major_axis      === nothing
         @test omm.body.segment.data.GM                   === nothing
-        @test omm.body.segment.data.spacecraft_data_comment === nothing
+        @test isempty(omm.body.segment.data.spacecraft_parameters_comments)
         @test omm.body.segment.data.mass                    === nothing
-        @test omm.body.segment.data.tle_parameters_comment  === nothing
+        @test isempty(omm.body.segment.data.tle_parameters_comments)
         @test omm.body.segment.data.ephemeris_type          === nothing
         @test omm.body.segment.data.classification_type     === nothing
         @test omm.body.segment.data.norad_cat_id            === nothing

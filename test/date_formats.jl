@@ -80,6 +80,31 @@
         @test omm.body.segment.data.epoch == NanoDate("2024-12-31T12:00:00")
     end
 
+    @testset "Invalid ordinal days" begin
+        @test_throws ArgumentError parse_omm(_minimal_omm_xml(epoch = "2025-000T00:00:00"))
+        @test_throws ArgumentError parse_omm(_minimal_omm_xml(epoch = "2025-366T00:00:00"))
+        @test_throws ArgumentError parse_omm(_minimal_omm_xml(epoch = "2024-367T00:00:00"))
+    end
+
+    @testset "Empty dates" begin
+        creation_xml = replace(
+            _minimal_omm_xml(),
+            "<CREATION_DATE>2025-12-30T23:36:37</CREATION_DATE>" =>
+                "<CREATION_DATE></CREATION_DATE>",
+        )
+        epoch_xml = replace(
+            _minimal_omm_xml(),
+            "<EPOCH>2025-12-30T18:12:04.533984</EPOCH>" => "<EPOCH></EPOCH>",
+        )
+
+        @test_throws ArgumentError parse_omm(creation_xml)
+        @test_throws ArgumentError parse_omm(epoch_xml)
+
+        permissive_omm = parse_omm(creation_xml; strict = false)
+        @test isnothing(permissive_omm.header.creation_date)
+        @test_throws ArgumentError write_omm(IOBuffer(), permissive_omm)
+    end
+
     @testset "Ordinal format without fractional seconds" begin
         xml = _minimal_omm_xml(;
             creation_date = "2025-060T12:30:45",
@@ -120,5 +145,14 @@
         @test !isnothing(omm_reparsed)
         @test omm_reparsed.header.creation_date == omm.header.creation_date
         @test omm_reparsed.body.segment.data.epoch == omm.body.segment.data.epoch
+    end
+
+    @testset "Nanosecond round-trip" begin
+        epoch = NanoDate("2025-12-30T18:12:04.123456789")
+        omm = parse_omm(_minimal_omm_xml(epoch = string(epoch)))
+        buf = IOBuffer()
+        write_omm(buf, omm)
+
+        @test parse_omm(String(take!(buf))).body.segment.data.epoch == epoch
     end
 end

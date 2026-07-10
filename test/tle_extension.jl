@@ -36,15 +36,15 @@
         @test_throws ErrorException convert(TLE, bad_omm)
     end
 
-    # == Missing mean_motion, semi_major_axis, and GM ======================================
+    # == Missing mean_motion and semi_major_axis ===========================================
 
     @testset "Missing mean motion fields" begin
-        bad_omm = OrbitMeanElementsMessage(omm;
-            mean_motion      = nothing,
-            semi_major_axis  = nothing,
-            GM               = nothing,
+        @test_throws ArgumentError OrbitMeanElementsMessage(
+            omm;
+            mean_motion = nothing,
+            semi_major_axis = nothing,
+            GM = nothing,
         )
-        @test_throws ErrorException convert(TLE, bad_omm)
     end
 
     # == Computed mean motion from semi_major_axis and GM ==================================
@@ -64,12 +64,11 @@
         @test tle.mean_motion ≈ expected_n atol = 1e-6
     end
 
-    # == Default norad_cat_id ==============================================================
+    # == Missing norad_cat_id ==============================================================
 
     @testset "Default norad_cat_id" begin
         omm_no_norad = OrbitMeanElementsMessage(omm; norad_cat_id = nothing)
-        tle = convert(TLE, omm_no_norad)
-        @test tle.satellite_number == 0
+        @test_throws ErrorException convert(TLE, omm_no_norad)
     end
 
     # == International designator conversion ===============================================

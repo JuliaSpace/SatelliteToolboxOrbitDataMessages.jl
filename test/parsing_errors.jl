@@ -131,14 +131,53 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
+    @testset "Both SEMI_MAJOR_AXIS and MEAN_MOTION" begin
+        xml = _minimal_omm_xml(semi_major_axis = "7134.084")
+        @test_throws ArgumentError parse_omm(xml)
+    end
+
+    @testset "Incomplete TLE parameters" begin
+        bstar_only = "<tleParameters><BSTAR>1e-4</BSTAR></tleParameters>"
+        missing_drag = """
+        <tleParameters>
+          <MEAN_MOTION_DOT>0</MEAN_MOTION_DOT>
+          <MEAN_MOTION_DDOT>0</MEAN_MOTION_DDOT>
+        </tleParameters>
+        """
+
+        @test_throws ArgumentError parse_omm(_minimal_omm_xml(tle_params_xml = bstar_only))
+        @test_throws ArgumentError parse_omm(
+            _minimal_omm_xml(tle_params_xml = missing_drag)
+        )
+
+        both_drag = """
+        <tleParameters>
+          <BSTAR>1e-4</BSTAR><BTERM>1e-4</BTERM>
+          <MEAN_MOTION_DOT>0</MEAN_MOTION_DOT><MEAN_MOTION_DDOT>0</MEAN_MOTION_DDOT>
+        </tleParameters>
+        """
+        both_second_derivatives = """
+        <tleParameters>
+          <BSTAR>1e-4</BSTAR><MEAN_MOTION_DOT>0</MEAN_MOTION_DOT>
+          <MEAN_MOTION_DDOT>0</MEAN_MOTION_DDOT><AGOM>1e-4</AGOM>
+        </tleParameters>
+        """
+        @test_throws ArgumentError parse_omm(
+            _minimal_omm_xml(tle_params_xml = both_drag)
+        )
+        @test_throws ArgumentError parse_omm(
+            _minimal_omm_xml(tle_params_xml = both_second_derivatives)
+        )
+    end
+
     # == Empty CLASSIFICATION_TYPE =========================================================
 
     @testset "Empty CLASSIFICATION_TYPE" begin
-        tle_xml = "<tleParameters><CLASSIFICATION_TYPE></CLASSIFICATION_TYPE></tleParameters>"
+        tle_xml = """
+        <tleParameters><CLASSIFICATION_TYPE></CLASSIFICATION_TYPE></tleParameters>
+        """
         xml = _minimal_omm_xml(tle_params_xml=tle_xml)
-        omm = parse_omm(xml)
-        @test !isnothing(omm)
-        @test isnothing(omm.body.segment.data.classification_type)
+        @test_throws ArgumentError parse_omm(xml)
     end
 
     # == Unknown root tag ==================================================================

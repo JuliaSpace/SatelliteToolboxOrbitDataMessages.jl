@@ -24,7 +24,9 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
     header = omm.header
 
     header_fields = NTuple{3, String}[]
-    _po!(header_fields, ("Comment",        header.comment,        ""))
+    for comment in header.comments
+        _po!(header_fields, ("Comment", comment, ""))
+    end
     _po!(header_fields, ("Classification", header.classification, ""))
     _po!(header_fields, ("Creation Date",  header.creation_date,  ""))
     _po!(header_fields, ("Originator",     header.originator,     ""))
@@ -35,7 +37,9 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
     metadata = omm.body.segment.metadata
 
     metadata_fields = NTuple{3, String}[]
-    _po!(metadata_fields, ("Comment",             metadata.comment,             ""))
+    for comment in metadata.comments
+        _po!(metadata_fields, ("Comment", comment, ""))
+    end
     _po!(metadata_fields, ("Object Name",         metadata.object_name,         ""))
     _po!(metadata_fields, ("Object ID",           metadata.object_id,           ""))
     _po!(metadata_fields, ("Center Name",         metadata.center_name,         ""))
@@ -48,10 +52,17 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     data = omm.body.segment.data
 
+    data_fields = NTuple{3, String}[]
+    for comment in data.comments
+        _po!(data_fields, ("Comment", comment, ""))
+    end
+
     # -- Mean Keplerian Elements -----------------------------------------------------------
 
     mean_elements_fields = NTuple{3, String}[]
-    _po!(mean_elements_fields, ("Comment",            data.data_comment,      ""))
+    for comment in data.mean_elements_comments
+        _po!(mean_elements_fields, ("Comment", comment, ""))
+    end
     _po!(mean_elements_fields, ("Epoch",              data.epoch,             ""))
     _po!(mean_elements_fields, ("Semi-Major Axis",    data.semi_major_axis,   "km"))
     _po!(mean_elements_fields, ("Mean Motion",        data.mean_motion,       "rev/day"))
@@ -65,7 +76,9 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
     # -- Spacecraft Parameters -------------------------------------------------------------
 
     spacecraft_fields = NTuple{3, String}[]
-    _po!(spacecraft_fields, ("Comment",           data.spacecraft_data_comment, ""))
+    for comment in data.spacecraft_parameters_comments
+        _po!(spacecraft_fields, ("Comment", comment, ""))
+    end
     _po!(spacecraft_fields, ("Mass",              data.mass,                    "kg"))
     _po!(spacecraft_fields, ("Solar Rad. Area",   data.solar_rad_area,          "m²"))
     _po!(spacecraft_fields, ("Solar Rad. Coeff.", data.solar_rad_coeff,         ""))
@@ -75,22 +88,28 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
     # -- TLE Related Parameters ------------------------------------------------------------
 
     tle_fields = NTuple{3, String}[]
-    _po!(tle_fields, ("Comment",             data.tle_parameters_comment, ""))
+    for comment in data.tle_parameters_comments
+        _po!(tle_fields, ("Comment", comment, ""))
+    end
     _po!(tle_fields, ("Ephemeris Type",      data.ephemeris_type,         ""))
     _po!(tle_fields, ("Classification Type", data.classification_type,    ""))
     _po!(tle_fields, ("NORAD Cat ID",        data.norad_cat_id,           ""))
     _po!(tle_fields, ("Element Set Number",  data.element_set_number,     ""))
     _po!(tle_fields, ("Rev at Epoch",        data.rev_at_epoch,           ""))
     _po!(tle_fields, ("Bstar",               data.bstar,                  ""))
+    _po!(tle_fields, ("Bterm",               data.bterm,                  "m²/kg"))
     _po!(tle_fields, ("∂(Mean Motion)/∂t",  data.mean_motion_dot,        "rev/day²"))
     _po!(tle_fields, ("∂²(Mean Motion)/∂t²", data.mean_motion_ddot,       "rev/day³"))
+    _po!(tle_fields, ("AGOM",                data.agom,                   "m²/kg"))
 
     # -- Covariance Matrix -----------------------------------------------------------------
 
     cov_fields = NTuple{3, String}[]
     if !isnothing(data.covariance_matrix)
         cov = data.covariance_matrix
-        _po!(cov_fields, ("Comment",       cov.comment,       ""))
+        for comment in cov.comments
+            _po!(cov_fields, ("Comment", comment, ""))
+        end
         _po!(cov_fields, ("Ref. Frame",    cov.cov_ref_frame, ""))
         _po!(cov_fields, ("CX_X",          cov.cx_x,          "km²"))
         _po!(cov_fields, ("CY_X",          cov.cy_x,          "km²"))
@@ -134,9 +153,15 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
     metadata_rail = "     │    "
     data_rail     = "        "
 
-    _print_node(out, "OrbitMeanElementsMessage:", "", "", :satellitetoolbox_odm_title)
+    _print_node(
+        out,
+        "OrbitMeanElementsMessage:",
+        "",
+        "",
+        :satellitetoolbox_odm_title,
+    )
 
-    # -- Header (top-level heading, drawn without a connector) ------------------------------
+    # -- Header (top-level heading, drawn without a connector) --------------------------
 
     _print_node(out, "Header", "  ", "", :satellitetoolbox_odm_section)
     _print_fields(out, header_fields, "    ")
@@ -154,6 +179,7 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
     # .. Data ..............................................................................
 
     _print_node(out, "Data", "     ", "└─ ", :satellitetoolbox_odm_node)
+    _print_fields(out, data_fields, data_rail)
 
     # Build the list of present data subsections so the last one is closed with `└─`.
     data_sections = filter(
@@ -180,4 +206,3 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     return nothing
 end
-

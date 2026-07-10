@@ -42,7 +42,7 @@ const _COV_XML = """
 
         cov = omm.body.segment.data.covariance_matrix
         @test !isnothing(cov)
-        @test cov.comment == "This is a covariance matrix"
+        @test cov.comments == ["This is a covariance matrix"]
         @test cov.cov_ref_frame == "ITRF"
         @test cov.cx_x           == 1.0
         @test cov.cy_x           == 2.0
@@ -100,7 +100,7 @@ const _COV_XML = """
 
         cov = omm.body.segment.data.covariance_matrix
         @test !isnothing(cov)
-        @test isnothing(cov.comment)
+        @test isempty(cov.comments)
         @test isnothing(cov.cov_ref_frame)
         @test cov.cx_x == 1.0
         @test cov.cz_dot_z_dot == 21.0
@@ -160,7 +160,7 @@ const _COV_XML = """
         cov2 = omm_reparsed.body.segment.data.covariance_matrix
 
         @test !isnothing(cov2)
-        @test cov1.comment       == cov2.comment
+        @test cov1.comments      == cov2.comments
         @test cov1.cov_ref_frame == cov2.cov_ref_frame
         @test cov1.cx_x           == cov2.cx_x
         @test cov1.cy_x           == cov2.cy_x

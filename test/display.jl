@@ -83,6 +83,7 @@ OrbitMeanElementsMessage:
             time_system          = "UTC",
             mean_element_theory  = "SGP4",
             epoch                = epoch,
+            mean_motion          = 15.0,
             eccentricity         = 0.001,
             inclination          = 45.0,
             raan                 = 100.0,
@@ -112,6 +113,7 @@ OrbitMeanElementsMessage:
             time_system          = "UTC",
             mean_element_theory  = "SGP4",
             epoch                = epoch,
+            mean_motion          = 15.0,
             eccentricity         = 0.001,
             inclination          = 45.0,
             raan                 = 100.0,
@@ -136,6 +138,7 @@ OrbitMeanElementsMessage:
             time_system          = "UTC",
             mean_element_theory  = "SGP4",
             epoch                = epoch,
+            mean_motion          = 15.0,
             eccentricity         = 0.001,
             inclination          = 45.0,
             raan                 = 100.0,
@@ -161,6 +164,7 @@ OrbitMeanElementsMessage:
             time_system          = "UTC",
             mean_element_theory  = "SGP4",
             epoch                = epoch,
+            mean_motion          = 15.0,
             eccentricity         = 0.001,
             inclination          = 45.0,
             raan                 = 100.0,
@@ -172,7 +176,7 @@ OrbitMeanElementsMessage:
         @test !occursin("User-Defined Parameters", result)
     end
 
-    # == Color smoke test ===================================================================
+    # == Color smoke test ==================================================================
 
     @testset "Color output" begin
         omm = read_omm(_FIXTURE_FILE)

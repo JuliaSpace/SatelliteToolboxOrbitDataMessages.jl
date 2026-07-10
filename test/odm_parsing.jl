@@ -14,14 +14,14 @@
 
     # == Header Fields =====================================================================
     @test omm.version               == v"3.0"
-    @test omm.header.comment        == "GENERATED VIA SPACE-TRACK.ORG API"
+    @test omm.header.comments       == ["GENERATED VIA SPACE-TRACK.ORG API"]
     @test omm.header.classification === nothing
     @test omm.header.creation_date  == NanoDate("2025-12-30T23:36:37")
     @test omm.header.originator     == "18 SPCS"
     @test omm.header.message_id     === nothing
 
     # == Metadata Fields ===================================================================
-    @test omm.body.segment.metadata.comment             === nothing
+    @test isempty(omm.body.segment.metadata.comments)
     @test omm.body.segment.metadata.object_name         == "AMAZONIA 1"
     @test omm.body.segment.metadata.object_id           == "2021-015A"
     @test omm.body.segment.metadata.center_name         == "EARTH"
@@ -31,7 +31,8 @@
     @test omm.body.segment.metadata.mean_element_theory == "SGP4"
 
     # == Data Fields - Mean Keplerian Elements =============================================
-    @test omm.body.segment.data.data_comment      === nothing
+    @test isempty(omm.body.segment.data.comments)
+    @test isempty(omm.body.segment.data.mean_elements_comments)
     @test omm.body.segment.data.epoch             ==  NanoDate("2025-12-30T18:12:04.533984")
     @test omm.body.segment.data.semi_major_axis   === nothing
     @test omm.body.segment.data.mean_motion       ≈   14.40772474 atol = 1e-6
@@ -43,7 +44,7 @@
     @test omm.body.segment.data.GM                === nothing
 
     # == Data Fields - Spacecraft Data ====================================================
-    @test omm.body.segment.data.spacecraft_data_comment === nothing
+    @test isempty(omm.body.segment.data.spacecraft_parameters_comments)
     @test omm.body.segment.data.mass                    === nothing
     @test omm.body.segment.data.solar_rad_area          === nothing
     @test omm.body.segment.data.solar_rad_coeff         === nothing
@@ -51,7 +52,7 @@
     @test omm.body.segment.data.drag_coeff              === nothing
 
     # == Data Fields - TLE Related Parameters ==============================================
-    @test omm.body.segment.data.tle_parameters_comment === nothing
+    @test isempty(omm.body.segment.data.tle_parameters_comments)
     @test omm.body.segment.data.ephemeris_type         ==  0
     @test omm.body.segment.data.classification_type    ==  'U'
     @test omm.body.segment.data.norad_cat_id           ==  47699
@@ -93,14 +94,14 @@ end
 
     # == Header Fields =====================================================================
     @test omm.version               == v"3.0"
-    @test omm.header.comment        == "GENERATED VIA SPACE-TRACK.ORG API"
+    @test omm.header.comments       == ["GENERATED VIA SPACE-TRACK.ORG API"]
     @test omm.header.classification === nothing
     @test omm.header.creation_date  == NanoDate("2025-12-30T23:36:37")
     @test omm.header.originator     == "18 SPCS"
     @test omm.header.message_id     === nothing
 
     # == Metadata Fields ===================================================================
-    @test omm.body.segment.metadata.comment             === nothing
+    @test isempty(omm.body.segment.metadata.comments)
     @test omm.body.segment.metadata.object_name         == "AMAZONIA 1"
     @test omm.body.segment.metadata.object_id           == "2021-015A"
     @test omm.body.segment.metadata.center_name         == "EARTH"
@@ -110,7 +111,8 @@ end
     @test omm.body.segment.metadata.mean_element_theory == "SGP4"
 
     # == Data Fields - Mean Keplerian Elements =============================================
-    @test omm.body.segment.data.data_comment      === nothing
+    @test isempty(omm.body.segment.data.comments)
+    @test isempty(omm.body.segment.data.mean_elements_comments)
     @test omm.body.segment.data.epoch             ==  NanoDate("2025-12-30T18:12:04.533984")
     @test omm.body.segment.data.semi_major_axis   === nothing
     @test omm.body.segment.data.mean_motion       ≈   14.40772474 atol = 1e-6
@@ -122,7 +124,7 @@ end
     @test omm.body.segment.data.GM                === nothing
 
     # == Data Fields - Spacecraft Data ====================================================
-    @test omm.body.segment.data.spacecraft_data_comment === nothing
+    @test isempty(omm.body.segment.data.spacecraft_parameters_comments)
     @test omm.body.segment.data.mass                    === nothing
     @test omm.body.segment.data.solar_rad_area          === nothing
     @test omm.body.segment.data.solar_rad_coeff         === nothing
@@ -130,7 +132,7 @@ end
     @test omm.body.segment.data.drag_coeff              === nothing
 
     # == Data Fields - TLE Related Parameters ==============================================
-    @test omm.body.segment.data.tle_parameters_comment === nothing
+    @test isempty(omm.body.segment.data.tle_parameters_comments)
     @test omm.body.segment.data.ephemeris_type         ==  0
     @test omm.body.segment.data.classification_type    ==  'U'
     @test omm.body.segment.data.norad_cat_id           ==  47699

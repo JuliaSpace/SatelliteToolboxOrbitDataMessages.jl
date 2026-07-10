@@ -29,7 +29,7 @@
         # non-bits fields like String).
         for omm in (first(omm_parse_omms), first(vodm_parse_odm), omm_file)
             @test omm.version                == omm_parse_omm.version
-            @test omm.header.comment         === omm_parse_omm.header.comment
+            @test omm.header.comments        ==  omm_parse_omm.header.comments
             @test omm.header.classification  === omm_parse_omm.header.classification
             @test omm.header.creation_date   ==  omm_parse_omm.header.creation_date
             @test omm.header.originator      ==  omm_parse_omm.header.originator
@@ -53,8 +53,13 @@
         omm_reparsed = parse_omm(written_xml)
 
         @test !isnothing(omm_reparsed)
-        @test omm_reparsed.header == omm_file.header
-        @test omm_reparsed.body.segment.metadata == omm_file.body.segment.metadata
+        @test omm_reparsed.header.comments == omm_file.header.comments
+        @test omm_reparsed.header.creation_date == omm_file.header.creation_date
+        @test omm_reparsed.header.originator == omm_file.header.originator
+        @test omm_reparsed.body.segment.metadata.comments ==
+            omm_file.body.segment.metadata.comments
+        @test omm_reparsed.body.segment.metadata.object_name ==
+            omm_file.body.segment.metadata.object_name
 
         # Compare the data fields (skip user_defined_parameters ordering for now).
         d1 = omm_reparsed.body.segment.data

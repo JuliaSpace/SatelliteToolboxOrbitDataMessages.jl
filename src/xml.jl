@@ -26,12 +26,13 @@ end
 
 Render the given `value` of type `T` as a string suitable for XML.
 
-`NanoDate` values are rendered with microsecond precision (`yyyy-mm-ddTHH:MM:SS.ssssss`).
-Sub-microsecond digits are truncated.
+`NanoDate` values are rendered with nanosecond precision (`yyyy-mm-ddTHH:MM:SS.sssssssss`).
 """
 _xml_render(value::String) = value
 _xml_render(value::Any) = string(value)
-_xml_render(value::NanoDate) = Dates.format(value, dateformat"yyyy-mm-ddTHH:MM:SS.ssssss")
+function _xml_render(value::NanoDate)
+    return Dates.format(value, dateformat"yyyy-mm-ddTHH:MM:SS.sssssssss")
+end
 
 """
     _parse_ndm_date(str::AbstractString) -> NanoDate
@@ -56,6 +57,10 @@ function _parse_ndm_date(str::AbstractString)
     year      = parse(Int, m[1])
     day_of_yr = parse(Int, m[2])
     rest      = m[3]
+
+    1 <= day_of_yr <= daysinyear(year) || throw(ArgumentError(
+        "Invalid ordinal day $day_of_yr for year $year."
+    ))
 
     # Build the calendar date from the year and day-of-year.
     date = Date(year, 1, 1) + Day(day_of_yr - 1)

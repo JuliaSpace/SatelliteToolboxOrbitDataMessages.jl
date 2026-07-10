@@ -154,10 +154,13 @@ Wrap one or more OMM XML strings in an <ndm> container. Each argument should be 
 <omm>...</omm> element (without the XML declaration).
 """
 function _ndm_xml(omm_xmls::AbstractString...)
-    inner = join(omm_xmls)
+    inner      = join(omm_xmls)
+    schema_url = "https://sanaregistry.org/r/ndmxml_unqualified/" *
+        "ndmxml-3.0.0-master-3.0.xsd"
     return """
     <?xml version="1.0" encoding="UTF-8"?>
-    <ndm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://sanaregistry.org/r/ndmxml_unqualified/ndmxml-3.0.0-master-3.0.xsd">$(inner)</ndm>
+    <ndm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="$(schema_url)">$(inner)</ndm>
     """
 end
 

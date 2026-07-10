@@ -49,6 +49,7 @@ The written version is always `3.0`, regardless of the version stored in the `om
 matches the schema against which the output is validated.
 """
 function _omm_to_xml(omm::OrbitMeanElementsMessage, stand_alone::Val{true})
+    _validate_writable_omm_header(omm)
     doc = XML.Document()
 
     # XML Declaration.
@@ -74,6 +75,7 @@ function _omm_to_xml(omm::OrbitMeanElementsMessage, stand_alone::Val{true})
 end
 
 function _omm_to_xml(omm::OrbitMeanElementsMessage, stand_alone::Val{false})
+    _validate_writable_omm_header(omm)
     doc = XML.Element("omm")
     doc["id"] = "CCSDS_OMM_VERS"
     doc["version"] = "3.0"
@@ -95,7 +97,7 @@ function _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessa
     header_node = XML.Element("header")
     push!(parent, header_node)
 
-    _xml_add_tag!(header_node, "COMMENT",        header.comment)
+    foreach(comment -> _xml_add_tag!(header_node, "COMMENT", comment), header.comments)
     _xml_add_tag!(header_node, "CLASSIFICATION", header.classification)
     _xml_add_tag!(header_node, "CREATION_DATE",  omm.header.creation_date)
     _xml_add_tag!(header_node, "ORIGINATOR",     header.originator)
@@ -115,7 +117,7 @@ function _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessa
     metadata_node = XML.Element("metadata")
     push!(segment_node, metadata_node)
 
-    _xml_add_tag!(metadata_node, "COMMENT",             metadata.comment)
+    foreach(comment -> _xml_add_tag!(metadata_node, "COMMENT", comment), metadata.comments)
     _xml_add_tag!(metadata_node, "OBJECT_NAME",         metadata.object_name)
     _xml_add_tag!(metadata_node, "OBJECT_ID",           metadata.object_id)
     _xml_add_tag!(metadata_node, "CENTER_NAME",         metadata.center_name)
@@ -130,12 +132,17 @@ function _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessa
     data_node = XML.Element("data")
     push!(segment_node, data_node)
 
+    foreach(comment -> _xml_add_tag!(data_node, "COMMENT", comment), data.comments)
+
     # .. Mean Keplerian Elements ...........................................................
 
     mean_kep_node = XML.Element("meanElements")
     push!(data_node, mean_kep_node)
 
-    _xml_add_tag!(mean_kep_node, "COMMENT",           data.data_comment)
+    foreach(
+        comment -> _xml_add_tag!(mean_kep_node, "COMMENT", comment),
+        data.mean_elements_comments,
+    )
     _xml_add_tag!(mean_kep_node, "EPOCH",             data.epoch)
     _xml_add_tag!(mean_kep_node, "SEMI_MAJOR_AXIS",   data.semi_major_axis)
     _xml_add_tag!(mean_kep_node, "MEAN_MOTION",       data.mean_motion)
@@ -150,7 +157,10 @@ function _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessa
 
     sc_params_node = XML.Element("spacecraftParameters")
 
-    _xml_add_tag!(sc_params_node, "COMMENT",         data.spacecraft_data_comment)
+    foreach(
+        comment -> _xml_add_tag!(sc_params_node, "COMMENT", comment),
+        data.spacecraft_parameters_comments,
+    )
     _xml_add_tag!(sc_params_node, "MASS",            data.mass)
     _xml_add_tag!(sc_params_node, "SOLAR_RAD_AREA",  data.solar_rad_area)
     _xml_add_tag!(sc_params_node, "SOLAR_RAD_COEFF", data.solar_rad_coeff)
@@ -163,15 +173,20 @@ function _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessa
 
     tle_params_node = XML.Element("tleParameters")
 
-    _xml_add_tag!(tle_params_node, "COMMENT",             data.tle_parameters_comment)
+    foreach(
+        comment -> _xml_add_tag!(tle_params_node, "COMMENT", comment),
+        data.tle_parameters_comments,
+    )
     _xml_add_tag!(tle_params_node, "EPHEMERIS_TYPE",      data.ephemeris_type)
     _xml_add_tag!(tle_params_node, "CLASSIFICATION_TYPE", data.classification_type)
     _xml_add_tag!(tle_params_node, "NORAD_CAT_ID",        data.norad_cat_id)
     _xml_add_tag!(tle_params_node, "ELEMENT_SET_NO",      data.element_set_number)
     _xml_add_tag!(tle_params_node, "REV_AT_EPOCH",        data.rev_at_epoch)
     _xml_add_tag!(tle_params_node, "BSTAR",               data.bstar)
+    _xml_add_tag!(tle_params_node, "BTERM",               data.bterm)
     _xml_add_tag!(tle_params_node, "MEAN_MOTION_DOT",     data.mean_motion_dot)
     _xml_add_tag!(tle_params_node, "MEAN_MOTION_DDOT",    data.mean_motion_ddot)
+    _xml_add_tag!(tle_params_node, "AGOM",                data.agom)
 
     isempty(tle_params_node.children) || push!(data_node, tle_params_node)
 
@@ -181,7 +196,7 @@ function _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessa
         cov = data.covariance_matrix
         cov_node = XML.Element("covarianceMatrix")
 
-        _xml_add_tag!(cov_node, "COMMENT",       cov.comment)
+        foreach(comment -> _xml_add_tag!(cov_node, "COMMENT", comment), cov.comments)
         _xml_add_tag!(cov_node, "COV_REF_FRAME",  cov.cov_ref_frame)
         _xml_add_tag!(cov_node, "CX_X",           cov.cx_x)
         _xml_add_tag!(cov_node, "CY_X",           cov.cy_x)
@@ -223,5 +238,20 @@ function _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessa
         push!(data_node, user_defined_parameter_nodes)
     end
 
+    return nothing
+end
+
+"""
+    _validate_writable_omm_header(omm::OrbitMeanElementsMessage) -> Nothing
+
+Validate that the header of `omm` contains the fields required for OMM 3.0 output.
+"""
+function _validate_writable_omm_header(omm::OrbitMeanElementsMessage)
+    isnothing(omm.header.creation_date) && throw(ArgumentError(
+        "Cannot write OMM 3.0 without a creation date."
+    ))
+    isempty(omm.header.originator) && throw(ArgumentError(
+        "Cannot write OMM 3.0 without an originator."
+    ))
     return nothing
 end
