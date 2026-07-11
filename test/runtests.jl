@@ -40,6 +40,7 @@ include("helpers.jl")
     end
 
     @testset "Fetchers" verbose = true begin
+        include("fetcher/api.jl")
         include("fetcher/celestrak.jl")
         include("fetcher/spacetrack_offline.jl")
         include("fetcher/spacetrack_online.jl")
