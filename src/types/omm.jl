@@ -187,6 +187,98 @@ struct OrbitMeanElementsMessage <: OrbitDataMessage
     body::OmmBody
 end
 
+# == Equality ==============================================================================
+
+function ==(x::OmmHeader, y::OmmHeader)
+    return x.comments == y.comments &&
+        x.classification == y.classification &&
+        x.creation_date == y.creation_date &&
+        x.originator == y.originator &&
+        x.message_id == y.message_id
+end
+
+function ==(x::OmmMetadata, y::OmmMetadata)
+    return x.comments == y.comments &&
+        x.object_name == y.object_name &&
+        x.object_id == y.object_id &&
+        x.center_name == y.center_name &&
+        x.ref_frame == y.ref_frame &&
+        x.ref_frame_epoch == y.ref_frame_epoch &&
+        x.time_system == y.time_system &&
+        x.mean_element_theory == y.mean_element_theory
+end
+
+function ==(x::OmmCovarianceMatrix, y::OmmCovarianceMatrix)
+    return x.comments == y.comments &&
+        x.cov_ref_frame == y.cov_ref_frame &&
+        x.cx_x == y.cx_x &&
+        x.cy_x == y.cy_x &&
+        x.cy_y == y.cy_y &&
+        x.cz_x == y.cz_x &&
+        x.cz_y == y.cz_y &&
+        x.cz_z == y.cz_z &&
+        x.cx_dot_x == y.cx_dot_x &&
+        x.cx_dot_y == y.cx_dot_y &&
+        x.cx_dot_z == y.cx_dot_z &&
+        x.cx_dot_x_dot == y.cx_dot_x_dot &&
+        x.cy_dot_x == y.cy_dot_x &&
+        x.cy_dot_y == y.cy_dot_y &&
+        x.cy_dot_z == y.cy_dot_z &&
+        x.cy_dot_x_dot == y.cy_dot_x_dot &&
+        x.cy_dot_y_dot == y.cy_dot_y_dot &&
+        x.cz_dot_x == y.cz_dot_x &&
+        x.cz_dot_y == y.cz_dot_y &&
+        x.cz_dot_z == y.cz_dot_z &&
+        x.cz_dot_x_dot == y.cz_dot_x_dot &&
+        x.cz_dot_y_dot == y.cz_dot_y_dot &&
+        x.cz_dot_z_dot == y.cz_dot_z_dot
+end
+
+function ==(x::OmmData, y::OmmData)
+    return x.comments == y.comments &&
+        x.mean_elements_comments == y.mean_elements_comments &&
+        x.epoch == y.epoch &&
+        x.semi_major_axis == y.semi_major_axis &&
+        x.mean_motion == y.mean_motion &&
+        x.eccentricity == y.eccentricity &&
+        x.inclination == y.inclination &&
+        x.raan == y.raan &&
+        x.arg_of_pericenter == y.arg_of_pericenter &&
+        x.mean_anomaly == y.mean_anomaly &&
+        x.GM == y.GM &&
+        x.spacecraft_parameters_comments == y.spacecraft_parameters_comments &&
+        x.mass == y.mass &&
+        x.solar_rad_area == y.solar_rad_area &&
+        x.solar_rad_coeff == y.solar_rad_coeff &&
+        x.drag_area == y.drag_area &&
+        x.drag_coeff == y.drag_coeff &&
+        x.tle_parameters_comments == y.tle_parameters_comments &&
+        x.ephemeris_type == y.ephemeris_type &&
+        x.classification_type == y.classification_type &&
+        x.norad_cat_id == y.norad_cat_id &&
+        x.element_set_number == y.element_set_number &&
+        x.rev_at_epoch == y.rev_at_epoch &&
+        x.bstar == y.bstar &&
+        x.bterm == y.bterm &&
+        x.mean_motion_dot == y.mean_motion_dot &&
+        x.mean_motion_ddot == y.mean_motion_ddot &&
+        x.agom == y.agom &&
+        x.covariance_matrix == y.covariance_matrix &&
+        x.user_defined_parameters == y.user_defined_parameters
+end
+
+function ==(x::OmmSegment, y::OmmSegment)
+    return x.metadata == y.metadata && x.data == y.data
+end
+
+function ==(x::OmmBody, y::OmmBody)
+    return x.segment == y.segment
+end
+
+function ==(x::OrbitMeanElementsMessage, y::OrbitMeanElementsMessage)
+    return x.version == y.version && x.header == y.header && x.body == y.body
+end
+
 # == Constructors ==========================================================================
 
 """

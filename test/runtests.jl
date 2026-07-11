@@ -27,6 +27,10 @@ include("helpers.jl")
         include("constructors.jl")
     end
 
+    @testset "Equality" verbose = true begin
+        include("equality.jl")
+    end
+
     @testset "Display" verbose = true begin
         include("display.jl")
     end

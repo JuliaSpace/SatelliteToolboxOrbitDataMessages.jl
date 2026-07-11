@@ -8,7 +8,7 @@ using StyledStrings
 using URIs
 using XML
 
-import Base: show
+import Base: ==, show
 import NanoDates: NanoDate
 
 ############################################################################################
