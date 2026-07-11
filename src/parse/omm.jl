@@ -71,49 +71,10 @@ function parse_omms(str::AbstractString; strict::Bool = true)
 end
 
 function parse_omms(xml::XML.Cursor; strict::Bool = true)
-    omms = OrbitMeanElementsMessage[]
-    root = next!(xml)
-    while !isnothing(root) && nodetype(root) !== Element
-        root = next!(xml)
-    end
-    isnothing(root) && throw(ArgumentError("The XML document has no root element."))
-    t = _omm_tag(root, strict)
-
-    if t == "ndm"
-        XML.@for_each_child root node begin
-            nodetype(node) === Element || continue
-            lt = _omm_tag(node, strict)
-
-            if lt == "omm"
-                push!(omms, _parse_omm(node, strict))
-            elseif lt == "opm"
-                @warn "We do not support Orbit Parameter Messages (OPM) yet."
-            elseif lt == "oem"
-                @warn "We do not support Orbit Ephemeris Messages (OEM) yet."
-            elseif lt == "ocm"
-                @warn "We do not support Orbit Comprehensive Messages (OCM) yet."
-            end
-        end
-
-        return omms
-
-    elseif t == "omm"
-        push!(omms, _parse_omm(root, strict))
-        return omms
-    elseif t == "opm"
-        @warn "We do not support Orbit Parameter Messages (OPM) yet."
-        return omms
-    elseif t == "oem"
-        @warn "We do not support Orbit Ephemeris Messages (OEM) yet."
-        return omms
-    elseif t == "ocm"
-        @warn "We do not support Orbit Comprehensive Messages (OCM) yet."
-        return omms
-    else
-        return throw(ArgumentError("The root tag `$t` is not recognized."))
-    end
-
-    return omms
+    messages = parse_odm(xml; strict)
+    return OrbitMeanElementsMessage[
+        message for message in messages if message isa OrbitMeanElementsMessage
+    ]
 end
 
 ############################################################################################

@@ -45,27 +45,51 @@ function parse_odm(xml::XML.Cursor; strict::Bool = true)
     # Process the root node.
     t = _omm_tag(root_node, strict)
 
-    if t == "opm"
-        @warn "We do not support Orbit Parameter Messages (OPM) yet."
-        return OrbitDataMessage[]
-    elseif t == "omm"
-        return OrbitDataMessage[_parse_omm(root_node, strict)]
-    elseif t == "oem"
-        @warn "We do not support Orbit Ephemeris Messages (OEM) yet."
-        return OrbitDataMessage[]
-    elseif t == "ocm"
-        @warn "We do not support Orbit Comprehensive Messages (OCM) yet."
-        return OrbitDataMessage[]
-    elseif t == "ndm"
-        return _parse_ndm(root_node, strict)
-    else
-        return throw(ArgumentError("The root tag `$t` is not recognized."))
-    end
+    t == "ndm" && return _parse_ndm(root_node, strict)
+
+    _is_odm_tag(t) || throw(ArgumentError("The root tag `$t` is not recognized."))
+
+    message = _parse_message(Val(Symbol(t)), root_node, strict)
+
+    return isnothing(message) ? OrbitDataMessage[] : OrbitDataMessage[message]
 end
 
 ############################################################################################
 #                                    Private Functions                                     #
 ############################################################################################
+
+# Tags of the ODM message types defined by the CCSDS 502.0-B-3 standard.
+const _ODM_TAGS = ("omm", "opm", "oem", "ocm")
+
+"""
+    _is_odm_tag(tag::AbstractString) -> Bool
+
+Return whether `tag` is an ODM message tag defined by the CCSDS 502.0-B-3 standard.
+"""
+_is_odm_tag(tag::AbstractString) = tag in _ODM_TAGS
+
+"""
+    _parse_message(::Val{tag}, xml::Cursor, strict::Bool) -> Union{Nothing, OrbitDataMessage}
+
+Parse the ODM message with the root `tag` at the current position of the `Cursor` `xml`,
+dispatching on `Val(tag)`. Message types that are not supported yet emit a warning and
+return `nothing`.
+
+To add support for a new message type, define a method for the corresponding tag, e.g.
+`_parse_message(::Val{:opm}, xml::XML.Cursor, strict::Bool)`.
+"""
+_parse_message(::Val{:omm}, xml::XML.Cursor, strict::Bool) = _parse_omm(xml, strict)
+
+for (tag, name) in (
+    :opm => "Orbit Parameter Messages (OPM)",
+    :oem => "Orbit Ephemeris Messages (OEM)",
+    :ocm => "Orbit Comprehensive Messages (OCM)",
+)
+    @eval function _parse_message(::Val{$(QuoteNode(tag))}, ::XML.Cursor, ::Bool)
+        @warn $("We do not support $name yet.")
+        return nothing
+    end
+end
 
 """
     _parse_ndm(xml::Cursor, strict::Bool) -> Vector{OrbitDataMessage}
@@ -78,17 +102,10 @@ function _parse_ndm(xml::XML.Cursor, strict::Bool)
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
-        lt = _omm_tag(node, strict)
-
-        if lt == "omm"
-            push!(messages, _parse_omm(node, strict))
-        elseif lt == "opm"
-            @warn "We do not support Orbit Parameter Messages (OPM) yet."
-        elseif lt == "oem"
-            @warn "We do not support Orbit Ephemeris Messages (OEM) yet."
-        elseif lt == "ocm"
-            @warn "We do not support Orbit Comprehensive Messages (OCM) yet."
-        end
+        t = _omm_tag(node, strict)
+        _is_odm_tag(t) || continue
+        message = _parse_message(Val(Symbol(t)), node, strict)
+        isnothing(message) || push!(messages, message)
     end
 
     return messages
