@@ -191,3 +191,32 @@ end
     @test user_params["FILE"]           == "4946249"
     @test user_params["GP_ID"]          == "307230979"
 end
+
+@testset "Whitespace-Padded Values" begin
+    # Pretty-printed XML documents are schema-valid because the XML schema types collapse
+    # the surrounding whitespace.
+    xml = _minimal_omm_xml(;
+        creation_date = "\n        2025-12-30T23:36:37\n      ",
+        originator    = "  18 SPCS  ",
+        mean_motion   = " 14.40772474 ",
+    )
+
+    omm = parse_omm(xml)
+
+    @test omm.header.creation_date          == NanoDate("2025-12-30T23:36:37")
+    @test omm.header.originator             == "18 SPCS"
+    @test omm.body.segment.data.mean_motion ≈  14.40772474
+end
+
+@testset "CDATA and Split Text Values" begin
+    # Values split into multiple text / CDATA chunks must be concatenated.
+    xml = replace(
+        _minimal_omm_xml(),
+        "<ORIGINATOR>18 SPCS</ORIGINATOR>" =>
+            "<ORIGINATOR><![CDATA[18]]> SPCS</ORIGINATOR>",
+    )
+
+    omm = parse_omm(xml)
+
+    @test omm.header.originator == "18 SPCS"
+end

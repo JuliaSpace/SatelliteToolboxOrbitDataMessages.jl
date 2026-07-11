@@ -215,3 +215,37 @@
         )
     end
 end
+
+@testset "Invalid Numeric Values" begin
+    # The error message must name the OMM field that contains the invalid value.
+    exception = try
+        parse_omm(_minimal_omm_xml(; mean_motion = "abc"))
+        nothing
+    catch exception
+        exception
+    end
+
+    @test exception isa ArgumentError
+    @test occursin("MEAN_MOTION", exception.msg)
+
+    exception = try
+        parse_omm(
+            _minimal_omm_xml(;
+                tle_params_xml = """
+                <tleParameters>
+                    <NORAD_CAT_ID>not-a-number</NORAD_CAT_ID>
+                    <BSTAR>0.0001</BSTAR>
+                    <MEAN_MOTION_DOT>0.0</MEAN_MOTION_DOT>
+                    <MEAN_MOTION_DDOT>0.0</MEAN_MOTION_DDOT>
+                </tleParameters>
+                """
+            )
+        )
+        nothing
+    catch exception
+        exception
+    end
+
+    @test exception isa ArgumentError
+    @test occursin("NORAD_CAT_ID", exception.msg)
+end

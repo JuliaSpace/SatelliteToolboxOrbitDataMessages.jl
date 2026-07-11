@@ -210,17 +210,39 @@ end
 
 Read the text or CDATA value of the current OMM scalar element while advancing the cursor
 past that element. Non-value child nodes are ignored.
+
+All text and CDATA chunks are concatenated and the surrounding whitespace is stripped,
+matching the whitespace-collapse behavior of the XML schema types used by the CCSDS
+502.0-B-3 standard.
 """
 function _omm_scalar_value(xml::XML.Cursor)
     result = ""
     XML.@for_each_child xml node begin
         if nodetype(node) === XML.Text || nodetype(node) === XML.CData
-            isempty(result) && (result = String(value(node)))
+            result *= String(value(node))
         elseif nodetype(node) === Element
             skip_element!(node)
         end
     end
-    return result
+    return String(strip(result))
+end
+
+"""
+    _parse_omm_number(::Type{T}, v::AbstractString, field::AbstractString) where T <: Number -> T
+
+Parse the string `v` as a number of type `T`, throwing an `ArgumentError` that names the
+OMM `field` if the value is not a valid number.
+"""
+function _parse_omm_number(
+    ::Type{T},
+    v::AbstractString,
+    field::AbstractString
+) where T <: Number
+    number = tryparse(T, v)
+    isnothing(number) && throw(ArgumentError(
+        "OMM field `$field` contains an invalid value: \"$v\"."
+    ))
+    return number
 end
 
 # == Header Parsing ========================================================================
@@ -571,21 +593,21 @@ function _parse_omm_mean_elements(xml::XML.Cursor, strict::Bool)
             isempty(v) && throw(ArgumentError("OMM field `EPOCH` cannot be empty."))
             epoch = _parse_ndm_date(v)
         elseif lt == "SEMI_MAJOR_AXIS"
-            semi_major_axis = parse(Float64, v)
+            semi_major_axis = _parse_omm_number(Float64, v, lt)
         elseif lt == "MEAN_MOTION"
-            mean_motion = parse(Float64, v)
+            mean_motion = _parse_omm_number(Float64, v, lt)
         elseif lt == "ECCENTRICITY"
-            eccentricity = parse(Float64, v)
+            eccentricity = _parse_omm_number(Float64, v, lt)
         elseif lt == "INCLINATION"
-            inclination = parse(Float64, v)
+            inclination = _parse_omm_number(Float64, v, lt)
         elseif lt == "RA_OF_ASC_NODE"
-            raan = parse(Float64, v)
+            raan = _parse_omm_number(Float64, v, lt)
         elseif lt == "ARG_OF_PERICENTER"
-            arg_of_pericenter = parse(Float64, v)
+            arg_of_pericenter = _parse_omm_number(Float64, v, lt)
         elseif lt == "MEAN_ANOMALY"
-            mean_anomaly = parse(Float64, v)
+            mean_anomaly = _parse_omm_number(Float64, v, lt)
         else
-            GM = parse(Float64, v)
+            GM = _parse_omm_number(Float64, v, lt)
         end
     end
 
@@ -668,15 +690,15 @@ function _parse_omm_spacecraft_parameters(xml::XML.Cursor, strict::Bool)
         push!(seen, lt)
 
         if lt == "MASS"
-            mass = parse(Float64, v)
+            mass = _parse_omm_number(Float64, v, lt)
         elseif lt == "SOLAR_RAD_AREA"
-            solar_rad_area = parse(Float64, v)
+            solar_rad_area = _parse_omm_number(Float64, v, lt)
         elseif lt == "SOLAR_RAD_COEFF"
-            solar_rad_coeff = parse(Float64, v)
+            solar_rad_coeff = _parse_omm_number(Float64, v, lt)
         elseif lt == "DRAG_AREA"
-            drag_area = parse(Float64, v)
+            drag_area = _parse_omm_number(Float64, v, lt)
         else
-            drag_coeff = parse(Float64, v)
+            drag_coeff = _parse_omm_number(Float64, v, lt)
         end
     end
 
@@ -754,28 +776,28 @@ function _parse_omm_tle_parameters(xml::XML.Cursor, strict::Bool)
         push!(seen, lt)
 
         if lt == "EPHEMERIS_TYPE"
-            ephemeris_type = parse(Int, v)
+            ephemeris_type = _parse_omm_number(Int, v, lt)
         elseif lt == "CLASSIFICATION_TYPE"
             length(v) == 1 || throw(ArgumentError(
                 "OMM field `CLASSIFICATION_TYPE` must contain exactly one character."
             ))
             classification_type = only(v)
         elseif lt == "NORAD_CAT_ID"
-            norad_cat_id = parse(Int, v)
+            norad_cat_id = _parse_omm_number(Int, v, lt)
         elseif lt == "ELEMENT_SET_NO"
-            element_set_number = parse(Int, v)
+            element_set_number = _parse_omm_number(Int, v, lt)
         elseif lt == "REV_AT_EPOCH"
-            rev_at_epoch = parse(Int, v)
+            rev_at_epoch = _parse_omm_number(Int, v, lt)
         elseif lt == "BSTAR"
-            bstar = parse(Float64, v)
+            bstar = _parse_omm_number(Float64, v, lt)
         elseif lt == "BTERM"
-            bterm = parse(Float64, v)
+            bterm = _parse_omm_number(Float64, v, lt)
         elseif lt == "MEAN_MOTION_DOT"
-            mean_motion_dot = parse(Float64, v)
+            mean_motion_dot = _parse_omm_number(Float64, v, lt)
         elseif lt == "MEAN_MOTION_DDOT"
-            mean_motion_ddot = parse(Float64, v)
+            mean_motion_ddot = _parse_omm_number(Float64, v, lt)
         else
-            agom = parse(Float64, v)
+            agom = _parse_omm_number(Float64, v, lt)
         end
     end
 
@@ -852,7 +874,7 @@ function _parse_omm_covariance_matrix(xml::XML.Cursor, strict::Bool)
         if lt == "COV_REF_FRAME"
             cov_ref_frame = v
         elseif haskey(values, lt)
-            values[lt] = parse(Float64, v)
+            values[lt] = _parse_omm_number(Float64, v, lt)
         else
             throw(ArgumentError("Unknown OMM covariance element `$lt`."))
         end
