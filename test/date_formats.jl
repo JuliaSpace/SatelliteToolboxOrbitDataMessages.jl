@@ -5,8 +5,8 @@
 #
 ############################################################################################
 
-@testset "Date formats" verbose = true begin
-    @testset "Calendar format (YYYY-MM-DDThh:mm:ss[.d→d][Z])" begin
+@testset "Date Formats" verbose = true begin
+    @testset "Calendar Format (YYYY-MM-DDThh:mm:ss[.d→d][Z])" begin
         xml = _minimal_omm_xml(;
             creation_date = "2025-12-30T23:36:37",
             epoch         = "2025-12-30T18:12:04.533984",
@@ -18,7 +18,7 @@
         @test omm.body.segment.data.epoch == NanoDate("2025-12-30T18:12:04.533984")
     end
 
-    @testset "Calendar format with Z suffix" begin
+    @testset "Calendar Format With Z Suffix" begin
         xml = _minimal_omm_xml(;
             creation_date = "2025-12-30T23:36:37Z",
             epoch         = "2025-12-30T18:12:04.533984Z",
@@ -30,7 +30,7 @@
         @test omm.body.segment.data.epoch == NanoDate("2025-12-30T18:12:04.533984")
     end
 
-    @testset "Ordinal day-of-year format (YYYY-DDDThh:mm:ss[.d→d][Z])" begin
+    @testset "Ordinal Day-of-Year Format (YYYY-DDDThh:mm:ss[.d→d][Z])" begin
         # 2025-365 = 2025-12-31.
         xml = _minimal_omm_xml(;
             creation_date = "2025-365T23:36:37",
@@ -43,7 +43,7 @@
         @test omm.body.segment.data.epoch == NanoDate("2025-12-31T18:12:04.533984")
     end
 
-    @testset "Ordinal day-of-year format with Z suffix" begin
+    @testset "Ordinal Day-of-Year Format With Z Suffix" begin
         xml = _minimal_omm_xml(;
             creation_date = "2025-365T23:36:37Z",
             epoch         = "2025-365T18:12:04.533984Z",
@@ -55,7 +55,7 @@
         @test omm.body.segment.data.epoch == NanoDate("2025-12-31T18:12:04.533984")
     end
 
-    @testset "Ordinal day 001 = January 1" begin
+    @testset "Ordinal Day 001 = January 1" begin
         xml = _minimal_omm_xml(;
             creation_date = "2025-001T00:00:00",
             epoch         = "2025-001T00:00:00",
@@ -67,7 +67,7 @@
         @test omm.body.segment.data.epoch == NanoDate("2025-01-01T00:00:00")
     end
 
-    @testset "Leap year day 366 = December 31" begin
+    @testset "Leap Year Day 366 = December 31" begin
         # 2024 is a leap year; 2024-366 = 2024-12-31.
         xml = _minimal_omm_xml(;
             creation_date = "2024-366T12:00:00",
@@ -80,13 +80,13 @@
         @test omm.body.segment.data.epoch == NanoDate("2024-12-31T12:00:00")
     end
 
-    @testset "Invalid ordinal days" begin
+    @testset "Invalid Ordinal Days" begin
         @test_throws ArgumentError parse_omm(_minimal_omm_xml(epoch = "2025-000T00:00:00"))
         @test_throws ArgumentError parse_omm(_minimal_omm_xml(epoch = "2025-366T00:00:00"))
         @test_throws ArgumentError parse_omm(_minimal_omm_xml(epoch = "2024-367T00:00:00"))
     end
 
-    @testset "Empty dates" begin
+    @testset "Empty Dates" begin
         creation_xml = replace(
             _minimal_omm_xml(),
             "<CREATION_DATE>2025-12-30T23:36:37</CREATION_DATE>" =>
@@ -105,7 +105,7 @@
         @test_throws ArgumentError write_omm(IOBuffer(), permissive_omm)
     end
 
-    @testset "Ordinal format without fractional seconds" begin
+    @testset "Ordinal Format Without Fractional Seconds" begin
         xml = _minimal_omm_xml(;
             creation_date = "2025-060T12:30:45",
             epoch         = "2025-060T12:30:45",
@@ -118,7 +118,7 @@
         @test omm.body.segment.data.epoch == NanoDate("2025-03-01T12:30:45")
     end
 
-    @testset "Ref frame epoch in ordinal format" begin
+    @testset "Ref Frame Epoch in Ordinal Format" begin
         xml = _minimal_omm_xml(;
             ref_frame_epoch = "2025-200T00:00:00",
         )
@@ -129,7 +129,7 @@
         @test omm.body.segment.metadata.ref_frame_epoch == NanoDate("2025-07-19T00:00:00")
     end
 
-    @testset "Round-trip preserves calendar format values" begin
+    @testset "Round-Trip Preserves Calendar Format Values" begin
         xml = _minimal_omm_xml(;
             creation_date = "2025-365T23:36:37Z",
             epoch         = "2025-365T18:12:04.533984Z",
@@ -147,7 +147,7 @@
         @test omm_reparsed.body.segment.data.epoch == omm.body.segment.data.epoch
     end
 
-    @testset "Nanosecond round-trip" begin
+    @testset "Nanosecond Round-Trip" begin
         epoch = NanoDate("2025-12-30T18:12:04.123456789")
         omm = parse_omm(_minimal_omm_xml(epoch = string(epoch)))
         buf = IOBuffer()

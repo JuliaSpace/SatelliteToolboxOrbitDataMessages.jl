@@ -4,19 +4,19 @@
 #
 ############################################################################################
 
-@testset "User-defined parameters" verbose = true begin
-    # == No userDefinedParameters section -> nothing =======================================
+@testset "User-Defined Parameters" verbose = true begin
+    # == No userDefinedParameters Section -> nothing =======================================
 
-    @testset "No section" begin
+    @testset "No Section" begin
         xml = _minimal_omm_xml()
         omm = parse_omm(xml)
         @test !isnothing(omm)
         @test isnothing(omm.body.segment.data.user_defined_parameters)
     end
 
-    # == Missing parameter attribute =======================================================
+    # == Missing Parameter Attribute =======================================================
 
-    @testset "Missing parameter attribute" begin
+    @testset "Missing Parameter Attribute" begin
         ud_xml = """
         <userDefinedParameters><USER_DEFINED>my_value</USER_DEFINED></userDefinedParameters>
         """
@@ -24,9 +24,9 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == Duplicate keys preserved ==========================================================
+    # == Duplicate Keys Preserved ==========================================================
 
-    @testset "Duplicate keys" begin
+    @testset "Duplicate Keys" begin
         ud_xml = """
         <userDefinedParameters>
           <USER_DEFINED parameter="KEY">val1</USER_DEFINED>

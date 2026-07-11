@@ -67,12 +67,12 @@ OrbitMeanElementsMessage:
     result = sprint(show, MIME("text/plain"), omm)
     @test result == expected
 
-    # == Spacecraft parameters populated ===================================================
+    # == Spacecraft Parameters Populated ===================================================
 
     creation_date = NanoDate("2025-12-30T23:36:37")
     epoch         = NanoDate("2025-12-30T18:12:04.533984")
 
-    @testset "Spacecraft parameters shown" begin
+    @testset "Spacecraft Parameters Shown" begin
         omm = OrbitMeanElementsMessage(;
             creation_date        = creation_date,
             originator           = "TEST",
@@ -100,9 +100,9 @@ OrbitMeanElementsMessage:
         @test occursin("100.0", result)
     end
 
-    # == No TLE parameters -> section omitted ==============================================
+    # == No TLE Parameters -> Section Omitted ==============================================
 
-    @testset "No TLE parameters" begin
+    @testset "No TLE Parameters" begin
         omm = OrbitMeanElementsMessage(;
             creation_date        = creation_date,
             originator           = "TEST",
@@ -125,9 +125,9 @@ OrbitMeanElementsMessage:
         @test !occursin("TLE Related Parameters", result)
     end
 
-    # == mean_motion_dot = nothing -> row omitted ==========================================
+    # == mean_motion_dot = nothing -> Row Omitted ==========================================
 
-    @testset "Omitted rows" begin
+    @testset "Omitted Rows" begin
         omm = OrbitMeanElementsMessage(;
             creation_date        = creation_date,
             originator           = "TEST",
@@ -151,9 +151,9 @@ OrbitMeanElementsMessage:
         @test !occursin("Mean Motion)/∂t", result)
     end
 
-    # == No user-defined parameters -> section omitted =====================================
+    # == No User-Defined Parameters -> Section Omitted =====================================
 
-    @testset "No user-defined parameters" begin
+    @testset "No User-Defined Parameters" begin
         omm = OrbitMeanElementsMessage(;
             creation_date        = creation_date,
             originator           = "TEST",
@@ -176,9 +176,9 @@ OrbitMeanElementsMessage:
         @test !occursin("User-Defined Parameters", result)
     end
 
-    # == Fully populated display ========================================================
+    # == Fully Populated Display ========================================================
 
-    @testset "All optional sections" begin
+    @testset "All Optional Sections" begin
         covariance_matrix = OmmCovarianceMatrix(;
             comments = ["Covariance comment"],
             cov_ref_frame = "RTN",
@@ -294,9 +294,9 @@ OrbitMeanElementsMessage:
         @test !occursin("∂²(Mean Motion)/∂t²", result)
     end
 
-    # == Color smoke test ==================================================================
+    # == Color Smoke Test ==================================================================
 
-    @testset "Color output" begin
+    @testset "Color Output" begin
         omm = read_omm(_FIXTURE_FILE)
 
         buf = IOContext(IOBuffer(), :color => true)

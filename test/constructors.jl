@@ -9,9 +9,9 @@
     creation_date  = NanoDate("2025-12-30T23:36:37")
     epoch          = NanoDate("2025-12-30T18:12:04.533984")
 
-    # == Full keyword constructor -> v3.0 ==================================================
+    # == Full Keyword Constructor -> v3.0 ==================================================
 
-    @testset "Full keyword constructor" begin
+    @testset "Full Keyword Constructor" begin
         omm = OrbitMeanElementsMessage(;
             header_comments  = ["Test header", "Second header comment"],
             classification   = "UNCLASSIFIED",
@@ -48,9 +48,9 @@
         @test omm.body.segment.data.norad_cat_id == 12345
     end
 
-    # == Minimal keyword constructor =======================================================
+    # == Minimal Keyword Constructor =======================================================
 
-    @testset "Minimal keyword constructor" begin
+    @testset "Minimal Keyword Constructor" begin
         omm = OrbitMeanElementsMessage(;
             creation_date        = creation_date,
             originator           = "TEST",
@@ -81,9 +81,9 @@
         @test omm.body.segment.data.user_defined_parameters === nothing
     end
 
-    # == Reconstruction override one field =================================================
+    # == Reconstruction Override One Field =================================================
 
-    @testset "Reconstruction override one field" begin
+    @testset "Reconstruction Override One Field" begin
         omm = OrbitMeanElementsMessage(;
             creation_date        = creation_date,
             originator           = "TEST",
@@ -112,9 +112,9 @@
         @test omm2.body.segment.data.eccentricity == omm.body.segment.data.eccentricity
     end
 
-    # == Reconstruction override multiple fields ===========================================
+    # == Reconstruction Override Multiple Fields ===========================================
 
-    @testset "Reconstruction override multiple fields" begin
+    @testset "Reconstruction Override Multiple Fields" begin
         omm = OrbitMeanElementsMessage(;
             creation_date        = creation_date,
             originator           = "TEST",
@@ -147,7 +147,7 @@
         @test omm2.body.segment.data.raan == omm.body.segment.data.raan
     end
 
-    @testset "Exactly one mean-motion representation" begin
+    @testset "Exactly One Mean-Motion Representation" begin
         kwargs = (;
             creation_date,
             originator = "TEST",

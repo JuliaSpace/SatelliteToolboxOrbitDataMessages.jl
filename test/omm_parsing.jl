@@ -78,7 +78,7 @@
     @test user_params["GP_ID"]          == "307230979"
 end
 
-@testset "Repeated and separated comments" begin
+@testset "Repeated and Separated Comments" begin
     xml = _minimal_omm_xml()
     xml = replace(
         xml,
@@ -110,7 +110,7 @@ end
     @test omm.body.segment.data.mean_motion_ddot === nothing
 end
 
-@testset "AbstractString input" begin
+@testset "AbstractString Input" begin
     wrapped = "x" * _minimal_omm_xml() * "y"
     xml = SubString(wrapped, 2, lastindex(wrapped) - 1)
 

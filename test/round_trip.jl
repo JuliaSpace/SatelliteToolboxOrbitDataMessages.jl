@@ -4,13 +4,13 @@
 #
 ############################################################################################
 
-@testset "Round-trip" verbose = true begin
+@testset "Round-Trip" verbose = true begin
     omm_file = read_omm(_FIXTURE_FILE)
     xml_str  = _fixture_omm_xml()
 
-    # == parse_omm / parse_omms / parse_odm / read_omm agree ===============================
+    # == parse_omm / parse_omms / parse_odm / read_omm Agree ===============================
 
-    @testset "All parsers agree" begin
+    @testset "All Parsers Agree" begin
         omm_parse_omm  = parse_omm(xml_str)
         omm_parse_omms = parse_omms(xml_str)
         vodm_parse_odm = parse_odm(xml_str)
@@ -43,9 +43,9 @@
         end
     end
 
-    # == write_omm + re-parse ==============================================================
+    # == write_omm + Re-Parse ==============================================================
 
-    @testset "write_omm round-trip" begin
+    @testset "write_omm Round-Trip" begin
         buf = IOBuffer()
         write_omm(buf, omm_file)
         written_xml = String(take!(buf))
@@ -91,9 +91,9 @@
         @test ud1 == ud2
     end
 
-    # == write_odm (vector form) + re-parse ================================================
+    # == write_odm (Vector Form) + Re-Parse ================================================
 
-    @testset "write_odm vector round-trip" begin
+    @testset "write_odm Vector Round-Trip" begin
         buf = IOBuffer()
         write_odm(buf, [omm_file])
         written_xml = String(take!(buf))

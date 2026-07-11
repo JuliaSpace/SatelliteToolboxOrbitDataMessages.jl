@@ -4,7 +4,7 @@
 #
 ############################################################################################
 
-@testset "Structural equality" begin
+@testset "Structural Equality" begin
     omm_1 = parse_omm(_fixture_omm_xml())
     omm_2 = parse_omm(_fixture_omm_xml())
 

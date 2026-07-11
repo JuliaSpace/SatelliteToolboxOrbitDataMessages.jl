@@ -4,15 +4,15 @@
 #
 ############################################################################################
 
-@testset "Spacetrack fetcher (online)" verbose = true begin
+@testset "Spacetrack Fetcher (Online)" verbose = true begin
     if !haskey(ENV, "HAS_SPACETRACK")
         @test_skip "Set HAS_SPACETRACK=1 to run online Spacetrack tests"
         return
     end
 
-    # == Bad credentials ===================================================================
+    # == Bad Credentials ===================================================================
 
-    @testset "Bad credentials" begin
+    @testset "Bad Credentials" begin
         f = create_omm_fetcher(
             SpacetrackOmmFetcher;
             username = "bad_user_$(randstring(8))",
@@ -22,7 +22,7 @@
         @test isnothing(f)
     end
 
-    # == Fetch by satellite name ===========================================================
+    # == Fetch by Satellite Name ===========================================================
 
     @testset "Fetch AMAZONIA 1" begin
         f = create_omm_fetcher(SpacetrackOmmFetcher)
@@ -40,9 +40,9 @@
         end
     end
 
-    # == Fetch by satellite_number + interval ==============================================
+    # == Fetch by satellite_number + Interval ==============================================
 
-    @testset "Fetch by number + interval" begin
+    @testset "Fetch by Number + Interval" begin
         f = create_omm_fetcher(SpacetrackOmmFetcher)
 
         if !isnothing(f)
@@ -63,9 +63,9 @@
         end
     end
 
-    # == Complex predicates ================================================================
+    # == Complex Predicates ================================================================
 
-    @testset "Complex predicates" begin
+    @testset "Complex Predicates" begin
         f = create_omm_fetcher(SpacetrackOmmFetcher)
 
         if !isnothing(f)

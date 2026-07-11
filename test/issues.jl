@@ -7,17 +7,17 @@
 @testset "Issues" verbose = true begin
     omm = read_omm(_FIXTURE_FILE)
 
-    # == Display snapshot (covered by display.jl, kept for reference) ======================
+    # == Display Snapshot (Covered by display.jl, Kept for Reference) ======================
 
-    @testset "Display snapshot" begin
+    @testset "Display Snapshot" begin
         result = sprint(show, MIME("text/plain"), omm)
         @test occursin("OrbitMeanElementsMessage", result)
         @test occursin("AMAZONIA 1", result)
     end
 
-    # == write_omm XML snapshot ============================================================
+    # == write_omm XML Snapshot ============================================================
 
-    @testset "write_omm XML snapshot" begin
+    @testset "write_omm XML Snapshot" begin
         buf = IOBuffer()
         write_omm(buf, omm)
         out = String(take!(buf))

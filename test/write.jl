@@ -4,12 +4,12 @@
 #
 ############################################################################################
 
-@testset "Write structure" verbose = true begin
+@testset "Write Structure" verbose = true begin
     omm = read_omm(_FIXTURE_FILE)
 
-    # == XML declaration ===================================================================
+    # == XML Declaration ===================================================================
 
-    @testset "XML declaration" begin
+    @testset "XML Declaration" begin
         buf = IOBuffer()
         write_omm(buf, omm)
         out = String(take!(buf))
@@ -17,9 +17,9 @@
         @test occursin("encoding=\"UTF-8\"", out)
     end
 
-    # == OMM root version ==================================================================
+    # == OMM Root Version ==================================================================
 
-    @testset "OMM root version" begin
+    @testset "OMM Root Version" begin
         buf = IOBuffer()
         write_omm(buf, omm)
         out = String(take!(buf))
@@ -28,9 +28,9 @@
         @test occursin("id=\"CCSDS_OMM_VERS\"", out)
     end
 
-    # == NDM wrapper schema (write_odm) ====================================================
+    # == NDM Wrapper Schema (write_odm) ====================================================
 
-    @testset "NDM wrapper schema" begin
+    @testset "NDM Wrapper Schema" begin
         buf = IOBuffer()
         write_odm(buf, omm)
         out = String(take!(buf))
@@ -38,9 +38,9 @@
         @test occursin("xsi:noNamespaceSchemaLocation", out)
     end
 
-    # == Vector form =======================================================================
+    # == Vector Form =======================================================================
 
-    @testset "Vector form" begin
+    @testset "Vector Form" begin
         buf = IOBuffer()
         write_odm(buf, [omm, omm])
         out = String(take!(buf))
@@ -80,9 +80,9 @@
         @test !occursin("userDefinedParameters", out)
     end
 
-    # == user_defined attributes ===========================================================
+    # == user_defined Attributes ===========================================================
 
-    @testset "user_defined attributes" begin
+    @testset "user_defined Attributes" begin
         minimal = OrbitMeanElementsMessage(;
             creation_date        = NanoDate("2025-01-01T00:00:00"),
             originator           = "T",

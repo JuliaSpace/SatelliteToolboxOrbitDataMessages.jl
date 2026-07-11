@@ -5,23 +5,23 @@
 ############################################################################################
 
 @testset "Errors" verbose = true begin
-    # == Missing id attribute ==============================================================
+    # == Missing id Attribute ==============================================================
 
-    @testset "Missing id attribute" begin
+    @testset "Missing id Attribute" begin
         xml = replace(_minimal_omm_xml(), "id=\"CCSDS_OMM_VERS\" " => "")
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == Unsupported version ===============================================================
+    # == Unsupported Version ===============================================================
 
-    @testset "Unsupported version" begin
+    @testset "Unsupported Version" begin
         xml = _minimal_omm_xml(omm_version="1.0")
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == Missing header ====================================================================
+    # == Missing Header ====================================================================
 
-    @testset "Missing header" begin
+    @testset "Missing Header" begin
         xml = """
         <?xml version="1.0" encoding="UTF-8"?>
         <omm id="CCSDS_OMM_VERS" version="3.0">
@@ -46,9 +46,9 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == Missing body ======================================================================
+    # == Missing Body ======================================================================
 
-    @testset "Missing body" begin
+    @testset "Missing Body" begin
         xml = """
         <?xml version="1.0" encoding="UTF-8"?>
         <omm id="CCSDS_OMM_VERS" version="3.0">
@@ -61,9 +61,9 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == Missing segment ===================================================================
+    # == Missing Segment ===================================================================
 
-    @testset "Missing segment" begin
+    @testset "Missing Segment" begin
         xml = """
         <?xml version="1.0" encoding="UTF-8"?>
         <omm id="CCSDS_OMM_VERS" version="3.0">
@@ -77,9 +77,9 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == Multiple segments =================================================================
+    # == Multiple Segments =================================================================
 
-    @testset "Multiple segments" begin
+    @testset "Multiple Segments" begin
         seg = "<segment><metadata>
             <OBJECT_NAME>AMAZONIA 1</OBJECT_NAME>
             <OBJECT_ID>2021-015A</OBJECT_ID>
@@ -124,7 +124,7 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == Missing both SEMI_MAJOR_AXIS and MEAN_MOTION ======================================
+    # == Missing Both SEMI_MAJOR_AXIS and MEAN_MOTION ======================================
 
     @testset "Missing SEMI_MAJOR_AXIS and MEAN_MOTION" begin
         xml = _minimal_omm_xml(semi_major_axis="", mean_motion="")
@@ -136,7 +136,7 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    @testset "Incomplete TLE parameters" begin
+    @testset "Incomplete TLE Parameters" begin
         bstar_only = "<tleParameters><BSTAR>1e-4</BSTAR></tleParameters>"
         missing_drag = """
         <tleParameters>
@@ -180,9 +180,9 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    # == Unknown root tag ==================================================================
+    # == Unknown Root Tag ==================================================================
 
-    @testset "Unknown root tag" begin
+    @testset "Unknown Root Tag" begin
         xml = """
         <?xml version="1.0" encoding="UTF-8"?>
         <foo><bar/></foo>

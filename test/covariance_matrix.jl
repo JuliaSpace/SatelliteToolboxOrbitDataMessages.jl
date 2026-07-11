@@ -33,8 +33,8 @@ const _COV_XML = """
 </covarianceMatrix>
 """
 
-@testset "Covariance matrix" verbose = true begin
-    @testset "Parse covariance matrix" begin
+@testset "Covariance Matrix" verbose = true begin
+    @testset "Parse Covariance Matrix" begin
         xml = _minimal_omm_xml(; covariance_matrix_xml = _COV_XML)
         omm = parse_omm(xml)
 
@@ -67,7 +67,7 @@ const _COV_XML = """
         @test cov.cz_dot_z_dot   == 21.0
     end
 
-    @testset "Parse covariance matrix without optional fields" begin
+    @testset "Parse Covariance Matrix Without Optional Fields" begin
         cov_xml = """
         <covarianceMatrix>
             <CX_X>1.0</CX_X>
@@ -106,7 +106,7 @@ const _COV_XML = """
         @test cov.cz_dot_z_dot == 21.0
     end
 
-    @testset "Missing covariance matrix defaults to nothing" begin
+    @testset "Missing Covariance Matrix Defaults to nothing" begin
         xml = _minimal_omm_xml()
         omm = parse_omm(xml)
 
@@ -114,7 +114,7 @@ const _COV_XML = """
         @test isnothing(omm.body.segment.data.covariance_matrix)
     end
 
-    @testset "Missing required element throws" begin
+    @testset "Missing Required Element Throws" begin
         cov_xml = """
         <covarianceMatrix>
             <CX_X>1.0</CX_X>
@@ -144,7 +144,7 @@ const _COV_XML = """
         @test_throws ArgumentError parse_omm(xml)
     end
 
-    @testset "Write covariance matrix round-trip" begin
+    @testset "Write Covariance Matrix Round-Trip" begin
         xml = _minimal_omm_xml(; covariance_matrix_xml = _COV_XML)
         omm = parse_omm(xml)
 
@@ -185,7 +185,7 @@ const _COV_XML = """
         @test cov1.cz_dot_z_dot   == cov2.cz_dot_z_dot
     end
 
-    @testset "Write without covariance matrix" begin
+    @testset "Write Without Covariance Matrix" begin
         xml = _minimal_omm_xml()
         omm = parse_omm(xml)
 
