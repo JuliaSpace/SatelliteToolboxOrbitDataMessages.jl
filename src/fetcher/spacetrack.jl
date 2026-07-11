@@ -40,7 +40,7 @@ function Base.show(io::IO, fetcher::SpacetrackOmmFetcher)
     expires = _spacetrack__cookie_expire_date(fetcher.cookiejar)
     Δt = isnothing(expires) ?
         "Unknown" :
-        Dates.canonicalize(Dates.CompoundPeriod(expires - Dates.now(Dates.UTC)))
+        Dates.canonicalize(round(expires - Dates.now(Dates.UTC), Dates.Second))
     print(io, "SpacetrackOmmFetcher: $(fetcher.username) (Login expires in $Δt)")
 end
 
@@ -51,7 +51,7 @@ end
 """
     create_omm_fetcher(::Type{SpacetrackOmmFetcher}; kwargs...) -> SpacetrackOmmFetcher
 
-Create an Orbit Mean-Elements Message (OMM) fetcher from Spacetrack service.
+Create an Orbit Mean-Elements Message (OMM) fetcher from the Space-Track service.
 
 !!! note
 
@@ -79,6 +79,11 @@ Create an Orbit Mean-Elements Message (OMM) fetcher from Spacetrack service.
 - `force_login::Bool`: If `true`, the user will be prompted to input the password even if a
     valid cookie is found.
     (**Default**: `false`)
+
+# Returns
+
+- `SpacetrackOmmFetcher`: The created fetcher. If the login fails, an
+    [`OdmLoginError`](@ref) is thrown.
 """
 function create_omm_fetcher(
     ::Type{SpacetrackOmmFetcher};
@@ -108,12 +113,7 @@ function create_omm_fetcher(
         end
 
         # Try to login. The plaintext is materialized only inside _spacetrack__login.
-        success, cookiejar = _spacetrack__login(username, password_sb)
-
-        if !success || isnothing(cookiejar)
-            @error "Could not login to Space-Track. Please check your credentials."
-            return nothing
-        end
+        cookiejar = _spacetrack__login(username, password_sb)
     else
         @info "A valid login cookie was found. Using it to fetch data."
     end
@@ -122,16 +122,14 @@ function create_omm_fetcher(
 end
 
 """
-    fetch_omms(
-        fetcher::SpacetrackOmmFetcher;
-        kwargs...
-    ) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
+    fetch_omms(fetcher::SpacetrackOmmFetcher; kwargs...) -> Vector{OrbitMeanElementsMessage}
 
-Fetch Orbit Mean-Elements Messages (OMM) from the Spacetrack using `fetch` with the
+Fetch Orbit Mean-Elements Messages (OMM) from the Space-Track service using the query
 parameters in `kwargs...`.
 
-This function returns a `Vector{OrbitMeanElementsMessage}` with the fetched OMMs. If an
-error is found, it returns `nothing`.
+This function returns a `Vector{OrbitMeanElementsMessage}` with the fetched OMMs. If the
+login cookie expired, an [`OdmLoginError`](@ref) is thrown. If the request to the service
+fails, an [`OdmFetchError`](@ref) is thrown.
 
 !!! warning
 
@@ -144,7 +142,7 @@ error is found, it returns `nothing`.
 
 # Keywords
 
-- `interval::Union{Nothing, Tuple{Union{Date, DateTime}, Union{Date, DateTime}}`: A tuple
+- `interval::Union{Nothing, Tuple{Union{Date, DateTime}, Union{Date, DateTime}}}`: A tuple
     with the start and end date of the interval to fetch the OMMs. This interval is appended
     to the predicates using the `EPOCH` field. If `nothing`, no interval is used. Notice
     that if the space data is `:gp` and an interval is specified, the space data is
@@ -185,6 +183,9 @@ error is found, it returns `nothing`.
     see the
     [Space-Track API documentation](https://www.space-track.org/documentation#/api).
     (**Default**: `:gp`)
+- `strict::Bool`: Require schema-defined XML tag casing when parsing the fetched OMMs. For
+    more information, see [`parse_omms`](@ref).
+    (**Default**: `true`)
 
 # Extended Help
 
@@ -302,7 +303,7 @@ julia> f = create_omm_fetcher(SpacetrackOmmFetcher)
 Space-Track username: username@email.com
 Space-Track password:
 [ Info: Successfully logged in to Space-Track.
-SpacetrackOmmFetcher: username@email.com (Login expires in 4 hours, 59 minutes, 59 seconds, 999 milliseconds)
+SpacetrackOmmFetcher: username@email.com (Login expires in 5 hours)
 ```
 
 Fetch all the OMMs for the SCD 1 satellite between June 19 and June 20, 2024.
@@ -332,12 +333,12 @@ function fetch_omms(
     satellite_name::Union{Nothing, AbstractString} = nothing,
     satellite_number::Union{Nothing, Integer} = nothing,
     space_data::Symbol = :gp,
+    strict::Bool = true,
 ) where {D1 <: Union{Date, DateTime}, D2 <: Union{Date, DateTime}, P}
     # Check if the cookie is still valid.
-    if !_spacetrack__is_cookie_valid(fetcher.cookiejar)
-        @error "The login cookie expired. Create a new fetcher instance to log in again."
-        return nothing
-    end
+    _spacetrack__is_cookie_valid(fetcher.cookiejar) || throw(OdmLoginError(
+        "The login cookie expired. Create a new fetcher instance to log in again."
+    ))
 
     space_data ∉ (:gp, :gp_history) && throw(ArgumentError(
         "Invalid space data: `$space_data`. It must be either `:gp` or `:gp_history`."
@@ -448,7 +449,9 @@ function fetch_omms(
     end
     raw_query = join(query_components)
 
-    isempty(raw_query) && return nothing
+    isempty(raw_query) && throw(ArgumentError(
+        "At least one query parameter must be provided."
+    ))
 
     space_data_str = string(space_data)
 
@@ -459,54 +462,46 @@ function fetch_omms(
 
     # == Fetch Data ========================================================================
 
-    try
-        response = HTTP.request(
+    response = try
+        HTTP.request(
             "GET",
             query_url,
             cookiejar = fetcher.cookiejar,
             cookies   = true,
         )
-
-        if response.status != 200
-            @error """
-                An error occurred during the data request:
-                HTTP Error Code : $(response.status)
-                Query URL       : $query_url
-                """
-            return nothing
-        end
-
-        omms = parse_omms(String(response.body))
-
-        # If the request is successful, we need to save the cookiejar because the expire
-        # period may have been updated.
-        _spacetrack__save_cookiejar(fetcher.cookiejar, fetcher.username)
-
-        return omms
-
     catch e
-        if e isa HTTP.Exceptions.HTTPError
-            if e isa HTTP.Exceptions.StatusError && e.status == 401
-                @error "Unauthorized access. Create a new fetcher instance to log in again."
+        if e isa HTTP.Exceptions.StatusError
+            if e.status == 401
                 _spacetrack__purge_cookiejar(fetcher.username)
-                return nothing
+                throw(OdmFetchError(
+                    "Unauthorized access. Create a new fetcher instance to log in again.";
+                    url = query_url,
+                    status = 401,
+                ))
             end
 
-            if e isa HTTP.Exceptions.StatusError
-                @error """
-                    An error occurred during the data request:
-                      HTTP Error Code : $(e.status)
-                      Query URL       : $query_url
-                    """
-            else
-                @error "The Space-Track request failed." query_url exception = e
-            end
-
-            return nothing
+            throw(OdmFetchError(
+                "An error occurred during the Space-Track data request.";
+                url = query_url,
+                status = e.status,
+            ))
+        elseif e isa HTTP.Exceptions.HTTPError
+            throw(OdmFetchError(
+                "The Space-Track request failed: $(typeof(e)).";
+                url = query_url,
+            ))
         end
 
         rethrow(e)
     end
+
+    omms = parse_omms(String(response.body); strict)
+
+    # If the request is successful, we need to save the cookiejar because the expire
+    # period may have been updated.
+    _spacetrack__save_cookiejar(fetcher.cookiejar, fetcher.username)
+
+    return omms
 end
 
 ############################################################################################
@@ -576,13 +571,13 @@ function _spacetrack__load_cookiejar(username::String)
 end
 
 """
-    _spacetrack__login(username::String, password::Base.SecretBuffer) -> Bool
+    _spacetrack__login(username::String, password::Base.SecretBuffer) -> HTTP.CookieJar
 
 Login to the Space-Track service using the provided `username` and `password`. The
 `password` is a `Base.SecretBuffer`; its plaintext is materialized only inside this
 function and shredded immediately after the request body is built. If the login is
-successful, it saves the cookies to the scratch space and returns `true`. If the login
-fails, it returns `false`.
+successful, it saves the cookies to the scratch space and returns the cookie jar.
+Otherwise, it throws an [`OdmLoginError`](@ref).
 """
 function _spacetrack__login(username::String, password::Base.SecretBuffer)
     try
@@ -613,28 +608,23 @@ function _spacetrack__login(username::String, password::Base.SecretBuffer)
         )
 
         # If the body contains "Failed", it means the login failed.
-        if occursin("Failed", String(response.body))
-            @error "Login failed: Invalid username or password."
-            return false, nothing
-        end
+        occursin("Failed", String(response.body)) && throw(OdmLoginError(
+            "Could not login to Space-Track: invalid username or password."
+        ))
 
         @info "Successfully logged in to Space-Track."
 
         # Save the cookie to the scratch space.
         _spacetrack__save_cookiejar(cookiejar, username)
 
-        return true, cookiejar
+        return cookiejar
 
     catch e
         if e isa HTTP.ExceptionRequest.StatusError
             msg = isnothing(e.response) ? "No server response" : String(e.response.body)
-            @error """
-                An error occurred during the login request:
-                  HTTP Error Code : $(e.status)
-                  Server message  : $msg
-                """
-
-            return false, nothing
+            throw(OdmLoginError(
+                "The Space-Track login request failed with HTTP status $(e.status): $msg"
+            ))
         end
 
         rethrow(e)

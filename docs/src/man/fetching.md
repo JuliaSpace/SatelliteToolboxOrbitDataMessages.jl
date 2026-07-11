@@ -17,8 +17,9 @@ The workflow is always the same:
 1. Create a fetcher with [`create_omm_fetcher`](@ref).
 2. Query the service with [`fetch_omms`](@ref).
 
-Both functions return a `Vector{OrbitMeanElementsMessage}` on success (possibly empty), or
-`nothing` if an error occurs.
+[`fetch_omms`](@ref) returns a `Vector{OrbitMeanElementsMessage}` on success (possibly
+empty). If the authentication fails or expires, an [`OdmLoginError`](@ref) is thrown. If
+the request to the service fails, an [`OdmFetchError`](@ref) is thrown.
 
 !!! note
 

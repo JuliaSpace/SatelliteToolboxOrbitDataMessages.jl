@@ -80,3 +80,10 @@
         end
     end
 end
+
+@testset "Celestrak Fetcher Exceptions" begin
+    # A connection-refused error must surface as an `OdmFetchError`.
+    f = create_omm_fetcher(CelestrakOmmFetcher; url = "http://127.0.0.1:9/gp.php")
+
+    @test_throws OdmFetchError fetch_omms(f; satellite_number = 25544)
+end

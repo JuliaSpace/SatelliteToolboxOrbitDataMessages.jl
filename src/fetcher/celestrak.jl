@@ -52,23 +52,38 @@ function create_omm_fetcher(
 end
 
 """
-    fetch_omms(
-        fetcher::CelestrakOmmFetcher;
-        kwargs...
-    ) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
+    fetch_omms(fetcher::CelestrakOmmFetcher; kwargs...) -> Vector{OrbitMeanElementsMessage}
 
-Fetch Orbit Mean-Elements Messages (OMM) from the Celestrak using `fetch` with the
+Fetch Orbit Mean-Elements Messages (OMM) from the Celestrak service using the query
 parameters in `kwargs...`.
 
 This function returns a `Vector{OrbitMeanElementsMessage}` with the fetched OMMs. If no
 matching OMM is found, an empty vector is returned. If an error prevents the request from
-succeeding, it returns `nothing`.
+succeeding, an [`OdmFetchError`](@ref) is thrown.
+
+# Keywords
+
+- `international_designator::Union{Nothing, AbstractString}`: International designator of
+    the satellite in the format `YYYY-NNN` or `YYYY-NNNP`.
+    (**Default**: `nothing`)
+- `satellite_number::Union{Nothing, Integer}`: NORAD catalog number of the satellite.
+    (**Default**: `nothing`)
+- `satellite_name::Union{Nothing, AbstractString}`: Name of the satellite.
+    (**Default**: `nothing`)
+- `strict::Bool`: Require schema-defined XML tag casing when parsing the fetched OMMs. For
+    more information, see [`parse_omms`](@ref). Celestrak currently emits empty required
+    OMM 2.0 header values, hence the relaxed default.
+    (**Default**: `false`)
+
+Exactly one of `international_designator`, `satellite_number`, and `satellite_name` must
+be provided.
 """
 function fetch_omms(
     fetcher::CelestrakOmmFetcher;
     international_designator::Union{Nothing, AbstractString} = nothing,
     satellite_number::Union{Nothing, Integer} = nothing,
     satellite_name::Union{Nothing, AbstractString} = nothing,
+    strict::Bool = false,
 )
 
     selector_count = count(!isnothing, (
@@ -102,7 +117,7 @@ function fetch_omms(
 
         m = match(r"^(\d{4})-(\d{1,3})([A-Z]*)$", international_designator)
 
-        isnothing(m) && return throw(ArgumentError(
+        isnothing(m) && throw(ArgumentError(
             "The international designator must have the format `YYYY-NNN` or `YYYY-NNNP`."
         ))
 
@@ -112,16 +127,12 @@ function fetch_omms(
         query_type  = "international designator"
         query_param = "INTDES=" * URIs.escapeuri(query_value)
 
-    elseif !isnothing(satellite_name)
+    else
         isempty(satellite_name) && throw(ArgumentError("The satellite name is empty."))
 
         query_value = satellite_name
         query_param = "NAME=" * URIs.escapeuri(query_value)
         query_type  = "satellite name"
-
-    else
-        throw(ArgumentError("No query information was provided."))
-
     end
 
     @info "Fetch OMMs from Celestrak using $query_type: \"$query_value\" ..."
@@ -133,49 +144,32 @@ function fetch_omms(
     # Fetch the data.
     @debug "Fetch URL: $url"
 
-    try
-        response = HTTP.request("GET", url)
-
-        if response.status != 200
-            @error """
-                An error occurred during the data request:
-                  HTTP Error Code : $(response.status)
-                  Query URL       : $url
-                """
-            return nothing
-        end
-
-        str = String(response.body)
-
-        # Check if some error occurred.
-        if !isnothing(match(r"No GP data found", str))
-            @warn "No OMM found."
-            return OrbitMeanElementsMessage[]
-
-        elseif !isnothing(match(r"Invalid query", str))
-            return throw(ErrorException("Invalid query: $query"))
-        end
-
-        # Celestrak currently emits empty required OMM 2.0 header values.
-        omms = parse_omms(str; strict = false)
-
-        return omms
-
+    response = try
+        HTTP.request("GET", url)
     catch e
-        if e isa HTTP.Exceptions.HTTPError
-            if e isa HTTP.Exceptions.StatusError
-                @error """
-                    An error occurred during the data request:
-                      HTTP Error Code : $(e.status)
-                      Query URL       : $url
-                    """
-            else
-                @error "The Celestrak request failed." query_url = url exception = e
-            end
-
-            return nothing
+        if e isa HTTP.Exceptions.StatusError
+            throw(OdmFetchError(
+                "An error occurred during the Celestrak data request.";
+                url = url,
+                status = e.status,
+            ))
+        elseif e isa HTTP.Exceptions.HTTPError
+            throw(OdmFetchError("The Celestrak request failed: $(typeof(e))."; url = url))
         end
 
         rethrow(e)
     end
+
+    str = String(response.body)
+
+    # Check if some error occurred.
+    if !isnothing(match(r"No GP data found", str))
+        @warn "No OMM found."
+        return OrbitMeanElementsMessage[]
+
+    elseif !isnothing(match(r"Invalid query", str))
+        throw(OdmFetchError("Invalid query: $query"; url = url))
+    end
+
+    return parse_omms(str; strict)
 end
