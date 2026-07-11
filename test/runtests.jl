@@ -11,46 +11,46 @@ include("helpers.jl")
 
 @testset "SatelliteToolboxOrbitDataMessages" verbose = true begin
     @testset "Parsing ODMs" verbose = true begin
-        include("omm_parsing.jl")
-        include("odm_parsing.jl")
-        include("round_trip.jl")
-        include("ndm_container.jl")
-        include("parsing_errors.jl")
-        include("case_insensitivity.jl")
-        include("optional_fields.jl")
-        include("user_defined_params.jl")
-        include("covariance_matrix.jl")
-        include("date_formats.jl")
+        include("parsing/omm.jl")
+        include("parsing/odm.jl")
+        include("parsing/ndm.jl")
+        include("parsing/errors.jl")
+        include("parsing/case_insensitivity.jl")
+        include("parsing/optional_fields.jl")
+        include("parsing/user_defined_parameters.jl")
+        include("parsing/covariance_matrix.jl")
+        include("parsing/date_formats.jl")
     end
 
     @testset "Constructors" verbose = true begin
-        include("constructors.jl")
+        include("interface/constructors.jl")
     end
 
     @testset "Equality" verbose = true begin
-        include("equality.jl")
+        include("interface/equality.jl")
     end
 
     @testset "Display" verbose = true begin
-        include("display.jl")
+        include("interface/display.jl")
     end
 
-    @testset "Write" verbose = true begin
-        include("write.jl")
+    @testset "Serialization" verbose = true begin
+        include("serialization/write.jl")
+        include("serialization/round_trip.jl")
     end
 
     @testset "Fetchers" verbose = true begin
-        include("fetcher/api.jl")
-        include("fetcher/celestrak.jl")
-        include("fetcher/spacetrack_offline.jl")
-        include("fetcher/spacetrack_online.jl")
+        include("fetchers/api.jl")
+        include("fetchers/celestrak.jl")
+        include("fetchers/spacetrack_offline.jl")
+        include("fetchers/spacetrack_online.jl")
     end
 
     @testset "TLE Extension" verbose = true begin
-        include("tle_extension.jl")
+        include("extensions/tle.jl")
     end
 
     @testset "Issues" verbose = true begin
-        include("issues.jl")
+        include("regressions/issues.jl")
     end
 end

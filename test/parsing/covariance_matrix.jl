@@ -4,35 +4,6 @@
 #
 ############################################################################################
 
-# Sample covariance matrix XML with all 21 elements and optional fields.
-const _COV_XML = """
-<covarianceMatrix>
-    <COMMENT>This is a covariance matrix</COMMENT>
-    <COV_REF_FRAME>ITRF</COV_REF_FRAME>
-    <CX_X>1.0</CX_X>
-    <CY_X>2.0</CY_X>
-    <CY_Y>3.0</CY_Y>
-    <CZ_X>4.0</CZ_X>
-    <CZ_Y>5.0</CZ_Y>
-    <CZ_Z>6.0</CZ_Z>
-    <CX_DOT_X>7.0</CX_DOT_X>
-    <CX_DOT_Y>8.0</CX_DOT_Y>
-    <CX_DOT_Z>9.0</CX_DOT_Z>
-    <CX_DOT_X_DOT>10.0</CX_DOT_X_DOT>
-    <CY_DOT_X>11.0</CY_DOT_X>
-    <CY_DOT_Y>12.0</CY_DOT_Y>
-    <CY_DOT_Z>13.0</CY_DOT_Z>
-    <CY_DOT_X_DOT>14.0</CY_DOT_X_DOT>
-    <CY_DOT_Y_DOT>15.0</CY_DOT_Y_DOT>
-    <CZ_DOT_X>16.0</CZ_DOT_X>
-    <CZ_DOT_Y>17.0</CZ_DOT_Y>
-    <CZ_DOT_Z>18.0</CZ_DOT_Z>
-    <CZ_DOT_X_DOT>19.0</CZ_DOT_X_DOT>
-    <CZ_DOT_Y_DOT>20.0</CZ_DOT_Y_DOT>
-    <CZ_DOT_Z_DOT>21.0</CZ_DOT_Z_DOT>
-</covarianceMatrix>
-"""
-
 @testset "Covariance Matrix" verbose = true begin
     @testset "Parse Covariance Matrix" begin
         xml = _minimal_omm_xml(; covariance_matrix_xml = _COV_XML)

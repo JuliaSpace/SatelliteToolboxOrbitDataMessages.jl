@@ -126,7 +126,7 @@
 
         # == ODM ===========================================================================
 
-        vodm = read_odm("ndm_example.xml")
+        vodm = read_odm(_NDM_FIXTURE_FILE)
         outfile, _ = mktemp()
         write_odm(outfile, vodm)
         vret = read_odm(outfile)

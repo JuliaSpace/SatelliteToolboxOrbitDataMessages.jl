@@ -1,11 +1,16 @@
 ## Description #############################################################################
 #
-# Test the parsing of Orbit Mean-Elements Messages (OMM).
+# Test the parsing of Orbit Data Messages (ODM).
 #
 ############################################################################################
 
-@testset "Parse OMM From File" verbose = true begin
-    omm = read_omm(joinpath(@__DIR__, "2025-12-30-Amazonia_1.xml"))
+@testset "Parse ODM From File" verbose = true begin
+    odm = read_odm(_FIXTURE_FILE)
+
+    @test odm isa Vector{OrbitDataMessage}
+    @test length(odm) == 1
+
+    omm = first(odm)
 
     # == Header Fields =====================================================================
     @test omm.version               == v"3.0"
@@ -78,48 +83,14 @@
     @test user_params["GP_ID"]          == "307230979"
 end
 
-@testset "Repeated and Separated Comments" begin
-    xml = _minimal_omm_xml()
-    xml = replace(
-        xml,
-        "<header>" => "<header><COMMENT>header 1</COMMENT><COMMENT>header 2</COMMENT>",
-        "<data>" => "<data><COMMENT>data 1</COMMENT><COMMENT>data 2</COMMENT>",
-        "<meanElements>" =>
-            "<meanElements><COMMENT>elements 1</COMMENT><COMMENT>elements 2</COMMENT>",
-    )
-    omm = parse_omm(xml)
+@testset "Parse ODM From IO" verbose = true begin
+    io = open(_FIXTURE_FILE, "r")
+    odm = read_odm(io)
 
-    @test omm.header.comments == ["header 1", "header 2"]
-    @test omm.body.segment.data.comments == ["data 1", "data 2"]
-    @test omm.body.segment.data.mean_elements_comments == ["elements 1", "elements 2"]
-end
+    @test odm isa Vector{OrbitDataMessage}
+    @test length(odm) == 1
 
-@testset "BTERM and AGOM" begin
-    tle_xml = """
-    <tleParameters>
-      <BTERM>0.0125</BTERM>
-      <MEAN_MOTION_DOT>0.1</MEAN_MOTION_DOT>
-      <AGOM>0.025</AGOM>
-    </tleParameters>
-    """
-    omm = parse_omm(_minimal_omm_xml(tle_params_xml = tle_xml))
-
-    @test omm.body.segment.data.bterm == 0.0125
-    @test omm.body.segment.data.bstar === nothing
-    @test omm.body.segment.data.agom == 0.025
-    @test omm.body.segment.data.mean_motion_ddot === nothing
-end
-
-@testset "AbstractString Input" begin
-    wrapped = "x" * _minimal_omm_xml() * "y"
-    xml = SubString(wrapped, 2, lastindex(wrapped) - 1)
-
-    @test parse_omm(xml).body.segment.metadata.object_name == "AMAZONIA 1"
-end
-
-@testset "Parse OMM From IO" verbose = true begin
-    io = open(joinpath(@__DIR__, "2025-12-30-Amazonia_1.xml"), "r")
-    omm = read_omm(io)
+    omm = first(odm)
 
     # == Header Fields =====================================================================
     @test omm.version               == v"3.0"
