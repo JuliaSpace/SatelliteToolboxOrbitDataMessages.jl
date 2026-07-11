@@ -111,4 +111,15 @@
         @test occursin("parameter=\"MY_KEY\"", out)
         @test occursin("my_value", out)
     end
+
+    # == Compare Against Reference File ====================================================
+
+    @testset "Compare Against Reference File" begin
+        vodm = read_odm("ndm_example.xml")
+        outfile, _ = mktemp()
+        write_odm(outfile, vodm)
+        vret = read_odm(outfile)
+
+        @test vret == vodm
+    end
 end
