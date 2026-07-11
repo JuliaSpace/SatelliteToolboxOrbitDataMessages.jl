@@ -115,11 +115,27 @@
     # == Compare Against Reference File ====================================================
 
     @testset "Compare Against Reference File" begin
+        # == OMM ===========================================================================
+
+        omm = read_omm(_FIXTURE_FILE)
+        outfile, _ = mktemp()
+        write_omm(outfile, omm)
+        ret = read_omm(outfile)
+
+        @test ret == omm
+
+        # == ODM ===========================================================================
+
         vodm = read_odm("ndm_example.xml")
         outfile, _ = mktemp()
         write_odm(outfile, vodm)
         vret = read_odm(outfile)
 
         @test vret == vodm
+
+        outfile, _ = mktemp()
+        write_odm(outfile, first(vodm))
+        vret = read_odm(outfile)
+        @test first(vret) == first(vodm)
     end
 end
