@@ -48,7 +48,8 @@ The CCSDS 502.0-B-3 standard allows two formats for absolute time tags and epoch
 function only needs to convert the ordinal form before delegating to `NanoDate`.
 """
 function _parse_ndm_date(str::AbstractString)
-    # Try the calendar format first (the common case).
+    # Check for the ordinal day-of-year format. If it does not match, fall back to the
+    # calendar format (the common case), which `NanoDate` handles natively.
     m = match(r"^(\d{4})-(\d{3})T(.*)$", str)
 
     isnothing(m) && return NanoDate(str)

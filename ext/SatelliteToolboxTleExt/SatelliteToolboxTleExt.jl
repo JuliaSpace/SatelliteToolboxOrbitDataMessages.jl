@@ -113,10 +113,11 @@ function _omm_object_id_to_tle_intl_designator(object_id::String)
     # If the pattern does not match, return as-is (fallback).
     isnothing(m) && return obj_id
 
-    # Obtain the captures.
+    # Obtain the captures. The piece group `([A-Z]*)` always matches, possibly as an empty
+    # string.
     year       = m.captures[1]
     launch_num = m.captures[2]
-    piece      = something(m.captures[3], "")
+    piece      = m.captures[3]
 
     # Take last 2 digits of year.
     year_2digit = @views year[3:4]

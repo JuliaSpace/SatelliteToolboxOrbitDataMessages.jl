@@ -100,7 +100,7 @@ function _add_omm_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
 
     foreach(comment -> _xml_add_tag!(header_node, "COMMENT", comment), header.comments)
     _xml_add_tag!(header_node, "CLASSIFICATION", header.classification)
-    _xml_add_tag!(header_node, "CREATION_DATE",  omm.header.creation_date)
+    _xml_add_tag!(header_node, "CREATION_DATE",  header.creation_date)
     _xml_add_tag!(header_node, "ORIGINATOR",     header.originator)
     _xml_add_tag!(header_node, "MESSAGE_ID",     header.message_id)
 
@@ -191,7 +191,7 @@ function _add_omm_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
 
     isempty(children(tle_params_node)) || push!(data_node, tle_params_node)
 
-    # .. Covariance Matrix ................................................................
+    # .. Covariance Matrix .................................................................
 
     if !isnothing(data.covariance_matrix)
         cov = data.covariance_matrix

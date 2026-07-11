@@ -1,4 +1,3 @@
-
 ## Description #############################################################################
 #
 # Read Orbit Data Messages (ODM) from files.

@@ -45,8 +45,8 @@ end
 """
     parse_omms(str::AbstractString; kwargs...) -> Vector{OrbitMeanElementsMessage}
 
-Parse a set of Orbit Mean-Elements Messages (OMM) string `str` and return the parsed
-messages. The input format must be XML.
+Parse a set of Orbit Mean-Elements Messages (OMM) in the string `str` and return the
+parsed messages. The input format must be XML.
 
     parse_omms(xml::Cursor; kwargs...) -> Vector{OrbitMeanElementsMessage}
 
@@ -131,7 +131,7 @@ function _parse_omm(xml::XML.Cursor, strict::Bool)
         strict ? id == "CCSDS_OMM_VERS" : lowercase(id) == "ccsds_omm_vers"
     )
     !valid_id && throw(ArgumentError(
-        "The OMM element is missing the required `id = CCSDS_OMM_VERSION` attribute."
+        "The OMM element is missing the required `id = CCSDS_OMM_VERS` attribute."
     ))
 
     version_attribute = get(xml, "version", nothing)
@@ -628,8 +628,7 @@ end
 Parse an OMM `spacecraftParameters` section at the cursor's current position.
 """
 function _parse_omm_spacecraft_parameters(xml::XML.Cursor, strict::Bool)
-    result = _empty_omm_spacecraft_parameters()
-    comments = result.spacecraft_parameters_comments
+    comments = String[]
     mass = nothing
     solar_rad_area = nothing
     solar_rad_coeff = nothing

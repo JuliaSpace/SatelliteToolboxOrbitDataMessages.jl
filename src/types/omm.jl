@@ -124,7 +124,7 @@ end
     drag_area::Union{Float64, Nothing} = nothing
     drag_coeff::Union{Float64, Nothing} = nothing
 
-    # == TLE Related Parameters ===========================================================
+    # == TLE Related Parameters ============================================================
 
     tle_parameters_comments::Vector{String} = String[]
     ephemeris_type::Union{Int, Nothing} = nothing
@@ -346,7 +346,7 @@ function OrbitMeanElementsMessage(
     time_system::String,
     mean_element_theory::String,
 
-    # == Data =============================================================================
+    # == Data ==============================================================================
 
     # -- Mean Keplerian Elements -----------------------------------------------------------
 
@@ -385,7 +385,7 @@ function OrbitMeanElementsMessage(
     mean_motion_ddot::Union{Float64, Nothing} = nothing,
     agom::Union{Float64, Nothing} = nothing,
 
-    # -- Covariance Matrix ----------------------------------------------------------------
+    # -- Covariance Matrix -----------------------------------------------------------------
 
     covariance_matrix::Union{OmmCovarianceMatrix, Nothing} = nothing,
 
