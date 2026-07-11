@@ -43,4 +43,48 @@
         @test !isnothing(omms)
         @test length(omms) == 1
     end
+
+    # == Unsupported ODMs ==================================================================
+
+    opm_elem = """
+    <opm id="CCSDS_OPM_VERS" version="3.0"><header/><body/></opm>
+    """
+    oem_elem = """
+    <oem id="CCSDS_OEM_VERS" version="3.0"><header/><body/></oem>
+    """
+    ocm_elem = """
+    <ocm id="CCSDS_OCM_VERS" version="3.0"><header/><body/></ocm>
+    """
+
+    opm_warning = "We do not support Orbit Parameter Messages (OPM) yet."
+    oem_warning = "We do not support Orbit Ephemeris Messages (OEM) yet."
+    ocm_warning = "We do not support Orbit Comprehensive Messages (OCM) yet."
+
+    @testset "Unsupported Stand-Alone ODMs" begin
+        @test_logs (:warn, opm_warning) @test isempty(parse_odm(opm_elem))
+        @test_logs (:warn, oem_warning) @test isempty(parse_odm(oem_elem))
+        @test_logs (:warn, ocm_warning) @test isempty(parse_odm(ocm_elem))
+
+        @test_logs (:warn, opm_warning) @test isempty(parse_omms(opm_elem))
+        @test_logs (:warn, oem_warning) @test isempty(parse_omms(oem_elem))
+        @test_logs (:warn, ocm_warning) @test isempty(parse_omms(ocm_elem))
+    end
+
+    # == Mixed NDM =========================================================================
+
+    @testset "Mixed NDM Skips Unsupported ODMs" begin
+        mixed_ndm = _ndm_xml(opm_elem, omm_elem, oem_elem, ocm_elem)
+
+        @test_logs (:warn, opm_warning) (:warn, oem_warning) (:warn, ocm_warning) begin
+            odms = parse_odm(mixed_ndm)
+            @test length(odms) == 1
+            @test only(odms) isa OrbitMeanElementsMessage
+        end
+
+        @test_logs (:warn, opm_warning) (:warn, oem_warning) (:warn, ocm_warning) begin
+            omms = parse_omms(mixed_ndm)
+            @test length(omms) == 1
+            @test only(omms).body.segment.metadata.object_name == "AMAZONIA 1"
+        end
+    end
 end

@@ -148,13 +148,13 @@ function _minimal_omm_xml(;
 end
 
 """
-    _ndm_xml(omm_xmls::String...) -> String
+    _ndm_xml(odm_xmls::String...) -> String
 
-Wrap one or more OMM XML strings in an <ndm> container. Each argument should be a complete
-<omm>...</omm> element (without the XML declaration).
+Wrap one or more ODM XML strings in an <ndm> container. Each argument should be a complete
+ODM element (without the XML declaration).
 """
-function _ndm_xml(omm_xmls::AbstractString...)
-    inner      = join(omm_xmls)
+function _ndm_xml(odm_xmls::AbstractString...)
+    inner      = join(odm_xmls)
     schema_url = "https://sanaregistry.org/r/ndmxml_unqualified/" *
         "ndmxml-3.0.0-master-3.0.xsd"
     return """
