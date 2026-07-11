@@ -53,19 +53,18 @@ function _omm_to_xml(omm::OrbitMeanElementsMessage, stand_alone::Val{true})
     doc = XML.Document()
 
     # XML Declaration.
-    decl = XML.Declaration()
-    decl["version"] = "1.0"
-    decl["encoding"] = "UTF-8"
+    decl = XML.Declaration(; version = "1.0", encoding = "UTF-8")
     push!(doc, decl)
 
-    root = XML.Element("omm")
-
     # Our XML is compatible with version 3.
-    root["id"] = "CCSDS_OMM_VERS"
-    root["version"] = "3.0"
-    root["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
-    root["xsi:noNamespaceSchemaLocation"] =
-        "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd"
+    root = XML.Element(
+        "omm";
+        id = "CCSDS_OMM_VERS",
+        version = "3.0",
+        var"xmlns:xsi" = "http://www.w3.org/2001/XMLSchema-instance",
+        var"xsi:noNamespaceSchemaLocation" =
+            "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd"
+    )
 
     push!(doc, root)
 
@@ -76,9 +75,11 @@ end
 
 function _omm_to_xml(omm::OrbitMeanElementsMessage, stand_alone::Val{false})
     _validate_writable_omm_header(omm)
-    doc = XML.Element("omm")
-    doc["id"] = "CCSDS_OMM_VERS"
-    doc["version"] = "3.0"
+    doc = XML.Element(
+        "omm";
+        id = "CCSDS_OMM_VERS",
+        version = "3.0"
+    )
 
     _add_omm_tags!(doc, omm)
 
@@ -86,11 +87,11 @@ function _omm_to_xml(omm::OrbitMeanElementsMessage, stand_alone::Val{false})
 end
 
 """
-    _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessage) -> Nothing
+    _add_omm_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage) -> Nothing
 
 Add the OMM tags from the given `omm` message to the `parent` XML node.
 """
-function _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessage)
+function _add_omm_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
     # == Header ============================================================================
 
     header = omm.header
@@ -167,7 +168,7 @@ function _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessa
     _xml_add_tag!(sc_params_node, "DRAG_AREA",       data.drag_area)
     _xml_add_tag!(sc_params_node, "DRAG_COEFF",      data.drag_coeff)
 
-    isempty(sc_params_node.children) || push!(data_node, sc_params_node)
+    isempty(children(sc_params_node)) || push!(data_node, sc_params_node)
 
     # .. TLE Related Parameters ............................................................
 
@@ -188,7 +189,7 @@ function _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessa
     _xml_add_tag!(tle_params_node, "MEAN_MOTION_DDOT",    data.mean_motion_ddot)
     _xml_add_tag!(tle_params_node, "AGOM",                data.agom)
 
-    isempty(tle_params_node.children) || push!(data_node, tle_params_node)
+    isempty(children(tle_params_node)) || push!(data_node, tle_params_node)
 
     # .. Covariance Matrix ................................................................
 
@@ -229,8 +230,7 @@ function _add_omm_tags!(parent::XML.AbstractXMLNode, omm::OrbitMeanElementsMessa
         user_defined_parameter_nodes = XML.Element("userDefinedParameters")
 
         for (key, value) in data.user_defined_parameters
-            child = XML.Element("USER_DEFINED")
-            child["parameter"] = key
+            child = XML.Element("USER_DEFINED"; parameter = key)
             push!(child, XML.Text(_xml_render(value)))
             push!(user_defined_parameter_nodes, child)
         end

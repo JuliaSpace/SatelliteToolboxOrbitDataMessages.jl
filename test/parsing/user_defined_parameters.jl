@@ -45,4 +45,16 @@
         @test udp[2].first == "KEY"
         @test udp[2].second == "val2"
     end
+
+    @testset "Decoded Entities" begin
+        ud_xml = """
+        <userDefinedParameters>
+          <USER_DEFINED parameter="A&amp;B">left &amp; right</USER_DEFINED>
+        </userDefinedParameters>
+        """
+        omm = parse_omm(_minimal_omm_xml(; user_defined_xml = ud_xml))
+
+        @test only(omm.body.segment.data.user_defined_parameters) ==
+            ("A&B" => "left & right")
+    end
 end

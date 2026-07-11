@@ -35,6 +35,20 @@
         @test length(vodm) == 2
     end
 
+    # == Cursor Entry Points ================================================================
+
+    @testset "Cursor Entry Points" begin
+        @test parse_omm(XML.Cursor(ndm_xml)) isa OrbitMeanElementsMessage
+        @test length(parse_omms(XML.Cursor(ndm_xml))) == 2
+        @test length(parse_odm(XML.Cursor(ndm_xml))) == 2
+    end
+
+    @testset "Non-Element Nodes" begin
+        xml = replace(ndm_xml, "<ndm>" => "<ndm>\n<!-- container comment -->")
+        @test length(parse_omms(xml)) == 2
+        @test length(parse_odm(xml)) == 2
+    end
+
     # == parse_omms on Single-OMM Document Returns 1-Vector ================================
 
     @testset "parse_omms on Single-OMM Doc" begin

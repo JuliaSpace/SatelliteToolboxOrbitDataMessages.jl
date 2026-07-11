@@ -12,9 +12,9 @@ export parse_omm, parse_omms
 Parse an Orbit Mean-Elements Message (OMM) in the string `str` and return the parsed
 message. The input format must be XML.
 
-    parse_omm(xml::LazyNode; kwargs...) -> Union{Nothing, OrbitMeanElementsMessage}
+    parse_omm(xml::Cursor; kwargs...) -> Union{Nothing, OrbitMeanElementsMessage}
 
-Parse an Orbit Mean-Elements Message (OMM) from a `LazyNode` `xml` and return the parsed
+Parse an Orbit Mean-Elements Message (OMM) from a `Cursor` `xml` and return the parsed
 message.
 
 If the XML is a Navigation Data Message (NDM), only the first OMM message is returned. If
@@ -28,12 +28,13 @@ the file does not contain an OMM message, `nothing` is returned.
 """
 function parse_omm(str::AbstractString; strict::Bool = true)
     # Open the XML file.
-    xml = parse(String(str), LazyNode)
+    xml = XML.Cursor(String(str))
     return parse_omm(xml; strict)
 end
 
-function parse_omm(xml::LazyNode; strict::Bool = true)
+function parse_omm(xml::XML.Cursor; strict::Bool = true)
     for node in xml
+        nodetype(node) === Element || continue
         t = _omm_tag(node, strict)
         t == "omm" && return _parse_omm(node, strict)
     end
@@ -47,9 +48,9 @@ end
 Parse a set of Orbit Mean-Elements Messages (OMM) string `str` and return the parsed
 messages. The input format must be XML.
 
-    parse_omms(xml::LazyNode; kwargs...) -> Vector{OrbitMeanElementsMessage}
+    parse_omms(xml::Cursor; kwargs...) -> Vector{OrbitMeanElementsMessage}
 
-Parse a set of Orbit Mean-Elements Messages (OMM) from a `LazyNode` `xml` and return the
+Parse a set of Orbit Mean-Elements Messages (OMM) from a `Cursor` `xml` and return the
 parsed messages.
 
 If the XML is a Navigation Data Message (NDM), only the OMM messages are returned; other
@@ -65,17 +66,22 @@ an OMM message, an empty vector is returned. If the root tag is not recognized, 
 """
 function parse_omms(str::AbstractString; strict::Bool = true)
     # Open the XML file.
-    xml = parse(String(str), LazyNode)
+    xml = XML.Cursor(String(str))
     return parse_omms(xml; strict)
 end
 
-function parse_omms(xml::LazyNode; strict::Bool = true)
+function parse_omms(xml::XML.Cursor; strict::Bool = true)
     omms = OrbitMeanElementsMessage[]
-    root = children(xml)[end]
-    t    = _omm_tag(root, strict)
+    root = next!(xml)
+    while !isnothing(root) && nodetype(root) !== Element
+        root = next!(xml)
+    end
+    isnothing(root) && throw(ArgumentError("The XML document has no root element."))
+    t = _omm_tag(root, strict)
 
     if t == "ndm"
-        for node in children(root)
+        XML.@for_each_child root node begin
+            nodetype(node) === Element || continue
             lt = _omm_tag(node, strict)
 
             if lt == "omm"
@@ -114,6 +120,8 @@ end
 #                                    Private Functions                                     #
 ############################################################################################
 
+# Map lowercase OMM structural tag names to their canonical schema-defined casing for
+# case-insensitive parsing.
 const _OMM_STRUCTURAL_TAGS = Dict(
     "ndm"                   => "ndm",
     "omm"                   => "omm",
@@ -133,12 +141,12 @@ const _OMM_STRUCTURAL_TAGS = Dict(
 )
 
 """
-    _omm_tag(node::LazyNode, strict::Bool) -> Union{String, Nothing}
+    _omm_tag(node::Cursor, strict::Bool) -> Union{String, Nothing}
 
 Return the canonical OMM tag for `node`, matching case-insensitively unless `strict` is
 `true`.
 """
-function _omm_tag(node::LazyNode, strict::Bool)
+function _omm_tag(node::XML.Cursor, strict::Bool)
     node_tag = tag(node)
     (strict || isnothing(node_tag)) && return node_tag
 
@@ -147,69 +155,83 @@ function _omm_tag(node::LazyNode, strict::Bool)
 end
 
 """
-    _parse_omm(xml::LazyNode) -> OrbitMeanElementsMessage
+    _parse_omm(xml::Cursor, strict::Bool) -> OrbitMeanElementsMessage
 
-Parse an Orbit Mean-Elements Message (OMM) from a `LazyNode` `xml` representation.
+Parse an Orbit Mean-Elements Message (OMM) from a `Cursor` `xml` representation.
 """
-function _parse_omm(xml::LazyNode, strict::Bool)
+function _parse_omm(xml::XML.Cursor, strict::Bool)
     _omm_tag(xml, strict) != "omm" && throw(
         ArgumentError("The provided XML does not contain an OMM element.")
     )
 
     # Extract the version attribute.
-    att = attributes(xml)
-
-    valid_id = haskey(att, "id") && (
-        strict ? att["id"] == "CCSDS_OMM_VERS" :
-        lowercase(att["id"]) == "ccsds_omm_vers"
+    id = get(xml, "id", nothing)
+    valid_id = !isnothing(id) && (
+        strict ? id == "CCSDS_OMM_VERS" : lowercase(id) == "ccsds_omm_vers"
     )
     !valid_id && throw(ArgumentError(
         "The OMM element is missing the required `id = CCSDS_OMM_VERSION` attribute."
     ))
 
-    !haskey(att, "version") && throw(ArgumentError(
+    version_attribute = get(xml, "version", nothing)
+    isnothing(version_attribute) && throw(ArgumentError(
         "The OMM element is missing the required `version` attribute."
     ))
 
-    version = VersionNumber(att["version"])
+    version = VersionNumber(version_attribute)
 
     version ∉ (v"2.0.0", v"3.0.0") &&
         throw(ArgumentError("Unsupported OMM version: $version."))
 
-    nodes = children(xml)
-    map(node -> _omm_tag(node, strict), nodes) == ["header", "body"] ||
-        throw(ArgumentError(
+    header = nothing
+    body = nothing
+    element_tags = String[]
+    XML.@for_each_child xml node begin
+        nodetype(node) === Element || continue
+        lt = _omm_tag(node, strict)
+        push!(element_tags, lt)
+        if lt == "header" && isnothing(header)
+            header = _parse_omm_header(node, strict)
+        elseif lt == "body" && isnothing(body)
+            body = _parse_omm_body(node, strict)
+        else
+            skip_element!(node)
+        end
+    end
+    element_tags == ["header", "body"] || throw(ArgumentError(
         "The OMM element must contain exactly one `header` followed by one `body`."
-        ))
-
-    # == Parse Header ======================================================================
-
-    header_id = findfirst(n -> _omm_tag(n, strict) == "header", nodes)
-
-    isnothing(header_id) && throw(ArgumentError("The OMM element is missing the header."))
-
-    header = _parse_omm_header(nodes[header_id], strict)
-
-    # == Parse Body ========================================================================
-
-    body_id = findfirst(n -> _omm_tag(n, strict) == "body", nodes)
-
-    isnothing(body_id) && throw(ArgumentError("The OMM element is missing the body."))
-
-    body = _parse_omm_body(nodes[body_id], strict)
+    ))
 
     return OrbitMeanElementsMessage(version, header, body)
+end
+
+"""
+    _omm_scalar_value(xml::Cursor) -> String
+
+Read the text or CDATA value of the current OMM scalar element while advancing the cursor
+past that element. Non-value child nodes are ignored.
+"""
+function _omm_scalar_value(xml::XML.Cursor)
+    result = ""
+    XML.@for_each_child xml node begin
+        if nodetype(node) === XML.Text || nodetype(node) === XML.CData
+            isempty(result) && (result = String(value(node)))
+        elseif nodetype(node) === Element
+            skip_element!(node)
+        end
+    end
+    return result
 end
 
 # == Header Parsing ========================================================================
 
 """
-    _parse_omm_header(xml::LazyNode) -> OmmHeader
+    _parse_omm_header(xml::Cursor, strict::Bool) -> OmmHeader
 
-Parse the header of an Orbit Mean-Elements Message (OMM) from a `LazyNode` `xml`
+Parse the header of an Orbit Mean-Elements Message (OMM) from a `Cursor` `xml`
 representation.
 """
-function _parse_omm_header(xml::LazyNode, strict::Bool)
+function _parse_omm_header(xml::XML.Cursor, strict::Bool)
     comments       = String[]
     classification = nothing
     creation_date  = nothing
@@ -217,10 +239,10 @@ function _parse_omm_header(xml::LazyNode, strict::Bool)
     message_id     = nothing
     seen           = Set{String}()
 
-    for node in children(xml)
+    XML.@for_each_child xml node begin
+        nodetype(node) === Element || continue
         lt = _omm_tag(node, strict)
-        nc = children(node)
-        v  = isempty(nc) ? "" : value(first(nc))
+        v = _omm_scalar_value(node)
 
         if lt == "COMMENT"
             push!(comments, v)
@@ -277,23 +299,30 @@ end
 # == Body Parsing ==========================================================================
 
 """
-    _parse_omm_body(xml::LazyNode) -> OmmBody
+    _parse_omm_body(xml::Cursor, strict::Bool) -> OmmBody
 
-Parse the body of an Orbit Mean-Elements Message (OMM) from a `LazyNode` `xml`
+Parse the body of an Orbit Mean-Elements Message (OMM) from a `Cursor` `xml`
 representation.
 """
-function _parse_omm_body(xml::LazyNode, strict::Bool)
-    ch = children(xml)
-    any(n -> _omm_tag(n, strict) != "segment", ch) &&
-        throw(ArgumentError("Unknown OMM body element."))
-    segment_ids = findall(n -> _omm_tag(n, strict) == "segment", ch)
+function _parse_omm_body(xml::XML.Cursor, strict::Bool)
+    segment = nothing
+    segment_count = 0
+    XML.@for_each_child xml node begin
+        nodetype(node) === Element || continue
+        _omm_tag(node, strict) == "segment" ||
+            throw(ArgumentError("Unknown OMM body element."))
+        segment_count += 1
+        if segment_count == 1
+            segment = _parse_omm_segment(node, strict)
+        else
+            skip_element!(node)
+        end
+    end
 
-    isempty(segment_ids) && throw(ArgumentError("The OMM body is missing the segment."))
-    length(segment_ids) > 1 && throw(ArgumentError(
+    segment_count == 0 && throw(ArgumentError("The OMM body is missing the segment."))
+    segment_count > 1 && throw(ArgumentError(
         "The OMM body contains multiple segments, which is not supported."
     ))
-
-    segment = _parse_omm_segment(ch[first(segment_ids)], strict)
 
     return OmmBody(segment)
 end
@@ -301,55 +330,49 @@ end
 # -- Body Segment Parsing ------------------------------------------------------------------
 
 """
-    _parse_omm_segment(xml::LazyNode) -> OmmSegment
+    _parse_omm_segment(xml::Cursor, strict::Bool) -> OmmSegment
 
-Parse a segment of the body of an Orbit Mean-Elements Message (OMM) from a `LazyNode` `xml`
+Parse a segment of the body of an Orbit Mean-Elements Message (OMM) from a `Cursor` `xml`
 representation.
 """
-function _parse_omm_segment(xml::LazyNode, strict::Bool)
-    ch = children(xml)
+function _parse_omm_segment(xml::XML.Cursor, strict::Bool)
+    metadata = nothing
+    data = nothing
+    XML.@for_each_child xml node begin
+        nodetype(node) === Element || continue
+        lt = _omm_tag(node, strict)
+        lt ∈ ("metadata", "data") ||
+            throw(ArgumentError("Unknown OMM segment element."))
+        if lt == "metadata"
+            !isnothing(metadata) && throw(ArgumentError(
+                "The OMM segment contains duplicate metadata sections."
+            ))
+            metadata = _parse_omm_metadata(node, strict)
+        else
+            !isnothing(data) && throw(ArgumentError(
+                "The OMM segment contains duplicate data sections."
+            ))
+            data = _parse_omm_data(node, strict)
+        end
+    end
 
-    # Find the metadata node.
-    any(n -> _omm_tag(n, strict) ∉ ("metadata", "data"), ch) &&
-        throw(ArgumentError("Unknown OMM segment element."))
-    count(n -> _omm_tag(n, strict) == "metadata", ch) > 1 &&
-        throw(ArgumentError("The OMM segment contains duplicate metadata sections."))
-    count(n -> _omm_tag(n, strict) == "data", ch) > 1 &&
-        throw(ArgumentError("The OMM segment contains duplicate data sections."))
-
-    metadata_id = findfirst(n -> _omm_tag(n, strict) == "metadata", ch)
-    isnothing(metadata_id) && throw(ArgumentError(
+    isnothing(metadata) && throw(ArgumentError(
         "The OMM segment is missing the metadata section."
     ))
-    metadata_nodes = ch[metadata_id]
-
-    # Find the data node.
-    data_id = findfirst(n -> _omm_tag(n, strict) == "data", ch)
-    isnothing(data_id) && throw(ArgumentError(
+    isnothing(data) && throw(ArgumentError(
         "The OMM segment is missing the data section."
     ))
-    data_nodes = ch[data_id]
-
-    # == Parse Metadata ====================================================================
-
-    metadata = _parse_omm_metadata(metadata_nodes, strict)
-
-    # == Parse Data ========================================================================
-
-    data = _parse_omm_data(data_nodes, strict)
 
     return OmmSegment(metadata, data)
 end
 
 """
-    _parse_omm_metadata(xml::LazyNode) -> OmmMetadata
+    _parse_omm_metadata(xml::Cursor, strict::Bool) -> OmmMetadata
 
 Parse the metadata of the segment body of an Orbit Mean-Elements Message (OMM) from a
-`LazyNode` `xml` representation.
+`Cursor` `xml` representation.
 """
-function _parse_omm_metadata(xml::LazyNode, strict::Bool)
-    ch = children(xml)
-
+function _parse_omm_metadata(xml::XML.Cursor, strict::Bool)
     comments            = String[]
     object_name         = nothing
     object_id           = nothing
@@ -360,10 +383,10 @@ function _parse_omm_metadata(xml::LazyNode, strict::Bool)
     mean_element_theory = nothing
     seen                = Set{String}()
 
-    for node in ch
+    XML.@for_each_child xml node begin
+        nodetype(node) === Element || continue
         lt = _omm_tag(node, strict)
-        nc = children(node)
-        v  = isempty(nc) ? "" : value(first(nc))
+        v = _omm_scalar_value(node)
 
         if lt == "COMMENT"
             push!(comments, v)
@@ -440,32 +463,27 @@ function _parse_omm_metadata(xml::LazyNode, strict::Bool)
 end
 
 """
-    _parse_omm_data(xml::LazyNode) -> OmmData
+    _parse_omm_data(xml::Cursor, strict::Bool) -> OmmData
 
 Parse the data of the segment body of an Orbit Mean-Elements Message (OMM) from a
-`LazyNode` `xml` representation.
+`Cursor` `xml` representation.
 """
-function _parse_omm_data(xml::LazyNode, strict::Bool)
-    ch = children(xml)
+function _parse_omm_data(xml::XML.Cursor, strict::Bool)
+    data_comments = String[]
+    mean_elements = nothing
+    spacecraft_parameters = nothing
+    tle_parameters = nothing
+    covariance_matrix = nothing
+    user_defined_parameters = nothing
+    seen_sections = Set{String}()
 
-    data_comments                = String[]
-    mean_elements_nodes          = nothing
-    spacecraft_parameters_nodes  = nothing
-    tle_parameters_nodes         = nothing
-    covariance_matrix_nodes      = nothing
-    user_defined_parameter_nodes = nothing
-    seen_sections                = Set{String}()
-
-    for node in ch
+    XML.@for_each_child xml node begin
+        nodetype(node) === Element || continue
         lt = _omm_tag(node, strict)
-        nc = children(node)
-
         if lt == "COMMENT"
-            v  = isempty(nc) ? "" : value(first(nc))
-            push!(data_comments, v)
+            push!(data_comments, _omm_scalar_value(node))
             continue
         end
-
         lt ∉ (
             "meanElements",
             "spacecraftParameters",
@@ -477,46 +495,64 @@ function _parse_omm_data(xml::LazyNode, strict::Bool)
         push!(seen_sections, lt)
 
         if lt == "meanElements"
-            mean_elements_nodes = nc
+            mean_elements = _parse_omm_mean_elements(node, strict)
         elseif lt == "spacecraftParameters"
-            spacecraft_parameters_nodes = nc
+            spacecraft_parameters = _parse_omm_spacecraft_parameters(node, strict)
         elseif lt == "tleParameters"
-            tle_parameters_nodes = nc
+            tle_parameters = _parse_omm_tle_parameters(node, strict)
         elseif lt == "covarianceMatrix"
-            covariance_matrix_nodes = nc
-        elseif lt == "userDefinedParameters"
-            user_defined_parameter_nodes = nc
+            covariance_matrix = _parse_omm_covariance_matrix(node, strict)
+        else
+            user_defined_parameters = _parse_omm_user_defined_parameters(node, strict)
         end
     end
 
-    # == Parse Mean Elements ===============================================================
-
-    isnothing(mean_elements_nodes) && throw(ArgumentError(
+    isnothing(mean_elements) && throw(ArgumentError(
         "The OMM data is missing the required section `meanElements`."
     ))
+    spacecraft_parameters = something(
+        spacecraft_parameters,
+        _empty_omm_spacecraft_parameters()
+    )
+    tle_parameters = something(tle_parameters, _empty_omm_tle_parameters())
 
-    epoch             = nothing
-    mean_elements_comments = String[]
-    semi_major_axis   = nothing
-    mean_motion       = nothing
-    eccentricity      = nothing
-    inclination       = nothing
-    raan              = nothing
+    return OmmData(
+        ;
+        comments = data_comments,
+        mean_elements...,
+        spacecraft_parameters...,
+        tle_parameters...,
+        covariance_matrix,
+        user_defined_parameters,
+    )
+end
+
+"""
+    _parse_omm_mean_elements(xml::Cursor, strict::Bool) -> NamedTuple
+
+Parse an OMM `meanElements` section at the cursor's current position.
+"""
+function _parse_omm_mean_elements(xml::XML.Cursor, strict::Bool)
+    comments = String[]
+    epoch = nothing
+    semi_major_axis = nothing
+    mean_motion = nothing
+    eccentricity = nothing
+    inclination = nothing
+    raan = nothing
     arg_of_pericenter = nothing
-    mean_anomaly      = nothing
-    GM                = nothing
-    seen              = Set{String}()
+    mean_anomaly = nothing
+    GM = nothing
+    seen = Set{String}()
 
-    for node in mean_elements_nodes
+    XML.@for_each_child xml node begin
+        nodetype(node) === Element || continue
         lt = _omm_tag(node, strict)
-        nc = children(node)
-        v  = isempty(nc) ? "" : value(first(nc))
-
+        v = _omm_scalar_value(node)
         if lt == "COMMENT"
-            push!(mean_elements_comments, v)
+            push!(comments, v)
             continue
         end
-
         lt ∉ (
             "EPOCH",
             "SEMI_MAJOR_AXIS",
@@ -548,362 +584,313 @@ function _parse_omm_data(xml::LazyNode, strict::Bool)
             arg_of_pericenter = parse(Float64, v)
         elseif lt == "MEAN_ANOMALY"
             mean_anomaly = parse(Float64, v)
-        elseif lt == "GM"
+        else
             GM = parse(Float64, v)
         end
     end
 
-    # Check if all required fields are present.
-    isnothing(epoch) && throw(ArgumentError(
-        "OMM data is missing required field `EPOCH`."
-    ))
-
+    isnothing(epoch) && throw(ArgumentError("OMM data is missing required field `EPOCH`."))
     (isnothing(semi_major_axis) == isnothing(mean_motion)) && throw(ArgumentError(
         "OMM data must contain exactly one of `SEMI_MAJOR_AXIS` and `MEAN_MOTION`."
     ))
-
     isnothing(eccentricity) && throw(ArgumentError(
         "OMM data is missing required field `ECCENTRICITY`."
     ))
-
     isnothing(inclination) && throw(ArgumentError(
         "OMM data is missing required field `INCLINATION`."
     ))
-
     isnothing(raan) && throw(ArgumentError(
         "OMM data is missing required field `RA_OF_ASC_NODE`."
     ))
-
     isnothing(arg_of_pericenter) && throw(ArgumentError(
         "OMM data is missing required field `ARG_OF_PERICENTER`."
     ))
-
     isnothing(mean_anomaly) && throw(ArgumentError(
         "OMM data is missing required field `MEAN_ANOMALY`."
     ))
 
-    # == Parse Spacecraft Parameters =======================================================
-
-    spacecraft_parameters_comments = String[]
-    mass                            = nothing
-    solar_rad_area                  = nothing
-    solar_rad_coeff                 = nothing
-    drag_area                       = nothing
-    drag_coeff                      = nothing
-    seen                            = Set{String}()
-
-    if !isnothing(spacecraft_parameters_nodes)
-        for node in spacecraft_parameters_nodes
-            lt = _omm_tag(node, strict)
-            nc = children(node)
-            v  = isempty(nc) ? "" : value(first(nc))
-
-            if lt == "COMMENT"
-                push!(spacecraft_parameters_comments, v)
-                continue
-            end
-
-            lt ∉ ("MASS", "SOLAR_RAD_AREA", "SOLAR_RAD_COEFF", "DRAG_AREA", "DRAG_COEFF") &&
-                throw(ArgumentError("Unknown OMM spacecraft parameter `$lt`."))
-            lt in seen && throw(ArgumentError("Duplicate OMM spacecraft parameter `$lt`."))
-            push!(seen, lt)
-
-            if lt == "MASS"
-                mass = parse(Float64, v)
-            elseif lt == "SOLAR_RAD_AREA"
-                solar_rad_area = parse(Float64, v)
-            elseif lt == "SOLAR_RAD_COEFF"
-                solar_rad_coeff = parse(Float64, v)
-            elseif lt == "DRAG_AREA"
-                drag_area = parse(Float64, v)
-            elseif lt == "DRAG_COEFF"
-                drag_coeff = parse(Float64, v)
-            end
-        end
-    end
-
-    # == Parse TLE Related Parameters ======================================================
-
-    tle_parameters_comments = String[]
-    ephemeris_type          = nothing
-    classification_type     = nothing
-    norad_cat_id            = nothing
-    element_set_number      = nothing
-    rev_at_epoch            = nothing
-    bstar                   = nothing
-    bterm                   = nothing
-    mean_motion_dot         = nothing
-    mean_motion_ddot        = nothing
-    agom                    = nothing
-    seen                    = Set{String}()
-
-    if !isnothing(tle_parameters_nodes)
-        for node in tle_parameters_nodes
-            lt = _omm_tag(node, strict)
-            nc = children(node)
-            v  = isempty(nc) ? "" : value(first(nc))
-
-            if lt == "COMMENT"
-                push!(tle_parameters_comments, v)
-                continue
-            end
-
-            lt ∉ (
-                "EPHEMERIS_TYPE",
-                "CLASSIFICATION_TYPE",
-                "NORAD_CAT_ID",
-                "ELEMENT_SET_NO",
-                "REV_AT_EPOCH",
-                "BSTAR",
-                "BTERM",
-                "MEAN_MOTION_DOT",
-                "MEAN_MOTION_DDOT",
-                "AGOM",
-            ) && throw(ArgumentError("Unknown OMM TLE parameter `$lt`."))
-            lt in seen && throw(ArgumentError("Duplicate OMM TLE parameter `$lt`."))
-            push!(seen, lt)
-
-            if lt == "EPHEMERIS_TYPE"
-                ephemeris_type = parse(Int, v)
-            elseif lt == "CLASSIFICATION_TYPE"
-                length(v) == 1 || throw(ArgumentError(
-                    "OMM field `CLASSIFICATION_TYPE` must contain exactly one character."
-                ))
-                classification_type = only(v)
-            elseif lt == "NORAD_CAT_ID"
-                norad_cat_id = parse(Int, v)
-            elseif lt == "ELEMENT_SET_NO"
-                element_set_number = parse(Int, v)
-            elseif lt == "REV_AT_EPOCH"
-                rev_at_epoch = parse(Int, v)
-            elseif lt == "BSTAR"
-                bstar = parse(Float64, v)
-            elseif lt == "BTERM"
-                bterm = parse(Float64, v)
-            elseif lt == "MEAN_MOTION_DOT"
-                mean_motion_dot = parse(Float64, v)
-            elseif lt == "MEAN_MOTION_DDOT"
-                mean_motion_ddot = parse(Float64, v)
-            elseif lt == "AGOM"
-                agom = parse(Float64, v)
-            end
-        end
-
-        (isnothing(bstar) == isnothing(bterm)) && throw(ArgumentError(
-            "OMM TLE parameters must contain exactly one of `BSTAR` and `BTERM`."
-        ))
-        isnothing(mean_motion_dot) && throw(ArgumentError(
-            "OMM TLE parameters are missing required field `MEAN_MOTION_DOT`."
-        ))
-        (isnothing(mean_motion_ddot) == isnothing(agom)) && throw(ArgumentError(
-            "OMM TLE parameters must contain exactly one of `MEAN_MOTION_DDOT` and `AGOM`."
-        ))
-    end
-
-    # == Covariance Matrix ================================================================
-
-    covariance_matrix = nothing
-
-    if !isnothing(covariance_matrix_nodes)
-        cov_comments     = String[]
-        cov_ref_frame    = nothing
-        cx_x             = nothing
-        cy_x             = nothing
-        cy_y             = nothing
-        cz_x             = nothing
-        cz_y             = nothing
-        cz_z             = nothing
-        cx_dot_x         = nothing
-        cx_dot_y         = nothing
-        cx_dot_z         = nothing
-        cx_dot_x_dot     = nothing
-        cy_dot_x         = nothing
-        cy_dot_y         = nothing
-        cy_dot_z         = nothing
-        cy_dot_x_dot     = nothing
-        cy_dot_y_dot     = nothing
-        cz_dot_x         = nothing
-        cz_dot_y         = nothing
-        cz_dot_z         = nothing
-        cz_dot_x_dot     = nothing
-        cz_dot_y_dot     = nothing
-        cz_dot_z_dot     = nothing
-        seen             = Set{String}()
-
-        for node in covariance_matrix_nodes
-            lt = _omm_tag(node, strict)
-            nc = children(node)
-            v  = isempty(nc) ? "" : value(first(nc))
-
-            if lt == "COMMENT"
-                push!(cov_comments, v)
-                continue
-            end
-
-            lt in seen && throw(ArgumentError("Duplicate OMM covariance element `$lt`."))
-            push!(seen, lt)
-
-            if lt == "COV_REF_FRAME"
-                cov_ref_frame = v
-            elseif lt == "CX_X"
-                cx_x = parse(Float64, v)
-            elseif lt == "CY_X"
-                cy_x = parse(Float64, v)
-            elseif lt == "CY_Y"
-                cy_y = parse(Float64, v)
-            elseif lt == "CZ_X"
-                cz_x = parse(Float64, v)
-            elseif lt == "CZ_Y"
-                cz_y = parse(Float64, v)
-            elseif lt == "CZ_Z"
-                cz_z = parse(Float64, v)
-            elseif lt == "CX_DOT_X"
-                cx_dot_x = parse(Float64, v)
-            elseif lt == "CX_DOT_Y"
-                cx_dot_y = parse(Float64, v)
-            elseif lt == "CX_DOT_Z"
-                cx_dot_z = parse(Float64, v)
-            elseif lt == "CX_DOT_X_DOT"
-                cx_dot_x_dot = parse(Float64, v)
-            elseif lt == "CY_DOT_X"
-                cy_dot_x = parse(Float64, v)
-            elseif lt == "CY_DOT_Y"
-                cy_dot_y = parse(Float64, v)
-            elseif lt == "CY_DOT_Z"
-                cy_dot_z = parse(Float64, v)
-            elseif lt == "CY_DOT_X_DOT"
-                cy_dot_x_dot = parse(Float64, v)
-            elseif lt == "CY_DOT_Y_DOT"
-                cy_dot_y_dot = parse(Float64, v)
-            elseif lt == "CZ_DOT_X"
-                cz_dot_x = parse(Float64, v)
-            elseif lt == "CZ_DOT_Y"
-                cz_dot_y = parse(Float64, v)
-            elseif lt == "CZ_DOT_Z"
-                cz_dot_z = parse(Float64, v)
-            elseif lt == "CZ_DOT_X_DOT"
-                cz_dot_x_dot = parse(Float64, v)
-            elseif lt == "CZ_DOT_Y_DOT"
-                cz_dot_y_dot = parse(Float64, v)
-            elseif lt == "CZ_DOT_Z_DOT"
-                cz_dot_z_dot = parse(Float64, v)
-            else
-                throw(ArgumentError("Unknown OMM covariance element `$lt`."))
-            end
-        end
-
-        # Check if all 21 required matrix elements are present.
-        for (name, val) in (
-            ("CX_X",             cx_x),
-            ("CY_X",             cy_x),
-            ("CY_Y",             cy_y),
-            ("CZ_X",             cz_x),
-            ("CZ_Y",             cz_y),
-            ("CZ_Z",             cz_z),
-            ("CX_DOT_X",         cx_dot_x),
-            ("CX_DOT_Y",         cx_dot_y),
-            ("CX_DOT_Z",         cx_dot_z),
-            ("CX_DOT_X_DOT",     cx_dot_x_dot),
-            ("CY_DOT_X",         cy_dot_x),
-            ("CY_DOT_Y",         cy_dot_y),
-            ("CY_DOT_Z",         cy_dot_z),
-            ("CY_DOT_X_DOT",     cy_dot_x_dot),
-            ("CY_DOT_Y_DOT",     cy_dot_y_dot),
-            ("CZ_DOT_X",         cz_dot_x),
-            ("CZ_DOT_Y",         cz_dot_y),
-            ("CZ_DOT_Z",         cz_dot_z),
-            ("CZ_DOT_X_DOT",     cz_dot_x_dot),
-            ("CZ_DOT_Y_DOT",     cz_dot_y_dot),
-            ("CZ_DOT_Z_DOT",     cz_dot_z_dot),
-        )
-            isnothing(val) && throw(ArgumentError(
-                "OMM covariance matrix is missing required element `$name`."
-            ))
-        end
-
-        covariance_matrix = OmmCovarianceMatrix(
-            cov_comments,
-            cov_ref_frame,
-            cx_x,
-            cy_x,
-            cy_y,
-            cz_x,
-            cz_y,
-            cz_z,
-            cx_dot_x,
-            cx_dot_y,
-            cx_dot_z,
-            cx_dot_x_dot,
-            cy_dot_x,
-            cy_dot_y,
-            cy_dot_z,
-            cy_dot_x_dot,
-            cy_dot_y_dot,
-            cz_dot_x,
-            cz_dot_y,
-            cz_dot_z,
-            cz_dot_x_dot,
-            cz_dot_y_dot,
-            cz_dot_z_dot
-        )
-    end
-
-    # == User-Defined Parameters ===========================================================
-
-    user_defined_parameters = nothing
-
-    if !isnothing(user_defined_parameter_nodes)
-        user_defined_parameters = Pair{String, String}[]
-
-        for node in user_defined_parameter_nodes
-            lt = _omm_tag(node, strict)
-            nc = children(node)
-            v  = isempty(nc) ? "" : value(first(nc))
-
-            if lt == "USER_DEFINED"
-                att = attributes(node)
-                (isnothing(att) || !haskey(att, "parameter")) && throw(ArgumentError(
-                    "OMM `USER_DEFINED` element is missing required attribute `parameter`."
-                ))
-                key = att["parameter"]
-                push!(user_defined_parameters, Pair(key, v))
-            else
-                throw(ArgumentError("Unknown user-defined parameter element `$lt`."))
-            end
-        end
-    end
-
-    return OmmData(
-        ;
-        comments = data_comments,
-        mean_elements_comments,
-        epoch,
-        semi_major_axis,
-        mean_motion,
-        eccentricity,
-        inclination,
-        raan,
-        arg_of_pericenter,
-        mean_anomaly,
-        GM,
-        spacecraft_parameters_comments,
-        mass,
-        solar_rad_area,
-        solar_rad_coeff,
-        drag_area,
-        drag_coeff,
-        tle_parameters_comments,
-        ephemeris_type,
-        classification_type,
-        norad_cat_id,
-        element_set_number,
-        rev_at_epoch,
-        bstar,
-        bterm,
-        mean_motion_dot,
-        mean_motion_ddot,
-        agom,
-        covariance_matrix,
-        user_defined_parameters,
+    return (
+        mean_elements_comments = comments,
+        epoch = epoch,
+        semi_major_axis = semi_major_axis,
+        mean_motion = mean_motion,
+        eccentricity = eccentricity,
+        inclination = inclination,
+        raan = raan,
+        arg_of_pericenter = arg_of_pericenter,
+        mean_anomaly = mean_anomaly,
+        GM = GM,
     )
+end
+
+"""
+    _empty_omm_spacecraft_parameters() -> NamedTuple
+
+Return default values for an omitted OMM `spacecraftParameters` section.
+"""
+function _empty_omm_spacecraft_parameters()
+    return (
+        spacecraft_parameters_comments = String[],
+        mass = nothing,
+        solar_rad_area = nothing,
+        solar_rad_coeff = nothing,
+        drag_area = nothing,
+        drag_coeff = nothing,
+    )
+end
+
+"""
+    _parse_omm_spacecraft_parameters(xml::Cursor, strict::Bool) -> NamedTuple
+
+Parse an OMM `spacecraftParameters` section at the cursor's current position.
+"""
+function _parse_omm_spacecraft_parameters(xml::XML.Cursor, strict::Bool)
+    result = _empty_omm_spacecraft_parameters()
+    comments = result.spacecraft_parameters_comments
+    mass = nothing
+    solar_rad_area = nothing
+    solar_rad_coeff = nothing
+    drag_area = nothing
+    drag_coeff = nothing
+    seen = Set{String}()
+
+    XML.@for_each_child xml node begin
+        nodetype(node) === Element || continue
+        lt = _omm_tag(node, strict)
+        v = _omm_scalar_value(node)
+        if lt == "COMMENT"
+            push!(comments, v)
+            continue
+        end
+        lt ∉ ("MASS", "SOLAR_RAD_AREA", "SOLAR_RAD_COEFF", "DRAG_AREA", "DRAG_COEFF") &&
+            throw(ArgumentError("Unknown OMM spacecraft parameter `$lt`."))
+        lt in seen && throw(ArgumentError("Duplicate OMM spacecraft parameter `$lt`."))
+        push!(seen, lt)
+
+        if lt == "MASS"
+            mass = parse(Float64, v)
+        elseif lt == "SOLAR_RAD_AREA"
+            solar_rad_area = parse(Float64, v)
+        elseif lt == "SOLAR_RAD_COEFF"
+            solar_rad_coeff = parse(Float64, v)
+        elseif lt == "DRAG_AREA"
+            drag_area = parse(Float64, v)
+        else
+            drag_coeff = parse(Float64, v)
+        end
+    end
+
+    return (
+        spacecraft_parameters_comments = comments,
+        mass = mass,
+        solar_rad_area = solar_rad_area,
+        solar_rad_coeff = solar_rad_coeff,
+        drag_area = drag_area,
+        drag_coeff = drag_coeff,
+    )
+end
+
+"""
+    _empty_omm_tle_parameters() -> NamedTuple
+
+Return default values for an omitted OMM `tleParameters` section.
+"""
+function _empty_omm_tle_parameters()
+    return (
+        tle_parameters_comments = String[],
+        ephemeris_type = nothing,
+        classification_type = nothing,
+        norad_cat_id = nothing,
+        element_set_number = nothing,
+        rev_at_epoch = nothing,
+        bstar = nothing,
+        bterm = nothing,
+        mean_motion_dot = nothing,
+        mean_motion_ddot = nothing,
+        agom = nothing,
+    )
+end
+
+"""
+    _parse_omm_tle_parameters(xml::Cursor, strict::Bool) -> NamedTuple
+
+Parse an OMM `tleParameters` section at the cursor's current position.
+"""
+function _parse_omm_tle_parameters(xml::XML.Cursor, strict::Bool)
+    comments = String[]
+    ephemeris_type = nothing
+    classification_type = nothing
+    norad_cat_id = nothing
+    element_set_number = nothing
+    rev_at_epoch = nothing
+    bstar = nothing
+    bterm = nothing
+    mean_motion_dot = nothing
+    mean_motion_ddot = nothing
+    agom = nothing
+    seen = Set{String}()
+
+    XML.@for_each_child xml node begin
+        nodetype(node) === Element || continue
+        lt = _omm_tag(node, strict)
+        v = _omm_scalar_value(node)
+        if lt == "COMMENT"
+            push!(comments, v)
+            continue
+        end
+        lt ∉ (
+            "EPHEMERIS_TYPE",
+            "CLASSIFICATION_TYPE",
+            "NORAD_CAT_ID",
+            "ELEMENT_SET_NO",
+            "REV_AT_EPOCH",
+            "BSTAR",
+            "BTERM",
+            "MEAN_MOTION_DOT",
+            "MEAN_MOTION_DDOT",
+            "AGOM",
+        ) && throw(ArgumentError("Unknown OMM TLE parameter `$lt`."))
+        lt in seen && throw(ArgumentError("Duplicate OMM TLE parameter `$lt`."))
+        push!(seen, lt)
+
+        if lt == "EPHEMERIS_TYPE"
+            ephemeris_type = parse(Int, v)
+        elseif lt == "CLASSIFICATION_TYPE"
+            length(v) == 1 || throw(ArgumentError(
+                "OMM field `CLASSIFICATION_TYPE` must contain exactly one character."
+            ))
+            classification_type = only(v)
+        elseif lt == "NORAD_CAT_ID"
+            norad_cat_id = parse(Int, v)
+        elseif lt == "ELEMENT_SET_NO"
+            element_set_number = parse(Int, v)
+        elseif lt == "REV_AT_EPOCH"
+            rev_at_epoch = parse(Int, v)
+        elseif lt == "BSTAR"
+            bstar = parse(Float64, v)
+        elseif lt == "BTERM"
+            bterm = parse(Float64, v)
+        elseif lt == "MEAN_MOTION_DOT"
+            mean_motion_dot = parse(Float64, v)
+        elseif lt == "MEAN_MOTION_DDOT"
+            mean_motion_ddot = parse(Float64, v)
+        else
+            agom = parse(Float64, v)
+        end
+    end
+
+    (isnothing(bstar) == isnothing(bterm)) && throw(ArgumentError(
+        "OMM TLE parameters must contain exactly one of `BSTAR` and `BTERM`."
+    ))
+    isnothing(mean_motion_dot) && throw(ArgumentError(
+        "OMM TLE parameters are missing required field `MEAN_MOTION_DOT`."
+    ))
+    (isnothing(mean_motion_ddot) == isnothing(agom)) && throw(ArgumentError(
+        "OMM TLE parameters must contain exactly one of `MEAN_MOTION_DDOT` and `AGOM`."
+    ))
+
+    return (
+        tle_parameters_comments = comments,
+        ephemeris_type = ephemeris_type,
+        classification_type = classification_type,
+        norad_cat_id = norad_cat_id,
+        element_set_number = element_set_number,
+        rev_at_epoch = rev_at_epoch,
+        bstar = bstar,
+        bterm = bterm,
+        mean_motion_dot = mean_motion_dot,
+        mean_motion_ddot = mean_motion_ddot,
+        agom = agom,
+    )
+end
+
+"""
+    _parse_omm_covariance_matrix(xml::Cursor, strict::Bool) -> OmmCovarianceMatrix
+
+Parse an OMM `covarianceMatrix` section at the cursor's current position.
+"""
+function _parse_omm_covariance_matrix(xml::XML.Cursor, strict::Bool)
+    comments = String[]
+    cov_ref_frame = nothing
+    names = (
+        "CX_X",
+        "CY_X",
+        "CY_Y",
+        "CZ_X",
+        "CZ_Y",
+        "CZ_Z",
+        "CX_DOT_X",
+        "CX_DOT_Y",
+        "CX_DOT_Z",
+        "CX_DOT_X_DOT",
+        "CY_DOT_X",
+        "CY_DOT_Y",
+        "CY_DOT_Z",
+        "CY_DOT_X_DOT",
+        "CY_DOT_Y_DOT",
+        "CZ_DOT_X",
+        "CZ_DOT_Y",
+        "CZ_DOT_Z",
+        "CZ_DOT_X_DOT",
+        "CZ_DOT_Y_DOT",
+        "CZ_DOT_Z_DOT",
+    )
+    values = Dict{String, Union{Nothing, Float64}}(name => nothing for name in names)
+    seen = Set{String}()
+
+    XML.@for_each_child xml node begin
+        nodetype(node) === Element || continue
+        lt = _omm_tag(node, strict)
+        v = _omm_scalar_value(node)
+        if lt == "COMMENT"
+            push!(comments, v)
+            continue
+        end
+        lt in seen && throw(ArgumentError("Duplicate OMM covariance element `$lt`."))
+        push!(seen, lt)
+
+        if lt == "COV_REF_FRAME"
+            cov_ref_frame = v
+        elseif haskey(values, lt)
+            values[lt] = parse(Float64, v)
+        else
+            throw(ArgumentError("Unknown OMM covariance element `$lt`."))
+        end
+    end
+
+    for name in names
+        isnothing(values[name]) && throw(ArgumentError(
+            "OMM covariance matrix is missing required element `$name`."
+        ))
+    end
+
+    return OmmCovarianceMatrix(
+        comments,
+        cov_ref_frame,
+        (values[name] for name in names)...
+    )
+end
+
+"""
+    _parse_omm_user_defined_parameters(
+        xml::Cursor,
+        strict::Bool
+    ) -> Vector{Pair{String,String}}
+
+Parse an OMM `userDefinedParameters` section at the cursor's current position.
+"""
+function _parse_omm_user_defined_parameters(xml::XML.Cursor, strict::Bool)
+    parameters = Pair{String, String}[]
+    XML.@for_each_child xml node begin
+        nodetype(node) === Element || continue
+        lt = _omm_tag(node, strict)
+        lt == "USER_DEFINED" ||
+            throw(ArgumentError("Unknown user-defined parameter element `$lt`."))
+        key = get(node, "parameter", nothing)
+        isnothing(key) && throw(ArgumentError(
+            "OMM `USER_DEFINED` element is missing required attribute `parameter`."
+        ))
+        push!(parameters, String(key) => _omm_scalar_value(node))
+    end
+    return parameters
 end

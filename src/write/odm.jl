@@ -28,15 +28,15 @@ format, overwriting its contents.
 function write_odm(io::IO, odm::OrbitDataMessage)
     doc = XML.Document()
 
-    decl = XML.Declaration()
-    decl["version"] = "1.0"
-    decl["encoding"] = "UTF-8"
+    decl = XML.Declaration(; version = "1.0", encoding = "UTF-8")
     push!(doc, decl)
 
-    root = XML.Element("ndm")
-    root["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
-    root["xsi:noNamespaceSchemaLocation"] =
-        "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd"
+    root = XML.Element(
+        "ndm";
+        var"xmlns:xsi" = "http://www.w3.org/2001/XMLSchema-instance",
+        var"xsi:noNamespaceSchemaLocation" =
+            "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd"
+    )
     push!(doc, root)
 
     if odm isa OrbitMeanElementsMessage
@@ -53,15 +53,15 @@ end
 function write_odm(io::IO, vodm::AbstractVector{T}) where T<:OrbitDataMessage
     doc = XML.Document()
 
-    decl = XML.Declaration()
-    decl["version"] = "1.0"
-    decl["encoding"] = "UTF-8"
+    decl = XML.Declaration(; version = "1.0", encoding = "UTF-8")
     push!(doc, decl)
 
-    root = XML.Element("ndm")
-    root["xmlns:xsi"] = "http://www.w3.org/2001/XMLSchema-instance"
-    root["xsi:noNamespaceSchemaLocation"] =
-        "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd"
+    root = XML.Element(
+        "ndm";
+        var"xmlns:xsi" = "http://www.w3.org/2001/XMLSchema-instance",
+        var"xsi:noNamespaceSchemaLocation" =
+            "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd"
+    )
     push!(doc, root)
 
     for odm in vodm

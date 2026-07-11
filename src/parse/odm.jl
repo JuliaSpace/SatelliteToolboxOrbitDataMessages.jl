@@ -12,9 +12,9 @@ export parse_odm
 Parse an Orbit Data Message (ODM) from the string `str`, which must contain a complete XML
 document, and return the parsed message(s).
 
-    parse_odm(xml::LazyNode; kwargs...) -> Vector{OrbitDataMessage}
+    parse_odm(xml::Cursor; kwargs...) -> Vector{OrbitDataMessage}
 
-Parse an Orbit Data Message (ODM) from the `LazyNode` `xml` and return the parsed
+Parse an Orbit Data Message (ODM) from the `Cursor` `xml` and return the parsed
 message(s).
 
 The return value is always a `Vector{OrbitDataMessage}`: a single-element vector for a
@@ -30,13 +30,17 @@ returning an empty vector. If the root tag is not recognized, an `ArgumentError`
 """
 function parse_odm(str::AbstractString; strict::Bool = true)
     # Open the XML file.
-    xml = parse(String(str), LazyNode)
+    xml = XML.Cursor(String(str))
     return parse_odm(xml; strict)
 end
 
-function parse_odm(xml::LazyNode; strict::Bool = true)
+function parse_odm(xml::XML.Cursor; strict::Bool = true)
     # Get the document root node.
-    root_node = children(xml)[end]
+    root_node = next!(xml)
+    while !isnothing(root_node) && nodetype(root_node) !== Element
+        root_node = next!(xml)
+    end
+    isnothing(root_node) && throw(ArgumentError("The XML document has no root element."))
 
     # Process the root node.
     t = _omm_tag(root_node, strict)
@@ -64,15 +68,16 @@ end
 ############################################################################################
 
 """
-    _parse_ndm(xml::LazyNode) -> Vector{OrbitDataMessage}
+    _parse_ndm(xml::Cursor, strict::Bool) -> Vector{OrbitDataMessage}
 
-Parse a Navigation Data Message (NDM) from a `LazyNode` `xml` and return a vector of Orbit
+Parse a Navigation Data Message (NDM) from a `Cursor` `xml` and return a vector of Orbit
 Data Messages (ODM).
 """
-function _parse_ndm(xml::LazyNode, strict::Bool)
+function _parse_ndm(xml::XML.Cursor, strict::Bool)
     messages = OrbitDataMessage[]
 
-    for node in children(xml)
+    XML.@for_each_child xml node begin
+        nodetype(node) === Element || continue
         lt = _omm_tag(node, strict)
 
         if lt == "omm"

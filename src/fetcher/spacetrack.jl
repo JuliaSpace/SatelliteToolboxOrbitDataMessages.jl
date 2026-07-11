@@ -476,8 +476,7 @@ function fetch_omms(
             return nothing
         end
 
-        xml  = parse(String(response.body), LazyNode)
-        omms = parse_omms(xml)
+        omms = parse_omms(String(response.body))
 
         # If the request is successful, we need to save the cookiejar because the expire
         # period may have been updated.

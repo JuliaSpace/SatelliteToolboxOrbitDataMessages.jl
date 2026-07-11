@@ -156,9 +156,8 @@ function fetch_omms(
             return throw(ErrorException("Invalid query: $query"))
         end
 
-        xml  = parse(str, LazyNode)
         # Celestrak currently emits empty required OMM 2.0 header values.
-        omms = parse_omms(xml; strict = false)
+        omms = parse_omms(str; strict = false)
 
         return omms
 
