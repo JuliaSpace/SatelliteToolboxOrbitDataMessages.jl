@@ -122,7 +122,10 @@ function create_omm_fetcher(
 end
 
 """
-    fetch_omms(fetcher::SpacetrackOmmFetcher; kwargs...) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
+    fetch_omms(
+        fetcher::SpacetrackOmmFetcher;
+        kwargs...
+    ) -> Union{Nothing, Vector{OrbitMeanElementsMessage}}
 
 Fetch Orbit Mean-Elements Messages (OMM) from the Spacetrack using `fetch` with the
 parameters in `kwargs...`.
@@ -327,12 +330,12 @@ function fetch_omms(
     predicates::Union{Nothing, Vector{Pair{String, P}}} = nothing,
     query_limits::Union{Nothing, Int, UnitRange{Int}} = nothing,
     satellite_name::Union{Nothing, AbstractString} = nothing,
-    satellite_number::Union{Nothing, Number} = nothing,
+    satellite_number::Union{Nothing, Integer} = nothing,
     space_data::Symbol = :gp,
 ) where {D1 <: Union{Date, DateTime}, D2 <: Union{Date, DateTime}, P}
     # Check if the cookie is still valid.
     if !_spacetrack__is_cookie_valid(fetcher.cookiejar)
-        @error "The login cookie has expired. Please create a new fetcher instance to login again."
+        @error "The login cookie expired. Create a new fetcher instance to log in again."
         return nothing
     end
 
@@ -364,7 +367,7 @@ function fetch_omms(
         # If the interval is specified and the space data is "gp", we switch to
         # "gp_history".
         if space_data == :gp
-            @debug "The space data was changed to `:gp_history` because an interval was specified."
+            @debug "Changed space data to `:gp_history` because an interval was specified."
             space_data = :gp_history
         end
     end
@@ -372,7 +375,7 @@ function fetch_omms(
     # -- Order By --------------------------------------------------------------------------
 
     if !isnothing(order_by)
-        order_by_predicate = ""
+        order_by_components = String[]
 
         for (field, direction) in order_by
             direction ∉ (:ascending, :descending) && throw(ArgumentError("""
@@ -382,10 +385,10 @@ function fetch_omms(
             ))
 
             dir_str = direction == :ascending ? "asc" : "desc"
-            order_by_predicate *=
-                isempty(order_by_predicate) ? "$field $dir_str" : ",$field $dir_str"
+            push!(order_by_components, "$field $dir_str")
         end
 
+        order_by_predicate = join(order_by_components, ',')
         !isempty(order_by_predicate) &&
             push!(query_predicates, "orderby" => HTML{String}(order_by_predicate))
     end
@@ -419,7 +422,9 @@ function fetch_omms(
 
     if !isnothing(satellite_number)
         # The satellite number must be positive.
-        satellite_number < 0 && throw(ArgumentError("The satellite number must be positive."))
+        satellite_number <= 0 && throw(ArgumentError(
+            "The satellite number must be positive."
+        ))
 
         push!(query_predicates, "NORAD_CAT_ID" => string(satellite_number))
 
@@ -437,12 +442,11 @@ function fetch_omms(
 
     # == Build Query URL ===================================================================
 
-    raw_query = ""
-
-    for (key, value) in query_predicates
+    query_components = map(query_predicates) do (key, value)
         v = value isa HTML{String} ? value.content : URIs.escapeuri(string(value))
-        raw_query *= "/$key/$v"
+        return "/$key/$v"
     end
+    raw_query = join(query_components)
 
     isempty(raw_query) && return nothing
 
@@ -475,11 +479,6 @@ function fetch_omms(
         xml  = parse(String(response.body), LazyNode)
         omms = parse_omms(xml)
 
-        if isnothing(omms)
-            @error "Could not parse the fetched OMMs."
-            return nothing
-        end
-
         # If the request is successful, we need to save the cookiejar because the expire
         # period may have been updated.
         _spacetrack__save_cookiejar(fetcher.cookiejar, fetcher.username)
@@ -487,18 +486,22 @@ function fetch_omms(
         return omms
 
     catch e
-        if e isa HTTP.ExceptionRequest.StatusError
-            if e.status == 401
-                @error "Unauthorized access. The login cookie may have expired. Please create a new fetcher instance to login again."
+        if e isa HTTP.Exceptions.HTTPError
+            if e isa HTTP.Exceptions.StatusError && e.status == 401
+                @error "Unauthorized access. Create a new fetcher instance to log in again."
                 _spacetrack__purge_cookiejar(fetcher.username)
                 return nothing
             end
 
-            @error """
-                An error occurred during the data request:
-                  HTTP Error Code : $(e.status)
-                  Query URL       : $query_url
-                """
+            if e isa HTTP.Exceptions.StatusError
+                @error """
+                    An error occurred during the data request:
+                      HTTP Error Code : $(e.status)
+                      Query URL       : $query_url
+                    """
+            else
+                @error "The Space-Track request failed." query_url exception = e
+            end
 
             return nothing
         end
@@ -585,9 +588,15 @@ fails, it returns `false`.
 function _spacetrack__login(username::String, password::Base.SecretBuffer)
     try
         # Materialize the plaintext only to build the URL-encoded body, then shred the
-        # buffer so the secret does not outlive this expression.
-        password_str = read(password, String)
-        Base.shred!(password)
+        # buffer so the secret does not outlive this expression. Use try/finally to
+        # guarantee shredding even if read fails.
+        local password_str
+
+        try
+            password_str = read(password, String)
+        finally
+            Base.shred!(password)
+        end
 
         login_data =
             "identity=$(URIs.escapeuri(username))&" *

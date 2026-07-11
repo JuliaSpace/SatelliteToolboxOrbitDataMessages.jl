@@ -9,11 +9,11 @@
     creation_date  = NanoDate("2025-12-30T23:36:37")
     epoch          = NanoDate("2025-12-30T18:12:04.533984")
 
-    # == Full keyword constructor -> v3.0 ==================================================
+    # == Full Keyword Constructor -> v3.0 ==================================================
 
-    @testset "Full keyword constructor" begin
+    @testset "Full Keyword Constructor" begin
         omm = OrbitMeanElementsMessage(;
-            header_comment   = "Test header",
+            header_comments  = ["Test header", "Second header comment"],
             classification   = "UNCLASSIFIED",
             creation_date    = creation_date,
             originator       = "TEST",
@@ -25,7 +25,6 @@
             time_system      = "UTC",
             mean_element_theory = "SGP4",
             epoch            = epoch,
-            semi_major_axis  = 7000.0,
             mean_motion      = 15.0,
             eccentricity     = 0.001,
             inclination      = 45.0,
@@ -35,11 +34,13 @@
             GM               = 398600.4418,
             mass             = 100.0,
             bstar            = 1e-4,
+            mean_motion_dot  = 0.0,
+            mean_motion_ddot = 0.0,
             norad_cat_id     = 12345,
         )
 
         @test omm.version == v"3.0"
-        @test omm.header.comment == "Test header"
+        @test omm.header.comments == ["Test header", "Second header comment"]
         @test omm.header.classification == "UNCLASSIFIED"
         @test omm.header.message_id == "MSG-001"
         @test omm.body.segment.data.mass == 100.0
@@ -47,9 +48,9 @@
         @test omm.body.segment.data.norad_cat_id == 12345
     end
 
-    # == Minimal keyword constructor =======================================================
+    # == Minimal Keyword Constructor =======================================================
 
-    @testset "Minimal keyword constructor" begin
+    @testset "Minimal Keyword Constructor" begin
         omm = OrbitMeanElementsMessage(;
             creation_date        = creation_date,
             originator           = "TEST",
@@ -60,6 +61,7 @@
             time_system          = "UTC",
             mean_element_theory  = "SGP4",
             epoch                = epoch,
+            mean_motion          = 15.0,
             eccentricity         = 0.001,
             inclination          = 45.0,
             raan                 = 100.0,
@@ -68,20 +70,20 @@
         )
 
         @test omm.version == v"3.0"
-        @test omm.header.comment === nothing
+        @test isempty(omm.header.comments)
         @test omm.header.classification === nothing
         @test omm.header.message_id === nothing
         @test omm.body.segment.data.semi_major_axis === nothing
-        @test omm.body.segment.data.mean_motion === nothing
+        @test omm.body.segment.data.mean_motion == 15.0
         @test omm.body.segment.data.GM === nothing
         @test omm.body.segment.data.mass === nothing
         @test omm.body.segment.data.bstar === nothing
         @test omm.body.segment.data.user_defined_parameters === nothing
     end
 
-    # == Reconstruction override one field =================================================
+    # == Reconstruction Override One Field =================================================
 
-    @testset "Reconstruction override one field" begin
+    @testset "Reconstruction Override One Field" begin
         omm = OrbitMeanElementsMessage(;
             creation_date        = creation_date,
             originator           = "TEST",
@@ -92,6 +94,7 @@
             time_system          = "UTC",
             mean_element_theory  = "SGP4",
             epoch                = epoch,
+            mean_motion          = 15.0,
             eccentricity         = 0.001,
             inclination          = 45.0,
             raan                 = 100.0,
@@ -109,9 +112,9 @@
         @test omm2.body.segment.data.eccentricity == omm.body.segment.data.eccentricity
     end
 
-    # == Reconstruction override multiple fields ===========================================
+    # == Reconstruction Override Multiple Fields ===========================================
 
-    @testset "Reconstruction override multiple fields" begin
+    @testset "Reconstruction Override Multiple Fields" begin
         omm = OrbitMeanElementsMessage(;
             creation_date        = creation_date,
             originator           = "TEST",
@@ -122,6 +125,7 @@
             time_system          = "UTC",
             mean_element_theory  = "SGP4",
             epoch                = epoch,
+            mean_motion          = 15.0,
             eccentricity         = 0.001,
             inclination          = 45.0,
             raan                 = 100.0,
@@ -141,5 +145,31 @@
         # Unchanged fields.
         @test omm2.body.segment.metadata.object_id == omm.body.segment.metadata.object_id
         @test omm2.body.segment.data.raan == omm.body.segment.data.raan
+    end
+
+    @testset "Exactly One Mean-Motion Representation" begin
+        kwargs = (;
+            creation_date,
+            originator = "TEST",
+            object_name = "TEST SAT",
+            object_id = "2025-001A",
+            center_name = "EARTH",
+            ref_frame = "TEME",
+            time_system = "UTC",
+            mean_element_theory = "SGP4",
+            epoch,
+            eccentricity = 0.001,
+            inclination = 45.0,
+            raan = 100.0,
+            arg_of_pericenter = 50.0,
+            mean_anomaly = 200.0,
+        )
+
+        @test_throws ArgumentError OrbitMeanElementsMessage(; kwargs...)
+        @test_throws ArgumentError OrbitMeanElementsMessage(;
+            kwargs...,
+            semi_major_axis = 7000.0,
+            mean_motion = 15.0,
+        )
     end
 end

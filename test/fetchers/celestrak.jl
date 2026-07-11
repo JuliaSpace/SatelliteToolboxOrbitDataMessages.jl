@@ -4,10 +4,10 @@
 #
 ############################################################################################
 
-@testset "Celestrak fetcher" verbose = true begin
+@testset "Celestrak Fetcher" verbose = true begin
     # == Default URL =======================================================================
 
-    @testset "Default fetcher" begin
+    @testset "Default Fetcher" begin
         f = create_omm_fetcher(CelestrakOmmFetcher)
         @test f isa CelestrakOmmFetcher
         @test f.url == "https://celestrak.org/NORAD/elements/gp.php"
@@ -27,40 +27,40 @@
         @test sprint(show, f) == "CelestrakOmmFetcher: https://example.com/api"
     end
 
-    # == Negative satellite number =========================================================
+    # == Negative Satellite Number =========================================================
 
-    @testset "Negative satellite number" begin
+    @testset "Negative Satellite Number" begin
         f = create_omm_fetcher(CelestrakOmmFetcher)
         @test_throws ArgumentError fetch_omms(f; satellite_number=-1)
     end
 
-    # == Bad international designator ======================================================
+    # == Bad International Designator ======================================================
 
-    @testset "Bad international designator" begin
+    @testset "Bad International Designator" begin
         f = create_omm_fetcher(CelestrakOmmFetcher)
         @test_throws ArgumentError fetch_omms(f; international_designator="bad-format")
     end
 
-    # == Empty satellite name ==============================================================
+    # == Empty Satellite Name ==============================================================
 
-    @testset "Empty satellite name" begin
+    @testset "Empty Satellite Name" begin
         f = create_omm_fetcher(CelestrakOmmFetcher)
         @test_throws ArgumentError fetch_omms(f; satellite_name="")
     end
 
-    # == No query information ==============================================================
+    # == No Query Information ==============================================================
 
-    @testset "No query info" begin
+    @testset "No Query Info" begin
         f = create_omm_fetcher(CelestrakOmmFetcher)
         @test_throws ArgumentError fetch_omms(f)
     end
 
-    # == Network lookup (ISS) ==============================================================
+    # == Network Lookup (ISS) ==============================================================
     # This test makes a real HTTP request to Celestrak. It is not gated behind an env flag
     # because Celestrak is a free public service. If the network is unavailable, the test
     # is skipped gracefully.
 
-    @testset "Fetch ISS (network)" begin
+    @testset "Fetch ISS (Network)" begin
         f = create_omm_fetcher(CelestrakOmmFetcher)
         result = try
             fetch_omms(f; satellite_number=25544)

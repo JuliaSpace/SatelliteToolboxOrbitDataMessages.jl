@@ -6,6 +6,7 @@ CurrentModule = SatelliteToolboxOrbitDataMessages
 
 ```@setup creating
 using SatelliteToolboxOrbitDataMessages
+using Dates
 using NanoDates
 ```
 
@@ -137,12 +138,12 @@ The following table lists all keywords accepted by the constructor. Fields marke
 
 | **Keyword**                | **Type**                          | **Section**       | **Required** |
 |:---------------------------|:----------------------------------|:------------------|:------------:|
-| `header_comment`           | `String`                          | Header            |              |
+| `header_comments`          | `Vector{String}`                  | Header            |              |
 | `classification`           | `String`                          | Header            |              |
 | `creation_date`            | `NanoDate`                        | Header            |      ✅       |
 | `originator`               | `String`                          | Header            |      ✅       |
 | `message_id`               | `String`                          | Header            |              |
-| `metadata_comment`         | `String`                          | Metadata          |              |
+| `metadata_comments`        | `Vector{String}`                  | Metadata          |              |
 | `object_name`              | `String`                          | Metadata          |      ✅       |
 | `object_id`                | `String`                          | Metadata          |      ✅       |
 | `center_name`              | `String`                          | Metadata          |      ✅       |
@@ -150,7 +151,8 @@ The following table lists all keywords accepted by the constructor. Fields marke
 | `ref_frame_epoch`          | `NanoDate`                        | Metadata          |              |
 | `time_system`              | `String`                          | Metadata          |      ✅       |
 | `mean_element_theory`      | `String`                          | Metadata          |      ✅       |
-| `data_comment`             | `String`                          | Mean Elements     |              |
+| `data_comments`            | `Vector{String}`                  | Data              |              |
+| `mean_elements_comments`   | `Vector{String}`                  | Mean Elements     |              |
 | `epoch`                    | `NanoDate`                        | Mean Elements     |      ✅       |
 | `semi_major_axis`          | `Float64`                         | Mean Elements     |    ✅ [^1]    |
 | `mean_motion`              | `Float64`                         | Mean Elements     |    ✅ [^1]    |
@@ -160,21 +162,69 @@ The following table lists all keywords accepted by the constructor. Fields marke
 | `arg_of_pericenter`        | `Float64`                         | Mean Elements     |      ✅       |
 | `mean_anomaly`             | `Float64`                         | Mean Elements     |      ✅       |
 | `GM`                       | `Float64`                         | Mean Elements     |              |
-| `spacecraft_data_comment`  | `String`                          | Spacecraft Data   |              |
+| `spacecraft_parameters_comments` | `Vector{String}`           | Spacecraft Data   |              |
 | `mass`                     | `Float64`                         | Spacecraft Data   |              |
 | `solar_rad_area`           | `Float64`                         | Spacecraft Data   |              |
 | `solar_rad_coeff`          | `Float64`                         | Spacecraft Data   |              |
 | `drag_area`                | `Float64`                         | Spacecraft Data   |              |
 | `drag_coeff`               | `Float64`                         | Spacecraft Data   |              |
-| `tle_parameters_comment`   | `String`                          | TLE Parameters    |              |
+| `tle_parameters_comments`  | `Vector{String}`                  | TLE Parameters    |              |
 | `ephemeris_type`           | `Int`                             | TLE Parameters    |              |
 | `classification_type`      | `Char`                            | TLE Parameters    |              |
 | `norad_cat_id`             | `Int`                             | TLE Parameters    |              |
 | `element_set_number`       | `Int`                             | TLE Parameters    |              |
 | `rev_at_epoch`             | `Int`                             | TLE Parameters    |              |
 | `bstar`                    | `Float64`                         | TLE Parameters    |              |
+| `bterm`                    | `Float64`                         | TLE Parameters    |              |
 | `mean_motion_dot`          | `Float64`                         | TLE Parameters    |              |
 | `mean_motion_ddot`         | `Float64`                         | TLE Parameters    |              |
+| `agom`                     | `Float64`                         | TLE Parameters    |              |
+| `covariance_matrix`        | `OmmCovarianceMatrix`             | Covariance Matrix |              |
 | `user_defined_parameters`  | `Vector{Pair{String, String}}`    | User-Defined      |              |
 
 [^1]: At least one of `semi_major_axis` or `mean_motion` must be provided.
+
+Comment keywords accept vectors because each XML section may contain multiple `COMMENT`
+elements. `data_comments` applies directly to `<data>`, while `mean_elements_comments`
+applies to `<meanElements>`.
+
+If any TLE-related parameter is supplied, `mean_motion_dot` is required. Exactly one of
+`bstar` or `bterm`, and exactly one of `mean_motion_ddot` or `agom`, must also be supplied.
+The constructor throws `ArgumentError` when these constraints are not met.
+
+## Covariance Matrix
+
+The OMM standard defines an optional covariance matrix section. It is represented by the
+`OmmCovarianceMatrix` type, which stores the 21 unique upper-triangular elements of the
+symmetric 6×6 matrix, along with an optional comment and reference frame:
+
+```@repl creating
+cov = OmmCovarianceMatrix(;
+    cov_ref_frame = "ITRF",
+    cx_x           = 1.0,
+    cy_x           = 2.0,
+    cy_y           = 3.0,
+    cz_x           = 4.0,
+    cz_y           = 5.0,
+    cz_z           = 6.0,
+    cx_dot_x       = 7.0,
+    cx_dot_y       = 8.0,
+    cx_dot_z       = 9.0,
+    cx_dot_x_dot   = 10.0,
+    cy_dot_x       = 11.0,
+    cy_dot_y       = 12.0,
+    cy_dot_z       = 13.0,
+    cy_dot_x_dot   = 14.0,
+    cy_dot_y_dot   = 15.0,
+    cz_dot_x       = 16.0,
+    cz_dot_y       = 17.0,
+    cz_dot_z       = 18.0,
+    cz_dot_x_dot   = 19.0,
+    cz_dot_y_dot   = 20.0,
+    cz_dot_z_dot   = 21.0,
+)
+
+omm = OrbitMeanElementsMessage(omm; covariance_matrix = cov)
+
+omm.body.segment.data.covariance_matrix.cov_ref_frame
+```

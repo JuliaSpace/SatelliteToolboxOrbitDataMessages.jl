@@ -20,7 +20,7 @@ function _valid_spacetrack_cookiejar()
     return cookiejar
 end
 
-@testset "Spacetrack fetcher (offline)" verbose = true begin
+@testset "Spacetrack Fetcher (Offline)" verbose = true begin
     # == Invalid space_data ================================================================
 
     @testset "Invalid space_data" begin
@@ -33,9 +33,9 @@ end
         )
     end
 
-    # == Bad interval (start >= end) =======================================================
+    # == Bad Interval (start >= end) =======================================================
 
-    @testset "Bad interval" begin
+    @testset "Bad Interval" begin
         fetcher = SpacetrackOmmFetcher("test", _valid_spacetrack_cookiejar())
 
         @test_throws ArgumentError fetch_omms(
@@ -45,7 +45,7 @@ end
         )
     end
 
-    # == Bad order_by direction ============================================================
+    # == Bad order_by Direction ============================================================
 
     @testset "Bad order_by" begin
         fetcher = SpacetrackOmmFetcher("test", _valid_spacetrack_cookiejar())
@@ -69,9 +69,9 @@ end
         )
     end
 
-    # == query_limits = 5:3 (empty range) ==================================================
+    # == query_limits = 5:3 (Empty Range) ==================================================
 
-    @testset "Empty query_limits range" begin
+    @testset "Empty query_limits Range" begin
         fetcher = SpacetrackOmmFetcher("test", _valid_spacetrack_cookiejar())
 
         @test_throws ArgumentError fetch_omms(
@@ -83,13 +83,13 @@ end
 
     # == _spacetrack__is_cookie_valid(nothing) =============================================
 
-    @testset "Cookie validity (nothing)" begin
+    @testset "Cookie Validity (nothing)" begin
         @test !SatelliteToolboxOrbitDataMessages._spacetrack__is_cookie_valid(nothing)
     end
 
-    # == Expired cookie ====================================================================
+    # == Expired Cookie ====================================================================
 
-    @testset "Expired cookie" begin
+    @testset "Expired Cookie" begin
         cookiejar = HTTP.CookieJar()
         host = "www.space-track.org"
         cookie_path = host * ";/;chocolatechip"
@@ -103,9 +103,9 @@ end
         @test !SatelliteToolboxOrbitDataMessages._spacetrack__is_cookie_valid(cookiejar)
     end
 
-    # == Valid cookie ======================================================================
+    # == Valid Cookie ======================================================================
 
-    @testset "Valid cookie" begin
+    @testset "Valid Cookie" begin
         cookiejar = _valid_spacetrack_cookiejar()
         @test SatelliteToolboxOrbitDataMessages._spacetrack__is_cookie_valid(cookiejar)
     end

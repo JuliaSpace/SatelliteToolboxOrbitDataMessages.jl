@@ -19,8 +19,15 @@ ndm_xml = """
 ```
 
 This package parses Orbit Data Messages provided as **XML** strings. All parsing functions
-accept either a raw XML `String` or an already-parsed
+accept either a raw XML `AbstractString` or an already-parsed
 [`XML.LazyNode`](https://github.com/JuliaComputing/XML.jl) object.
+
+Parsing is strict and case-sensitive by default. Pass `strict = false` to `parse_omm`,
+`parse_omms`, or `parse_odm` to match XML tags and the required OMM `id` attribute value
+case-insensitively. Permissive mode also preserves an empty OMM header creation date as
+`nothing`, which accommodates known Celestrak OMM 2.0 output without inventing a timestamp.
+Such an incomplete message cannot be written as OMM 3.0. Both modes otherwise reject
+unrecognized tags and malformed or incomplete OMM sections.
 
 Throughout this page, we assume the variable `omm_xml` holds the XML string of a single OMM,
 and `ndm_xml` holds a Navigation Data Message (NDM) that bundles two OMMs (`AMAZONIA 1` and
@@ -50,18 +57,16 @@ length(omms)
 omms[2].body.segment.metadata.object_name
 ```
 
-`parse_omms` always returns a `Vector{OrbitMeanElementsMessage}` (possibly empty), or
-`nothing` if the document contains no OMM section.
+`parse_omms` always returns a `Vector{OrbitMeanElementsMessage}`, which is empty when a
+recognized document contains no supported OMM.
 
 ## Parsing Generic Orbit Data Messages
 
 The [`parse_odm`](@ref) function is the most general entry point. It inspects the root tag
 of the document and dispatches to the appropriate parser:
 
-- If the document is a single message (e.g. an `<omm>`), it returns a single
-  [`OrbitDataMessage`](@ref).
-- If the document is a Navigation Data Message (`<ndm>`), it returns a
-  `Vector{OrbitDataMessage}` with every supported message it contains.
+`parse_odm` always returns a `Vector{OrbitDataMessage}`. A stand-alone `<omm>` produces a
+single-element vector, while an `<ndm>` produces a vector containing every supported message.
 
 ```@repl parsing
 odm = parse_odm(omm_xml)

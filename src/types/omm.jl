@@ -9,16 +9,16 @@
 #
 ############################################################################################
 
-export OrbitMeanElementsMessage
+export OrbitMeanElementsMessage, OmmCovarianceMatrix
 
 # == Types =================================================================================
 
 # -- Header --------------------------------------------------------------------------------
 
 @kwdef struct OmmHeader
-    comment::Union{String, Nothing} = nothing
+    comments::Vector{String} = String[]
     classification::Union{String, Nothing} = nothing
-    creation_date::NanoDate
+    creation_date::Union{NanoDate, Nothing}
     originator::String
     message_id::Union{String, Nothing} = nothing
 end
@@ -26,7 +26,7 @@ end
 # -- Metadata ------------------------------------------------------------------------------
 
 @kwdef struct OmmMetadata
-    comment::Union{String, Nothing} = nothing
+    comments::Vector{String} = String[]
     object_name::String
     object_id::String
     center_name::String
@@ -38,10 +38,73 @@ end
 
 # -- Data ----------------------------------------------------------------------------------
 
+"""
+    struct OmmCovarianceMatrix
+
+Covariance matrix of an Orbit Mean-Elements Message (OMM) as defined by the CCSDS 502.0-B-3
+standard.
+
+The matrix is symmetric, so only the upper-triangular 21 elements are stored. The elements
+follow the CCSDS naming convention where `CX_X` is the (1,1) entry, `CY_X` is the (2,1)
+entry, etc.
+
+# Fields
+
+- `comments::Vector{String}`: Comments for the covariance matrix section.
+- `cov_ref_frame::Union{String, Nothing}`: Reference frame of the covariance matrix.
+- `cx_x::Float64`: (1,1) element [km²].
+- `cy_x::Float64`: (2,1) element [km²].
+- `cy_y::Float64`: (2,2) element [km²].
+- `cz_x::Float64`: (3,1) element [km²].
+- `cz_y::Float64`: (3,2) element [km²].
+- `cz_z::Float64`: (3,3) element [km²].
+- `cx_dot_x::Float64`: (4,1) element [km²/s].
+- `cx_dot_y::Float64`: (4,2) element [km²/s].
+- `cx_dot_z::Float64`: (4,3) element [km²/s].
+- `cx_dot_x_dot::Float64`: (4,4) element [km²/s²].
+- `cy_dot_x::Float64`: (5,1) element [km²/s].
+- `cy_dot_y::Float64`: (5,2) element [km²/s].
+- `cy_dot_z::Float64`: (5,3) element [km²/s].
+- `cy_dot_x_dot::Float64`: (5,4) element [km²/s²].
+- `cy_dot_y_dot::Float64`: (5,5) element [km²/s²].
+- `cz_dot_x::Float64`: (6,1) element [km²/s].
+- `cz_dot_y::Float64`: (6,2) element [km²/s].
+- `cz_dot_z::Float64`: (6,3) element [km²/s].
+- `cz_dot_x_dot::Float64`: (6,4) element [km²/s²].
+- `cz_dot_y_dot::Float64`: (6,5) element [km²/s²].
+- `cz_dot_z_dot::Float64`: (6,6) element [km²/s²].
+"""
+@kwdef struct OmmCovarianceMatrix
+    comments::Vector{String} = String[]
+    cov_ref_frame::Union{String, Nothing} = nothing
+    cx_x::Float64
+    cy_x::Float64
+    cy_y::Float64
+    cz_x::Float64
+    cz_y::Float64
+    cz_z::Float64
+    cx_dot_x::Float64
+    cx_dot_y::Float64
+    cx_dot_z::Float64
+    cx_dot_x_dot::Float64
+    cy_dot_x::Float64
+    cy_dot_y::Float64
+    cy_dot_z::Float64
+    cy_dot_x_dot::Float64
+    cy_dot_y_dot::Float64
+    cz_dot_x::Float64
+    cz_dot_y::Float64
+    cz_dot_z::Float64
+    cz_dot_x_dot::Float64
+    cz_dot_y_dot::Float64
+    cz_dot_z_dot::Float64
+end
+
 @kwdef struct OmmData
     # == Mean Keplerian Elements ===========================================================
 
-    data_comment::Union{String, Nothing} = nothing
+    comments::Vector{String} = String[]
+    mean_elements_comments::Vector{String} = String[]
     epoch::NanoDate
     semi_major_axis::Union{Float64, Nothing} = nothing
     mean_motion::Union{Float64, Nothing} = nothing
@@ -54,7 +117,7 @@ end
 
     # == Spacecraft Data ===================================================================
 
-    spacecraft_data_comment::Union{String, Nothing} = nothing
+    spacecraft_parameters_comments::Vector{String} = String[]
     mass::Union{Float64, Nothing} = nothing
     solar_rad_area::Union{Float64, Nothing} = nothing
     solar_rad_coeff::Union{Float64, Nothing} = nothing
@@ -63,19 +126,21 @@ end
 
     # == TLE Related Parameters ===========================================================
 
-    tle_parameters_comment::Union{String, Nothing} = nothing
+    tle_parameters_comments::Vector{String} = String[]
     ephemeris_type::Union{Int, Nothing} = nothing
     classification_type::Union{Char, Nothing} = nothing
     norad_cat_id::Union{Int, Nothing} = nothing
     element_set_number::Union{Int, Nothing} = nothing
     rev_at_epoch::Union{Int, Nothing} = nothing
     bstar::Union{Float64, Nothing} = nothing
+    bterm::Union{Float64, Nothing} = nothing
     mean_motion_dot::Union{Float64, Nothing} = nothing
     mean_motion_ddot::Union{Float64, Nothing} = nothing
+    agom::Union{Float64, Nothing} = nothing
 
     # == Covariance Matrix =================================================================
 
-    # TODO: Support covariance matrix.
+    covariance_matrix::Union{OmmCovarianceMatrix, Nothing} = nothing
 
     # == User-Defined Parameters ===========================================================
 
@@ -122,6 +187,98 @@ struct OrbitMeanElementsMessage <: OrbitDataMessage
     body::OmmBody
 end
 
+# == Equality ==============================================================================
+
+function ==(x::OmmHeader, y::OmmHeader)
+    return x.comments == y.comments &&
+        x.classification == y.classification &&
+        x.creation_date == y.creation_date &&
+        x.originator == y.originator &&
+        x.message_id == y.message_id
+end
+
+function ==(x::OmmMetadata, y::OmmMetadata)
+    return x.comments == y.comments &&
+        x.object_name == y.object_name &&
+        x.object_id == y.object_id &&
+        x.center_name == y.center_name &&
+        x.ref_frame == y.ref_frame &&
+        x.ref_frame_epoch == y.ref_frame_epoch &&
+        x.time_system == y.time_system &&
+        x.mean_element_theory == y.mean_element_theory
+end
+
+function ==(x::OmmCovarianceMatrix, y::OmmCovarianceMatrix)
+    return x.comments == y.comments &&
+        x.cov_ref_frame == y.cov_ref_frame &&
+        x.cx_x == y.cx_x &&
+        x.cy_x == y.cy_x &&
+        x.cy_y == y.cy_y &&
+        x.cz_x == y.cz_x &&
+        x.cz_y == y.cz_y &&
+        x.cz_z == y.cz_z &&
+        x.cx_dot_x == y.cx_dot_x &&
+        x.cx_dot_y == y.cx_dot_y &&
+        x.cx_dot_z == y.cx_dot_z &&
+        x.cx_dot_x_dot == y.cx_dot_x_dot &&
+        x.cy_dot_x == y.cy_dot_x &&
+        x.cy_dot_y == y.cy_dot_y &&
+        x.cy_dot_z == y.cy_dot_z &&
+        x.cy_dot_x_dot == y.cy_dot_x_dot &&
+        x.cy_dot_y_dot == y.cy_dot_y_dot &&
+        x.cz_dot_x == y.cz_dot_x &&
+        x.cz_dot_y == y.cz_dot_y &&
+        x.cz_dot_z == y.cz_dot_z &&
+        x.cz_dot_x_dot == y.cz_dot_x_dot &&
+        x.cz_dot_y_dot == y.cz_dot_y_dot &&
+        x.cz_dot_z_dot == y.cz_dot_z_dot
+end
+
+function ==(x::OmmData, y::OmmData)
+    return x.comments == y.comments &&
+        x.mean_elements_comments == y.mean_elements_comments &&
+        x.epoch == y.epoch &&
+        x.semi_major_axis == y.semi_major_axis &&
+        x.mean_motion == y.mean_motion &&
+        x.eccentricity == y.eccentricity &&
+        x.inclination == y.inclination &&
+        x.raan == y.raan &&
+        x.arg_of_pericenter == y.arg_of_pericenter &&
+        x.mean_anomaly == y.mean_anomaly &&
+        x.GM == y.GM &&
+        x.spacecraft_parameters_comments == y.spacecraft_parameters_comments &&
+        x.mass == y.mass &&
+        x.solar_rad_area == y.solar_rad_area &&
+        x.solar_rad_coeff == y.solar_rad_coeff &&
+        x.drag_area == y.drag_area &&
+        x.drag_coeff == y.drag_coeff &&
+        x.tle_parameters_comments == y.tle_parameters_comments &&
+        x.ephemeris_type == y.ephemeris_type &&
+        x.classification_type == y.classification_type &&
+        x.norad_cat_id == y.norad_cat_id &&
+        x.element_set_number == y.element_set_number &&
+        x.rev_at_epoch == y.rev_at_epoch &&
+        x.bstar == y.bstar &&
+        x.bterm == y.bterm &&
+        x.mean_motion_dot == y.mean_motion_dot &&
+        x.mean_motion_ddot == y.mean_motion_ddot &&
+        x.agom == y.agom &&
+        x.covariance_matrix == y.covariance_matrix &&
+        x.user_defined_parameters == y.user_defined_parameters
+end
+
+function ==(x::OmmSegment, y::OmmSegment)
+    return x.metadata == y.metadata && x.data == y.data
+end
+
+function ==(x::OmmBody, y::OmmBody)
+    return x.segment == y.segment
+end
+
+function ==(x::OrbitMeanElementsMessage, y::OrbitMeanElementsMessage)
+    return x.version == y.version && x.header == y.header && x.body == y.body
+end
+
 # == Constructors ==========================================================================
 
 """
@@ -140,16 +297,16 @@ The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be prov
 
 # Keywords
 
-- `header_comment::Union{String, Nothing}`: Comment for the header section.
-    (**Default**: `nothing`)
+- `header_comments::Vector{String}`: Comments for the header section.
+    (**Default**: `String[]`)
 - `classification::Union{String, Nothing}`: Message classification.
     (**Default**: `nothing`)
 - `creation_date::NanoDate`: Message creation date (**required**).
 - `originator::String`: Message originator (**required**).
 - `message_id::Union{String, Nothing}`: Unique message identifier.
     (**Default**: `nothing`)
-- `metadata_comment::Union{String, Nothing}`: Comment for the metadata section.
-    (**Default**: `nothing`)
+- `metadata_comments::Vector{String}`: Comments for the metadata section.
+    (**Default**: `String[]`)
 - `object_name::String`: Spacecraft name (**required**).
 - `object_id::String`: International designator, usually in the format `YYYY-NNNP`
     (**required**).
@@ -161,8 +318,10 @@ The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be prov
 - `time_system::String`: Time system used for the message (**required**).
 - `mean_element_theory::String`: Theory describing the mean elements, e.g. `"SGP4"`
     (**required**).
-- `data_comment::Union{String, Nothing}`: Comment for the mean elements section.
-    (**Default**: `nothing`)
+- `data_comments::Vector{String}`: Comments for the data section.
+    (**Default**: `String[]`)
+- `mean_elements_comments::Vector{String}`: Comments for the mean elements section.
+    (**Default**: `String[]`)
 - `epoch::NanoDate`: Epoch of the mean Keplerian elements (**required**).
 - `semi_major_axis::Union{Float64, Nothing}`: Semi-major axis [km]. Either this keyword or
     `mean_motion` must be provided.
@@ -177,9 +336,9 @@ The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be prov
 - `mean_anomaly::Float64`: Mean anomaly [deg] (**required**).
 - `GM::Union{Float64, Nothing}`: Gravitational coefficient [km³/s²].
     (**Default**: `nothing`)
-- `spacecraft_data_comment::Union{String, Nothing}`: Comment for the spacecraft data
+- `spacecraft_parameters_comments::Vector{String}`: Comments for the spacecraft parameters
     section.
-    (**Default**: `nothing`)
+    (**Default**: `String[]`)
 - `mass::Union{Float64, Nothing}`: Spacecraft mass [kg].
     (**Default**: `nothing`)
 - `solar_rad_area::Union{Float64, Nothing}`: Effective area for solar radiation pressure
@@ -191,9 +350,9 @@ The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be prov
     (**Default**: `nothing`)
 - `drag_coeff::Union{Float64, Nothing}`: Atmospheric drag coefficient.
     (**Default**: `nothing`)
-- `tle_parameters_comment::Union{String, Nothing}`: Comment for the TLE-related parameters
+- `tle_parameters_comments::Vector{String}`: Comments for the TLE-related parameters
     section.
-    (**Default**: `nothing`)
+    (**Default**: `String[]`)
 - `ephemeris_type::Union{Int, Nothing}`: Default ephemeris type associated with the TLE.
     (**Default**: `nothing`)
 - `classification_type::Union{Char, Nothing}`: Classification type, e.g. `'U'` for
@@ -207,17 +366,24 @@ The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be prov
     (**Default**: `nothing`)
 - `bstar::Union{Float64, Nothing}`: SGP4 drag term (B*) [1/earth radii].
     (**Default**: `nothing`)
+- `bterm::Union{Float64, Nothing}`: Ballistic coefficient [m²/kg].
+    (**Default**: `nothing`)
 - `mean_motion_dot::Union{Float64, Nothing}`: First time derivative of the mean motion
     [rev/day²].
     (**Default**: `nothing`)
 - `mean_motion_ddot::Union{Float64, Nothing}`: Second time derivative of the mean motion
     [rev/day³].
     (**Default**: `nothing`)
+- `agom::Union{Float64, Nothing}`: Solar radiation pressure coefficient [m²/kg].
+    (**Default**: `nothing`)
 - `user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}}`: User-defined
     parameters as a vector of `key => value` pairs.
     (**Default**: `nothing`)
 
-    OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...) -> OrbitMeanElementsMessage
+    OrbitMeanElementsMessage(
+        omm::OrbitMeanElementsMessage;
+        kwargs...
+    ) -> OrbitMeanElementsMessage
 
 Create a copy of `omm`, overriding the fields specified in `kwargs...`. Any keyword accepted
 by the main constructor can be used; the remaining fields are copied from `omm`.
@@ -225,14 +391,14 @@ by the main constructor can be used; the remaining fields are copied from `omm`.
 function OrbitMeanElementsMessage(
     ;
     # == Header ============================================================================
-    header_comment::Union{String, Nothing} = nothing,
+    header_comments::Vector{String} = String[],
     classification::Union{String, Nothing} = nothing,
     creation_date::NanoDate,
     originator::String,
     message_id::Union{String, Nothing} = nothing,
 
     # == Metadata ==========================================================================
-    metadata_comment::Union{String, Nothing} = nothing,
+    metadata_comments::Vector{String} = String[],
     object_name::String,
     object_id::String,
     center_name::String,
@@ -245,7 +411,8 @@ function OrbitMeanElementsMessage(
 
     # -- Mean Keplerian Elements -----------------------------------------------------------
 
-    data_comment::Union{String, Nothing} = nothing,
+    data_comments::Vector{String} = String[],
+    mean_elements_comments::Vector{String} = String[],
     epoch::NanoDate,
     semi_major_axis::Union{Float64, Nothing} = nothing,
     mean_motion::Union{Float64, Nothing} = nothing,
@@ -258,7 +425,7 @@ function OrbitMeanElementsMessage(
 
     # -- Spacecraft Data -------------------------------------------------------------------
 
-    spacecraft_data_comment::Union{String, Nothing} = nothing,
+    spacecraft_parameters_comments::Vector{String} = String[],
     mass::Union{Float64, Nothing} = nothing,
     solar_rad_area::Union{Float64, Nothing} = nothing,
     solar_rad_coeff::Union{Float64, Nothing} = nothing,
@@ -267,23 +434,60 @@ function OrbitMeanElementsMessage(
 
     # -- TLE Related Parameters ------------------------------------------------------------
 
-    tle_parameters_comment::Union{String, Nothing} = nothing,
+    tle_parameters_comments::Vector{String} = String[],
     ephemeris_type::Union{Int, Nothing} = nothing,
     classification_type::Union{Char, Nothing} = nothing,
     norad_cat_id::Union{Int, Nothing} = nothing,
     element_set_number::Union{Int, Nothing} = nothing,
     rev_at_epoch::Union{Int, Nothing} = nothing,
     bstar::Union{Float64, Nothing} = nothing,
+    bterm::Union{Float64, Nothing} = nothing,
     mean_motion_dot::Union{Float64, Nothing} = nothing,
     mean_motion_ddot::Union{Float64, Nothing} = nothing,
+    agom::Union{Float64, Nothing} = nothing,
+
+    # -- Covariance Matrix ----------------------------------------------------------------
+
+    covariance_matrix::Union{OmmCovarianceMatrix, Nothing} = nothing,
 
     # -- User-Defined Parameters -----------------------------------------------------------
 
     user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}} = nothing
 )
+    (isnothing(semi_major_axis) == isnothing(mean_motion)) && throw(ArgumentError(
+        "Exactly one of `semi_major_axis` and `mean_motion` must be provided."
+    ))
+
+    has_tle_parameters =
+        !isempty(tle_parameters_comments) ||
+        any(!isnothing, (
+            ephemeris_type,
+            classification_type,
+            norad_cat_id,
+            element_set_number,
+            rev_at_epoch,
+            bstar,
+            bterm,
+            mean_motion_dot,
+            mean_motion_ddot,
+            agom,
+        ))
+
+    if has_tle_parameters
+        (isnothing(bstar) == isnothing(bterm)) && throw(ArgumentError(
+            "Exactly one of `bstar` and `bterm` is required in TLE parameters."
+        ))
+        isnothing(mean_motion_dot) && throw(ArgumentError(
+            "`mean_motion_dot` is required in TLE parameters."
+        ))
+        (isnothing(mean_motion_ddot) == isnothing(agom)) && throw(ArgumentError(
+            "Exactly one of `mean_motion_ddot` and `agom` is required in TLE parameters."
+        ))
+    end
+
     header = OmmHeader(
         ;
-        comment = header_comment,
+        comments = copy(header_comments),
         classification,
         creation_date,
         originator,
@@ -292,7 +496,7 @@ function OrbitMeanElementsMessage(
 
     metadata = OmmMetadata(
         ;
-        comment = metadata_comment,
+        comments = copy(metadata_comments),
         object_name,
         object_id,
         center_name,
@@ -304,7 +508,8 @@ function OrbitMeanElementsMessage(
 
     data = OmmData(
         ;
-        data_comment,
+        comments = copy(data_comments),
+        mean_elements_comments = copy(mean_elements_comments),
         epoch,
         semi_major_axis,
         mean_motion,
@@ -314,21 +519,24 @@ function OrbitMeanElementsMessage(
         arg_of_pericenter,
         mean_anomaly,
         GM,
-        spacecraft_data_comment,
+        spacecraft_parameters_comments = copy(spacecraft_parameters_comments),
         mass,
         solar_rad_area,
         solar_rad_coeff,
         drag_area,
         drag_coeff,
-        tle_parameters_comment,
+        tle_parameters_comments = copy(tle_parameters_comments),
         ephemeris_type,
         classification_type,
         norad_cat_id,
         element_set_number,
         rev_at_epoch,
         bstar,
+        bterm,
         mean_motion_dot,
         mean_motion_ddot,
+        agom,
+        covariance_matrix,
         user_defined_parameters,
     )
 
@@ -344,7 +552,7 @@ function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
         ;
         # == Header ========================================================================
 
-        header_comment = omm.header.comment,
+        header_comments = omm.header.comments,
         classification = omm.header.classification,
         creation_date  = omm.header.creation_date,
         originator     = omm.header.originator,
@@ -352,7 +560,7 @@ function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
 
         # == Metadata ======================================================================
 
-        metadata_comment    = omm.body.segment.metadata.comment,
+        metadata_comments   = omm.body.segment.metadata.comments,
         object_name         = omm.body.segment.metadata.object_name,
         object_id           = omm.body.segment.metadata.object_id,
         center_name         = omm.body.segment.metadata.center_name,
@@ -365,7 +573,8 @@ function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
 
         # -- Mean Keplerian Elements -------------------------------------------------------
 
-        data_comment      = omm.body.segment.data.data_comment,
+        data_comments          = omm.body.segment.data.comments,
+        mean_elements_comments = omm.body.segment.data.mean_elements_comments,
         epoch             = omm.body.segment.data.epoch,
         semi_major_axis   = omm.body.segment.data.semi_major_axis,
         mean_motion       = omm.body.segment.data.mean_motion,
@@ -378,26 +587,33 @@ function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
 
         # -- Spacecraft Data ---------------------------------------------------------------
 
-        spacecraft_data_comment = omm.body.segment.data.spacecraft_data_comment,
+        spacecraft_parameters_comments =
+            omm.body.segment.data.spacecraft_parameters_comments,
         mass                    = omm.body.segment.data.mass,
         solar_rad_area          = omm.body.segment.data.solar_rad_area,
         solar_rad_coeff         = omm.body.segment.data.solar_rad_coeff,
         drag_area               = omm.body.segment.data.drag_area,
         drag_coeff              = omm.body.segment.data.drag_coeff,
 
-        # -- TLE Related Parameters ------------------------------------------------------------
+        # -- TLE Related Parameters --------------------------------------------------------
 
-        tle_parameters_comment = omm.body.segment.data.tle_parameters_comment,
+        tle_parameters_comments = omm.body.segment.data.tle_parameters_comments,
         ephemeris_type         = omm.body.segment.data.ephemeris_type,
         classification_type    = omm.body.segment.data.classification_type,
         norad_cat_id           = omm.body.segment.data.norad_cat_id,
         element_set_number     = omm.body.segment.data.element_set_number,
         rev_at_epoch           = omm.body.segment.data.rev_at_epoch,
         bstar                  = omm.body.segment.data.bstar,
+        bterm                  = omm.body.segment.data.bterm,
         mean_motion_dot        = omm.body.segment.data.mean_motion_dot,
         mean_motion_ddot       = omm.body.segment.data.mean_motion_ddot,
+        agom                   = omm.body.segment.data.agom,
 
-        # -- User-Defined Parameters ------------------------------------------------------------
+        # -- Covariance Matrix -------------------------------------------------------------
+
+        covariance_matrix      = omm.body.segment.data.covariance_matrix,
+
+        # -- User-Defined Parameters -------------------------------------------------------
 
         user_defined_parameters = omm.body.segment.data.user_defined_parameters,
 

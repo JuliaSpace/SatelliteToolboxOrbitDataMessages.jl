@@ -4,7 +4,37 @@
 #
 ############################################################################################
 
-const _FIXTURE_FILE = joinpath(@__DIR__, "2025-12-30-Amazonia_1.xml")
+const _FIXTURE_FILE = joinpath(@__DIR__, "fixtures", "2025-12-30-Amazonia_1.xml")
+const _NDM_FIXTURE_FILE = joinpath(@__DIR__, "fixtures", "ndm_example.xml")
+
+# Sample covariance matrix XML with all 21 elements and optional fields.
+const _COV_XML = """
+<covarianceMatrix>
+    <COMMENT>This is a covariance matrix</COMMENT>
+    <COV_REF_FRAME>ITRF</COV_REF_FRAME>
+    <CX_X>1.0</CX_X>
+    <CY_X>2.0</CY_X>
+    <CY_Y>3.0</CY_Y>
+    <CZ_X>4.0</CZ_X>
+    <CZ_Y>5.0</CZ_Y>
+    <CZ_Z>6.0</CZ_Z>
+    <CX_DOT_X>7.0</CX_DOT_X>
+    <CX_DOT_Y>8.0</CX_DOT_Y>
+    <CX_DOT_Z>9.0</CX_DOT_Z>
+    <CX_DOT_X_DOT>10.0</CX_DOT_X_DOT>
+    <CY_DOT_X>11.0</CY_DOT_X>
+    <CY_DOT_Y>12.0</CY_DOT_Y>
+    <CY_DOT_Z>13.0</CY_DOT_Z>
+    <CY_DOT_X_DOT>14.0</CY_DOT_X_DOT>
+    <CY_DOT_Y_DOT>15.0</CY_DOT_Y_DOT>
+    <CZ_DOT_X>16.0</CZ_DOT_X>
+    <CZ_DOT_Y>17.0</CZ_DOT_Y>
+    <CZ_DOT_Z>18.0</CZ_DOT_Z>
+    <CZ_DOT_X_DOT>19.0</CZ_DOT_X_DOT>
+    <CZ_DOT_Y_DOT>20.0</CZ_DOT_Y_DOT>
+    <CZ_DOT_Z_DOT>21.0</CZ_DOT_Z_DOT>
+</covarianceMatrix>
+"""
 
 """
     _fixture_omm_xml() -> String
@@ -43,6 +73,10 @@ Build a minimal valid OMM XML string. Optional tags can be provided via keyword 
 - `arg_of_pericenter::String = "97.3772"`
 - `mean_anomaly::String = "262.7545"`
 - `gm::String = ""`
+- `spacecraft_params_xml::String = ""` (raw XML for spacecraftParameters)
+- `tle_params_xml::String = ""` (raw XML for tleParameters)
+- `covariance_matrix_xml::String = ""` (raw XML for covarianceMatrix)
+- `user_defined_xml::String = ""` (raw XML for userDefinedParameters)
 - `extra_inner::String = ""` (raw XML inserted inside <omm>, e.g. extra segments)
 
 The `extra_inner` keyword allows inserting raw XML inside the <omm> element (e.g. for
@@ -76,6 +110,7 @@ function _minimal_omm_xml(;
     gm::String = "",
     spacecraft_params_xml::String = "",
     tle_params_xml::String = "",
+    covariance_matrix_xml::String = "",
     user_defined_xml::String = "",
     extra_inner::String = "",
 )
@@ -120,6 +155,7 @@ function _minimal_omm_xml(;
         "<meanElements>$(mean_elements_inner)</meanElements>",
         spacecraft_params_xml,
         tle_params_xml,
+        covariance_matrix_xml,
         user_defined_xml,
     ]))
 
@@ -142,16 +178,19 @@ function _minimal_omm_xml(;
 end
 
 """
-    _ndm_xml(omm_xmls::String...) -> String
+    _ndm_xml(odm_xmls::String...) -> String
 
-Wrap one or more OMM XML strings in an <ndm> container. Each argument should be a complete
-<omm>...</omm> element (without the XML declaration).
+Wrap one or more ODM XML strings in an <ndm> container. Each argument should be a complete
+ODM element (without the XML declaration).
 """
-function _ndm_xml(omm_xmls::AbstractString...)
-    inner = join(omm_xmls)
+function _ndm_xml(odm_xmls::AbstractString...)
+    inner      = join(odm_xmls)
+    schema_url = "https://sanaregistry.org/r/ndmxml_unqualified/" *
+        "ndmxml-3.0.0-master-3.0.xsd"
     return """
     <?xml version="1.0" encoding="UTF-8"?>
-    <ndm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://sanaregistry.org/r/ndmxml_unqualified/ndmxml-3.0.0-master-3.0.xsd">$(inner)</ndm>
+    <ndm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="$(schema_url)">$(inner)</ndm>
     """
 end
 

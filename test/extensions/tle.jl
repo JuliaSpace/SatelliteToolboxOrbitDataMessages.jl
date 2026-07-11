@@ -4,12 +4,12 @@
 #
 ############################################################################################
 
-@testset "TLE extension" verbose = true begin
+@testset "TLE Extension" verbose = true begin
     omm = read_omm(_FIXTURE_FILE)
 
-    # == Convert fixture OMM to TLE ========================================================
+    # == Convert Fixture OMM to TLE ========================================================
 
-    @testset "Convert fixture" begin
+    @testset "Convert Fixture" begin
         tle = convert(TLE, omm)
 
         @test tle isa TLE
@@ -29,27 +29,27 @@
         @test tle.revolution_number == 25439
     end
 
-    # == Non-SGP4 mean element theory ======================================================
+    # == Non-SGP4 Mean Element Theory ======================================================
 
-    @testset "Non-SGP4 theory" begin
+    @testset "Non-SGP4 Theory" begin
         bad_omm = OrbitMeanElementsMessage(omm; mean_element_theory = "SPECIAL")
         @test_throws ErrorException convert(TLE, bad_omm)
     end
 
-    # == Missing mean_motion, semi_major_axis, and GM ======================================
+    # == Missing mean_motion and semi_major_axis ===========================================
 
-    @testset "Missing mean motion fields" begin
-        bad_omm = OrbitMeanElementsMessage(omm;
-            mean_motion      = nothing,
-            semi_major_axis  = nothing,
-            GM               = nothing,
+    @testset "Missing Mean Motion Fields" begin
+        @test_throws ArgumentError OrbitMeanElementsMessage(
+            omm;
+            mean_motion = nothing,
+            semi_major_axis = nothing,
+            GM = nothing,
         )
-        @test_throws ErrorException convert(TLE, bad_omm)
     end
 
-    # == Computed mean motion from semi_major_axis and GM ==================================
+    # == Computed Mean Motion From semi_major_axis and GM ==================================
 
-    @testset "Computed mean motion" begin
+    @testset "Computed Mean Motion" begin
         a  = 7134.084
         GM = 398600.4418
         expected_n = sqrt(GM / a^3) / (2π) * 86400
@@ -64,15 +64,14 @@
         @test tle.mean_motion ≈ expected_n atol = 1e-6
     end
 
-    # == Default norad_cat_id ==============================================================
+    # == Missing norad_cat_id ==============================================================
 
     @testset "Default norad_cat_id" begin
         omm_no_norad = OrbitMeanElementsMessage(omm; norad_cat_id = nothing)
-        tle = convert(TLE, omm_no_norad)
-        @test tle.satellite_number == 0
+        @test_throws ErrorException convert(TLE, omm_no_norad)
     end
 
-    # == International designator conversion ===============================================
+    # == International Designator Conversion ===============================================
 
     @testset "Designator 2021-015A" begin
         omm_designator = OrbitMeanElementsMessage(omm; object_id = "2021-015A")
