@@ -12,6 +12,13 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
+    # == Missing Required Header Fields ====================================================
+
+    @testset "Missing Required Header Fields" begin
+        @test_throws ArgumentError parse_omm(_minimal_omm_xml(; creation_date = ""))
+        @test_throws ArgumentError parse_omm(_minimal_omm_xml(; originator = ""))
+    end
+
     # == Unsupported Version ===============================================================
 
     @testset "Unsupported Version" begin
@@ -188,5 +195,23 @@
         <foo><bar/></foo>
         """
         @test_throws ArgumentError parse_odm(xml)
+        @test_throws ArgumentError parse_omms(xml)
+        @test isnothing(parse_omm(xml))
+    end
+
+    # == Unknown Optional-Section Elements =================================================
+
+    @testset "Unknown Optional-Section Elements" begin
+        covariance_xml = "<covarianceMatrix><UNKNOWN>1.0</UNKNOWN></covarianceMatrix>"
+        user_defined_xml = """
+        <userDefinedParameters><UNKNOWN>value</UNKNOWN></userDefinedParameters>
+        """
+
+        @test_throws ArgumentError parse_omm(
+            _minimal_omm_xml(; covariance_matrix_xml = covariance_xml)
+        )
+        @test_throws ArgumentError parse_omm(
+            _minimal_omm_xml(; user_defined_xml = user_defined_xml)
+        )
     end
 end
