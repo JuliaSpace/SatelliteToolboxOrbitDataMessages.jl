@@ -41,3 +41,18 @@
     nan_omm = OrbitMeanElementsMessage(omm_1; eccentricity = NaN)
     @test nan_omm != nan_omm
 end
+
+@testset "Hash Consistency" begin
+    omm_1 = parse_omm(_fixture_omm_xml())
+    omm_2 = parse_omm(_fixture_omm_xml())
+
+    # `==` must imply equal hashes so that the types work in `Dict`s and `Set`s.
+    @test hash(omm_1) == hash(omm_2)
+    @test hash(omm_1.header) == hash(omm_2.header)
+    @test hash(omm_1.body) == hash(omm_2.body)
+    @test omm_1 in Set([omm_2])
+    @test length(unique([omm_1, omm_2])) == 1
+
+    different_omm = OrbitMeanElementsMessage(omm_2; originator = "OTHER")
+    @test hash(omm_1) != hash(different_omm)
+end
