@@ -13,9 +13,6 @@
 This package allows creating, fetching, and parsing Orbit Data Messages (ODM) as described
 in the [CCSDS 502.0-B-3 standard](https://ccsds.org/Pubs/502x0b3e1.pdf).
 
-> [!WARNING]
-> This package is still under development and it is not registered yet.
-
 We currently support only parsing and fetching ODM files in the XML format with the
 following message types:
 
