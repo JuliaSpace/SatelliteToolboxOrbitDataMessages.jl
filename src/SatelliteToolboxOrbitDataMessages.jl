@@ -2,6 +2,7 @@ module SatelliteToolboxOrbitDataMessages
 
 using Dates
 using HTTP
+using PrecompileTools
 using Scratch
 using Serialization
 using StyledStrings
@@ -40,6 +41,8 @@ include("./read/omm.jl")
 
 include("./write/odm.jl")
 include("./write/omm.jl")
+
+include("./precompile.jl")
 
 ############################################################################################
 #                                       Initialize                                         #
