@@ -70,21 +70,21 @@ omm.body.segment.data.inclination
 ```
 
 The package also provides accessor functions that flatten this hierarchy. They live in the
-[`OMM`](@ref) module to avoid polluting the namespace, so the most common fields can be
+[`ODM`](@ref) module to avoid polluting the namespace, so the most common fields can be
 obtained directly:
 
 ```@repl quick_start
-OMM.originator(omm)
+ODM.originator(omm)
 
-OMM.object_name(omm)
+ODM.object_name(omm)
 
-OMM.epoch(omm)
+ODM.epoch(omm)
 
-OMM.inclination(omm)
+ODM.inclination(omm)
 ```
 
-Every field has a corresponding accessor (e.g., [`OMM.eccentricity`](@ref),
-[`OMM.mean_motion`](@ref), [`OMM.norad_cat_id`](@ref)). See the [Library](@ref) page for
+Every field has a corresponding accessor (e.g., [`ODM.eccentricity`](@ref),
+[`ODM.mean_motion`](@ref), [`ODM.norad_cat_id`](@ref)). See the [Library](@ref) page for
 the complete list.
 
 If the OMM is stored in a file, use [`read_omm`](@ref) instead:

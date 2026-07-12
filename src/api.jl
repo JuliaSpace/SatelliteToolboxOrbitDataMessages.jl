@@ -4,20 +4,20 @@
 #
 ############################################################################################
 
-export OMM
+export ODM
 
 """
-    module OMM
+    module ODM
 
-Namespace with accessor functions for the fields of an Orbit Mean-Elements Message (OMM).
+Namespace with accessor functions for the fields of Orbit Data Messages (ODM).
 
 The accessors flatten the nested CCSDS hierarchy so that the most common fields can be
-obtained without navigating the message structure, e.g. `OMM.epoch(omm)` instead of
+obtained without navigating the message structure, e.g. `ODM.epoch(omm)` instead of
 `omm.body.segment.data.epoch`. The functions live in this module to avoid polluting the
 namespace with the field names; access them qualified, or opt in with
-`using SatelliteToolboxOrbitDataMessages.OMM`.
+`using SatelliteToolboxOrbitDataMessages.ODM`.
 """
-module OMM
+module ODM
 
 using ..SatelliteToolboxOrbitDataMessages: OrbitMeanElementsMessage
 
@@ -37,7 +37,7 @@ const _OMM_HEADER_ACCESSORS = (
 
 for (fname, field, rtype, desc) in _OMM_HEADER_ACCESSORS
     docstr = """
-            OMM.$fname(omm::OrbitMeanElementsMessage) -> $rtype
+            ODM.$fname(omm::OrbitMeanElementsMessage) -> $rtype
 
         Return $desc of the Orbit Mean-Elements Message `omm`.
         """
@@ -77,7 +77,7 @@ const _OMM_METADATA_ACCESSORS = (
 
 for (fname, field, rtype, desc) in _OMM_METADATA_ACCESSORS
     docstr = """
-            OMM.$fname(omm::OrbitMeanElementsMessage) -> $rtype
+            ODM.$fname(omm::OrbitMeanElementsMessage) -> $rtype
 
         Return $desc of the Orbit Mean-Elements Message `omm`.
         """
@@ -214,7 +214,7 @@ const _OMM_DATA_ACCESSORS = (
 
 for (fname, field, rtype, desc) in _OMM_DATA_ACCESSORS
     docstr = """
-            OMM.$fname(omm::OrbitMeanElementsMessage) -> $rtype
+            ODM.$fname(omm::OrbitMeanElementsMessage) -> $rtype
 
         Return $desc of the Orbit Mean-Elements Message `omm`.
         """
@@ -224,4 +224,4 @@ for (fname, field, rtype, desc) in _OMM_DATA_ACCESSORS
     end
 end
 
-end # module OMM
+end # module ODM
