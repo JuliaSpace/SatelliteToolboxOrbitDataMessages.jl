@@ -196,14 +196,32 @@ matching the whitespace-collapse behavior of the XML schema types used by the CC
 502.0-B-3 standard.
 """
 function _omm_scalar_value(xml::XML.Cursor)
-    result = ""
+    # Virtually every scalar element contains exactly one text chunk, so we keep the first
+    # chunk as is and only fall back to an `IOBuffer` when a second chunk appears, avoiding
+    # quadratic string concatenation.
+    first_chunk::Union{Nothing, String} = nothing
+    buffer::Union{Nothing, IOBuffer} = nothing
+
     XML.@for_each_child xml node begin
         if nodetype(node) === XML.Text || nodetype(node) === XML.CData
-            result *= String(value(node))
+            chunk = String(value(node))
+
+            if isnothing(first_chunk)
+                first_chunk = chunk
+            else
+                if isnothing(buffer)
+                    buffer = IOBuffer()
+                    print(buffer, first_chunk)
+                end
+                print(buffer, chunk)
+            end
         elseif nodetype(node) === Element
             skip_element!(node)
         end
     end
+
+    isnothing(first_chunk) && return ""
+    result = isnothing(buffer) ? first_chunk : String(take!(buffer))
     return String(strip(result))
 end
 
