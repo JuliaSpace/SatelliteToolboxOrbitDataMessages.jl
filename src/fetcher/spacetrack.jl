@@ -474,6 +474,8 @@ function fetch_omms(
 
     # == Fetch Data ========================================================================
 
+    expire_date_before_request = _spacetrack__cookie_expire_date(fetcher.cookiejar)
+
     response = try
         HTTP.request(
             "GET",
@@ -509,9 +511,11 @@ function fetch_omms(
 
     omms = parse_omms(String(response.body); strict)
 
-    # If the request is successful, we need to save the cookiejar because the expire
-    # period may have been updated.
-    _spacetrack__save_cookiejar(fetcher.cookiejar, fetcher.username)
+    # If the request is successful, save the cookiejar when the expire period has been
+    # updated by the server. Reserializing an unchanged jar would be wasted work.
+    if _spacetrack__cookie_expire_date(fetcher.cookiejar) != expire_date_before_request
+        _spacetrack__save_cookiejar(fetcher.cookiejar, fetcher.username)
+    end
 
     return omms
 end
@@ -572,11 +576,14 @@ function _spacetrack__load_cookiejar(username::String)
             push!(cookiejar.entries, entry)
         end
     catch e
-        @error """
-            Could not load cookies from file.
+        # A stale or incompatible cache is routine (e.g. after an HTTP.jl or Julia
+        # upgrade), so warn instead of erroring and remove the unreadable file.
+        @warn """
+            Could not load cookies from file. Removing the stale cache.
               $e
             """
         empty!(cookiejar.entries)
+        rm(cookie_file; force = true)
     end
 
     return cookiejar
