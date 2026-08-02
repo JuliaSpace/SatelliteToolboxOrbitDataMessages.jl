@@ -11,7 +11,9 @@
 """
     _xml_add_tag!(parent::XML.Node, tag::String, value::Any) -> Nothing
 
-Add a child XML tag to `parent` with the given `tag` name and `value`.
+Add a child XML tag to `parent` with the given `tag` name and `value`. If `value` is
+`nothing`, the function does nothing, so optional fields are simply omitted from the
+output.
 """
 function _xml_add_tag!(parent::XML.Node, tag::String, value::Any)
     isnothing(value) && return nothing

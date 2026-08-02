@@ -17,7 +17,8 @@ Read an Orbit Data Message (ODM) from the provided `io` stream.
 
 # Keywords
 
-- `strict::Bool`: Require schema-defined XML tag casing.
+- `strict::Bool`: Require schema-defined XML tag casing. If `false`, match tags and the OMM
+    `id` attribute value case-insensitively.
     (**Default**: `true`)
 """
 function read_odm(file::AbstractString; strict::Bool = true)
