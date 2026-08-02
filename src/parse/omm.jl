@@ -360,8 +360,8 @@ function _parse_omm_body(xml::XML.Cursor, strict::Bool, version::VersionNumber)
     segment_count = 0
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
-        _omm_tag(node, strict) == "segment" ||
-            throw(ArgumentError("Unknown OMM body element."))
+        lt = _omm_tag(node, strict)
+        lt == "segment" || throw(ArgumentError("Unknown OMM body element `$lt`."))
         segment_count += 1
         if segment_count == 1
             segment = _parse_omm_segment(node, strict, version)
@@ -393,7 +393,7 @@ function _parse_omm_segment(xml::XML.Cursor, strict::Bool, version::VersionNumbe
         nodetype(node) === Element || continue
         lt = _omm_tag(node, strict)
         lt ∈ ("metadata", "data") ||
-            throw(ArgumentError("Unknown OMM segment element."))
+            throw(ArgumentError("Unknown OMM segment element `$lt`."))
         if lt == "metadata"
             !isnothing(metadata) && throw(ArgumentError(
                 "The OMM segment contains duplicate metadata sections."
