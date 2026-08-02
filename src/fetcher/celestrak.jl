@@ -115,7 +115,8 @@ function fetch_omms(
         # where `YYYY` is the launch year, `NNN` is the launch number (1 to 3 digits),
         # and `P` is an optional piece letter.
 
-        m = match(r"^(\d{4})-(\d{1,3})([A-Z]*)$", international_designator)
+        # Uppercase the input so that lowercase piece letters are accepted.
+        m = match(r"^(\d{4})-(\d{1,3})([A-Z]*)$", uppercase(strip(international_designator)))
 
         isnothing(m) && throw(ArgumentError(
             "The international designator must have the format `YYYY-NNN` or `YYYY-NNNP`."

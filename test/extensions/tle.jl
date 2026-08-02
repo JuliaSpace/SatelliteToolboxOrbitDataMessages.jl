@@ -109,4 +109,10 @@
         tle = convert(TLE, omm_designator)
         @test tle.international_designator == "21015"
     end
+
+    @testset "Designator 2021-015a (Lowercase)" begin
+        omm_designator = OrbitMeanElementsMessage(omm; object_id = "2021-015a")
+        tle = convert(TLE, omm_designator)
+        @test tle.international_designator == "21015A"
+    end
 end

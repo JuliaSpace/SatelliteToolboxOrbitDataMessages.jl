@@ -41,6 +41,16 @@
         @test_throws ArgumentError fetch_omms(f; international_designator="bad-format")
     end
 
+    # == Lowercase International Designator ================================================
+
+    @testset "Lowercase International Designator" begin
+        # A lowercase piece letter must pass validation. We use an unreachable URL so the
+        # request fails after the designator is accepted, surfacing an `OdmFetchError`
+        # instead of an `ArgumentError`.
+        f = create_omm_fetcher(CelestrakOmmFetcher; url = "http://127.0.0.1:9/gp.php")
+        @test_throws OdmFetchError fetch_omms(f; international_designator = "2021-15a")
+    end
+
     # == Empty Satellite Name ==============================================================
 
     @testset "Empty Satellite Name" begin

@@ -107,8 +107,9 @@ a TLE international designator (format: `YYNNNXXX`).
 The OMM format is typically `1998-067A` while TLE format is `98067A`.
 """
 function _omm_object_id_to_tle_intl_designator(object_id::String)
-    # Remove any whitespace.
-    obj_id = strip(object_id)
+    # Remove any whitespace and uppercase the input so that lowercase piece letters are
+    # accepted.
+    obj_id = uppercase(strip(object_id))
 
     # Try to match the pattern YYYY-NNN[piece].
     m = match(r"^(\d{4})-(\d{1,3})([A-Z]*)$", obj_id)
