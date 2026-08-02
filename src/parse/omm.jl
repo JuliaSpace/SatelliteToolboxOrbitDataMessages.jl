@@ -480,11 +480,11 @@ Parse the data of the segment body of an Orbit Mean-Elements Message (OMM) with 
 """
 function _parse_omm_data(xml::XML.Cursor, strict::Bool, version::VersionNumber)
     data_comments = String[]
-    mean_elements = nothing
-    spacecraft_parameters = nothing
-    tle_parameters = nothing
-    covariance_matrix = nothing
-    user_defined_parameters = nothing
+    mean_elements::Union{Nothing, _OmmMeanElementsNT} = nothing
+    spacecraft_parameters::Union{Nothing, _OmmSpacecraftParametersNT} = nothing
+    tle_parameters::Union{Nothing, _OmmTleParametersNT} = nothing
+    covariance_matrix::Union{Nothing, OmmCovarianceMatrix} = nothing
+    user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}} = nothing
     seen_sections = Set{String}()
 
     XML.@for_each_child xml node begin
@@ -537,8 +537,24 @@ function _parse_omm_data(xml::XML.Cursor, strict::Bool, version::VersionNumber)
     )
 end
 
+# Concrete `NamedTuple` type returned by `_parse_omm_mean_elements`. Using a fixed type
+# keeps the return type value-independent, avoiding dynamic dispatch when the result is
+# splatted into the `OmmData` constructor.
+const _OmmMeanElementsNT = @NamedTuple{
+    mean_elements_comments::Vector{String},
+    epoch::NanoDate,
+    semi_major_axis::Union{Nothing, Float64},
+    mean_motion::Union{Nothing, Float64},
+    eccentricity::Float64,
+    inclination::Float64,
+    raan::Float64,
+    arg_of_pericenter::Float64,
+    mean_anomaly::Float64,
+    GM::Union{Nothing, Float64},
+}
+
 """
-    _parse_omm_mean_elements(xml::Cursor, strict::Bool) -> NamedTuple
+    _parse_omm_mean_elements(xml::Cursor, strict::Bool) -> _OmmMeanElementsNT
 
 Parse an OMM `meanElements` section at the cursor's current position.
 """
@@ -619,38 +635,49 @@ function _parse_omm_mean_elements(xml::XML.Cursor, strict::Bool)
         "OMM data is missing required field `MEAN_ANOMALY`."
     ))
 
-    return (
-        mean_elements_comments = comments,
-        epoch = epoch,
-        semi_major_axis = semi_major_axis,
-        mean_motion = mean_motion,
-        eccentricity = eccentricity,
-        inclination = inclination,
-        raan = raan,
-        arg_of_pericenter = arg_of_pericenter,
-        mean_anomaly = mean_anomaly,
-        GM = GM,
-    )
+    return _OmmMeanElementsNT((
+        comments,
+        epoch,
+        semi_major_axis,
+        mean_motion,
+        eccentricity,
+        inclination,
+        raan,
+        arg_of_pericenter,
+        mean_anomaly,
+        GM,
+    ))
 end
 
+# Concrete `NamedTuple` type returned by the `spacecraftParameters` section parsers. See
+# the comment on `_OmmMeanElementsNT` for the rationale.
+const _OmmSpacecraftParametersNT = @NamedTuple{
+    spacecraft_parameters_comments::Vector{String},
+    mass::Union{Nothing, Float64},
+    solar_rad_area::Union{Nothing, Float64},
+    solar_rad_coeff::Union{Nothing, Float64},
+    drag_area::Union{Nothing, Float64},
+    drag_coeff::Union{Nothing, Float64},
+}
+
 """
-    _empty_omm_spacecraft_parameters() -> NamedTuple
+    _empty_omm_spacecraft_parameters() -> _OmmSpacecraftParametersNT
 
 Return default values for an omitted OMM `spacecraftParameters` section.
 """
 function _empty_omm_spacecraft_parameters()
-    return (
-        spacecraft_parameters_comments = String[],
-        mass = nothing,
-        solar_rad_area = nothing,
-        solar_rad_coeff = nothing,
-        drag_area = nothing,
-        drag_coeff = nothing,
-    )
+    return _OmmSpacecraftParametersNT((
+        String[],
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+    ))
 end
 
 """
-    _parse_omm_spacecraft_parameters(xml::Cursor, strict::Bool) -> NamedTuple
+    _parse_omm_spacecraft_parameters(xml::Cursor, strict::Bool) -> _OmmSpacecraftParametersNT
 
 Parse an OMM `spacecraftParameters` section at the cursor's current position.
 """
@@ -689,39 +716,55 @@ function _parse_omm_spacecraft_parameters(xml::XML.Cursor, strict::Bool)
         end
     end
 
-    return (
-        spacecraft_parameters_comments = comments,
-        mass = mass,
-        solar_rad_area = solar_rad_area,
-        solar_rad_coeff = solar_rad_coeff,
-        drag_area = drag_area,
-        drag_coeff = drag_coeff,
-    )
+    return _OmmSpacecraftParametersNT((
+        comments,
+        mass,
+        solar_rad_area,
+        solar_rad_coeff,
+        drag_area,
+        drag_coeff,
+    ))
 end
 
+# Concrete `NamedTuple` type returned by the `tleParameters` section parsers. See the
+# comment on `_OmmMeanElementsNT` for the rationale.
+const _OmmTleParametersNT = @NamedTuple{
+    tle_parameters_comments::Vector{String},
+    ephemeris_type::Union{Nothing, Int},
+    classification_type::Union{Nothing, Char},
+    norad_cat_id::Union{Nothing, Int},
+    element_set_number::Union{Nothing, Int},
+    rev_at_epoch::Union{Nothing, Int},
+    bstar::Union{Nothing, Float64},
+    bterm::Union{Nothing, Float64},
+    mean_motion_dot::Union{Nothing, Float64},
+    mean_motion_ddot::Union{Nothing, Float64},
+    agom::Union{Nothing, Float64},
+}
+
 """
-    _empty_omm_tle_parameters() -> NamedTuple
+    _empty_omm_tle_parameters() -> _OmmTleParametersNT
 
 Return default values for an omitted OMM `tleParameters` section.
 """
 function _empty_omm_tle_parameters()
-    return (
-        tle_parameters_comments = String[],
-        ephemeris_type = nothing,
-        classification_type = nothing,
-        norad_cat_id = nothing,
-        element_set_number = nothing,
-        rev_at_epoch = nothing,
-        bstar = nothing,
-        bterm = nothing,
-        mean_motion_dot = nothing,
-        mean_motion_ddot = nothing,
-        agom = nothing,
-    )
+    return _OmmTleParametersNT((
+        String[],
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+    ))
 end
 
 """
-    _parse_omm_tle_parameters(xml::Cursor, strict::Bool, version::VersionNumber) -> NamedTuple
+    _parse_omm_tle_parameters(xml::Cursor, strict::Bool, version::VersionNumber) -> _OmmTleParametersNT
 
 Parse an OMM `tleParameters` section with schema `version` at the cursor's current
 position.
@@ -814,19 +857,19 @@ function _parse_omm_tle_parameters(xml::XML.Cursor, strict::Bool, version::Versi
         "OMM TLE parameters are missing required field `MEAN_MOTION_DOT`."
     ))
 
-    return (
-        tle_parameters_comments = comments,
-        ephemeris_type = ephemeris_type,
-        classification_type = classification_type,
-        norad_cat_id = norad_cat_id,
-        element_set_number = element_set_number,
-        rev_at_epoch = rev_at_epoch,
-        bstar = bstar,
-        bterm = bterm,
-        mean_motion_dot = mean_motion_dot,
-        mean_motion_ddot = mean_motion_ddot,
-        agom = agom,
-    )
+    return _OmmTleParametersNT((
+        comments,
+        ephemeris_type,
+        classification_type,
+        norad_cat_id,
+        element_set_number,
+        rev_at_epoch,
+        bstar,
+        bterm,
+        mean_motion_dot,
+        mean_motion_ddot,
+        agom,
+    ))
 end
 
 """
