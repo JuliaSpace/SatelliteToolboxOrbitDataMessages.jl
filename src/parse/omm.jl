@@ -163,22 +163,25 @@ function _parse_omm(xml::XML.Cursor, strict::Bool)
     version ∉ (v"2.0.0", v"3.0.0") &&
         throw(ArgumentError("Unsupported OMM version: $version."))
 
+    # Track the structure with flags instead of accumulating the element tags in a vector.
+    # The message is valid only if the children are exactly one `header` followed by one
+    # `body`.
     header = nothing
     body = nothing
-    element_tags = String[]
+    valid_structure = true
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
         lt = _omm_tag(node, strict)
-        push!(element_tags, lt)
-        if lt == "header" && isnothing(header)
+        if lt == "header" && isnothing(header) && isnothing(body)
             header = _parse_omm_header(node, strict, version)
-        elseif lt == "body" && isnothing(body)
+        elseif lt == "body" && !isnothing(header) && isnothing(body)
             body = _parse_omm_body(node, strict, version)
         else
+            valid_structure = false
             skip_element!(node)
         end
     end
-    element_tags == ["header", "body"] || throw(ArgumentError(
+    (valid_structure && !isnothing(header) && !isnothing(body)) || throw(ArgumentError(
         "The OMM element must contain exactly one `header` followed by one `body`."
     ))
 
