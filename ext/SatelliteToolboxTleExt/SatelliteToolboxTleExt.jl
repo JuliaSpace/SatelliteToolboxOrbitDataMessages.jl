@@ -11,6 +11,29 @@ import Base: convert
 #                                        Julia API                                         #
 ############################################################################################
 
+"""
+    convert(::Type{TLE}, omm::OrbitMeanElementsMessage) -> TLE
+
+Convert `omm` to a Two-Line Element set (TLE).
+
+The mean motion [rev/day] is taken directly from the message or, if absent, computed from
+the semi-major axis [km] and the gravitational parameter GM [km³/s²]. The epoch is
+converted to the TLE two-digit year and fractional day-of-year representation, and the
+international designator is derived from the `OBJECT_ID` metadata field. The values are
+assumed to be already adjusted for the SGP4 algorithm, as done by the Celestrak and
+Space-Track services. The conversion throws an `ErrorException` if any required field is
+missing or incompatible with the TLE format.
+
+# Extended help
+
+## Throws
+
+- `ErrorException`: The mean element theory is not SGP4; the message contains `BTERM` or
+    `AGOM`, which have no TLE counterpart; the mean motion is absent and cannot be computed
+    because the semi-major axis or GM is missing; or one of the required fields
+    (`classification_type`, `norad_cat_id`, `element_set_number`, `rev_at_epoch`, `bstar`,
+    `mean_motion_dot`, `mean_motion_ddot`) is missing.
+"""
 function convert(::Type{TLE}, omm::OrbitMeanElementsMessage)
     # We should only convert to TLE if the mean element theory is SGP4.
     omm.body.segment.metadata.mean_element_theory != "SGP4" &&
@@ -101,10 +124,12 @@ end
 """
     _omm_object_id_to_tle_intl_designator(object_id::String) -> String
 
-Convert an OMM `OBJECT_ID` (format: `YYYY-NNNX` or `YYYY-NNN` or similar variations) to
-a TLE international designator (format: `YYNNNXXX`).
+Convert an OMM `OBJECT_ID` (format: `YYYY-NNNX` or `YYYY-NNN` or similar variations) to a
+TLE international designator (format: `YYNNNXXX`).
 
-The OMM format is typically `1998-067A` while TLE format is `98067A`.
+The OMM format is typically `1998-067A` while TLE format is `98067A`. The input is
+stripped and uppercased before matching. If it does not match the expected pattern, the
+stripped and uppercased input is returned unchanged as a fallback.
 """
 function _omm_object_id_to_tle_intl_designator(object_id::String)
     # Remove any whitespace and uppercase the input so that lowercase piece letters are
