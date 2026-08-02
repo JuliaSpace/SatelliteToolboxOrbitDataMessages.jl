@@ -244,7 +244,8 @@ end
 """
     _validate_writable_omm_header(omm::OrbitMeanElementsMessage) -> Nothing
 
-Validate that the header of `omm` contains the fields required for OMM 3.0 output.
+Validate that the header of `omm` contains the fields required for OMM 3.0 output and that
+the data section does not define both fields of a mutually exclusive pair.
 """
 function _validate_writable_omm_header(omm::OrbitMeanElementsMessage)
     isnothing(omm.header.creation_date) && throw(ArgumentError(
@@ -253,5 +254,19 @@ function _validate_writable_omm_header(omm::OrbitMeanElementsMessage)
     isempty(omm.header.originator) && throw(ArgumentError(
         "Cannot write OMM 3.0 without an originator."
     ))
+
+    # The OMM 3.0 schema defines the following pairs as mutually exclusive choices. Writing
+    # both fields of a pair would produce schema-invalid XML.
+    data = omm.body.segment.data
+    !isnothing(data.semi_major_axis) && !isnothing(data.mean_motion) && throw(ArgumentError(
+        "Cannot write OMM 3.0 with both `semi_major_axis` and `mean_motion`."
+    ))
+    !isnothing(data.bstar) && !isnothing(data.bterm) && throw(ArgumentError(
+        "Cannot write OMM 3.0 with both `bstar` and `bterm`."
+    ))
+    !isnothing(data.mean_motion_ddot) && !isnothing(data.agom) && throw(ArgumentError(
+        "Cannot write OMM 3.0 with both `mean_motion_ddot` and `agom`."
+    ))
+
     return nothing
 end

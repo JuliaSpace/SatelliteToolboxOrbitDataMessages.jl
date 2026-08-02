@@ -80,6 +80,45 @@
         @test !occursin("userDefinedParameters", out)
     end
 
+    # == Mutually Exclusive Fields =========================================================
+
+    @testset "Mutually Exclusive Fields" begin
+        # The keyword constructor rejects these combinations, so we assemble the message
+        # through the inner constructors to reach the writer validation.
+        omm = parse_omm(_minimal_omm_xml())
+        data = omm.body.segment.data
+
+        function _omm_with_data(data::SatelliteToolboxOrbitDataMessages.OmmData)
+            segment = SatelliteToolboxOrbitDataMessages.OmmSegment(
+                omm.body.segment.metadata,
+                data,
+            )
+            body = SatelliteToolboxOrbitDataMessages.OmmBody(segment)
+            return OrbitMeanElementsMessage(omm.version, omm.header, body)
+        end
+
+        base_kwargs = (;
+            epoch             = data.epoch,
+            eccentricity      = data.eccentricity,
+            inclination       = data.inclination,
+            raan              = data.raan,
+            arg_of_pericenter = data.arg_of_pericenter,
+            mean_anomaly      = data.mean_anomaly,
+        )
+
+        for exclusive_kwargs in (
+            (; mean_motion = data.mean_motion, semi_major_axis = 7000.0),
+            (; mean_motion = data.mean_motion, bstar = 1e-4, bterm = 1e-4),
+            (; mean_motion = data.mean_motion, mean_motion_ddot = 0.0, agom = 1e-2),
+        )
+            bad_data = SatelliteToolboxOrbitDataMessages.OmmData(;
+                base_kwargs...,
+                exclusive_kwargs...,
+            )
+            @test_throws ArgumentError write_omm(IOBuffer(), _omm_with_data(bad_data))
+        end
+    end
+
     # == user_defined Attributes ===========================================================
 
     @testset "user_defined Attributes" begin
