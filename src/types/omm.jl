@@ -189,9 +189,12 @@ end
 
 # == Equality and Hashing ==================================================================
 
-# Define `==` and `hash` by comparing and hashing all fields. Both functions are generated
-# together to keep the invariant `x == y` ⟹ `hash(x) == hash(y)`, which is required for
-# the types to behave correctly in `Dict`s and `Set`s.
+# Define `==`, `isequal`, and `hash` by comparing and hashing all fields. The functions
+# are generated together to keep the invariants `x == y` ⟹ `hash(x) == hash(y)` and
+# `isequal(x, y)` ⟹ `hash(x) == hash(y)`, which are required for the types to behave
+# correctly in `Dict`s and `Set`s. `isequal` is defined field-wise with `isequal` so that
+# messages containing `NaN` values (e.g. in the covariance matrix) can still be found in
+# hash-based collections.
 for T in (
     :OmmHeader,
     :OmmMetadata,
@@ -204,6 +207,10 @@ for T in (
     @eval begin
         function ==(x::$T, y::$T)
             return all(f -> getfield(x, f) == getfield(y, f), fieldnames($T))
+        end
+
+        function Base.isequal(x::$T, y::$T)
+            return all(f -> isequal(getfield(x, f), getfield(y, f)), fieldnames($T))
         end
 
         function Base.hash(x::$T, h::UInt)

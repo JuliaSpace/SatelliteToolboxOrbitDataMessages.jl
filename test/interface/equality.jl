@@ -40,6 +40,9 @@
 
     nan_omm = OrbitMeanElementsMessage(omm_1; eccentricity = NaN)
     @test nan_omm != nan_omm
+    @test isequal(nan_omm, nan_omm)
+    @test isequal(nan_omm, OrbitMeanElementsMessage(omm_1; eccentricity = NaN))
+    @test !isequal(nan_omm, OrbitMeanElementsMessage(omm_1; eccentricity = 0.5))
 end
 
 @testset "Hash Consistency" begin
@@ -55,4 +58,13 @@ end
 
     different_omm = OrbitMeanElementsMessage(omm_2; originator = "OTHER")
     @test hash(omm_1) != hash(different_omm)
+
+    # `isequal` must also imply equal hashes so that messages containing `NaN` values can
+    # still be found in hash-based collections.
+    nan_omm_1 = OrbitMeanElementsMessage(omm_1; eccentricity = NaN)
+    nan_omm_2 = OrbitMeanElementsMessage(omm_2; eccentricity = NaN)
+    @test hash(nan_omm_1) == hash(nan_omm_2)
+    @test nan_omm_1 in Set([nan_omm_2])
+    @test haskey(Dict(nan_omm_1 => 1), nan_omm_2)
+    @test length(unique([nan_omm_1, nan_omm_2])) == 1
 end
