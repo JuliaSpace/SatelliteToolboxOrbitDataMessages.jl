@@ -44,7 +44,7 @@ end
 Covariance matrix of an Orbit Mean-Elements Message (OMM) as defined by the CCSDS 502.0-B-3
 standard.
 
-The matrix is symmetric, so only the upper-triangular 21 elements are stored. The elements
+The matrix is symmetric, so only the lower-triangular 21 elements are stored. The elements
 follow the CCSDS naming convention where `CX_X` is the (1,1) entry, `CY_X` is the (2,1)
 entry, etc.
 
