@@ -21,6 +21,28 @@ function _valid_spacetrack_cookiejar()
 end
 
 @testset "Spacetrack Fetcher (Offline)" verbose = true begin
+    # == Cookie Lookup by Name =============================================================
+
+    @testset "Cookie Lookup by Name" begin
+        # The cookie must be found even if the server stores it under a different domain or
+        # path key (e.g. `Domain=space-track.org` without the `www.` prefix).
+        cookiejar = HTTP.CookieJar()
+        host = "space-track.org"
+        cookie_path = host * ";/ajaxauth;chocolatechip"
+        expires = Dates.now(Dates.UTC) + Dates.Hour(4)
+        cookiejar.entries[host] = Dict{String, HTTP.Cookie}()
+        cookiejar.entries[host][cookie_path] = HTTP.Cookie(;
+            name    = "chocolatechip",
+            value   = "test",
+            expires = expires,
+        )
+
+        expire_date =
+            SatelliteToolboxOrbitDataMessages._spacetrack__cookie_expire_date(cookiejar)
+        @test expire_date == expires
+        @test SatelliteToolboxOrbitDataMessages._spacetrack__is_cookie_valid(cookiejar)
+    end
+
     # == Invalid space_data ================================================================
 
     @testset "Invalid space_data" begin

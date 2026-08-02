@@ -515,14 +515,15 @@ Get the expiration date of the spacetrack cookie in the `cookiejar`. If the cook
 found, it returns `nothing`.
 """
 function _spacetrack__cookie_expire_date(cookiejar::HTTP.CookieJar)
-    !haskey(cookiejar.entries, _SPACETRACK__HOST) && return nothing
-    cookie_path = _SPACETRACK__HOST * ";/;" * _SPACETRACK__COOKIE_NAME
-    entries     = cookiejar.entries[_SPACETRACK__HOST]
+    # Search the jar by cookie name instead of reconstructing the exact storage key, which
+    # depends on the domain and path attributes set by the server.
+    for entries in values(cookiejar.entries)
+        for cookie in values(entries)
+            cookie.name == _SPACETRACK__COOKIE_NAME && return cookie.expires
+        end
+    end
 
-    !haskey(entries, cookie_path) && return nothing
-    expires = entries[cookie_path].expires
-
-    return expires
+    return nothing
 end
 
 """
