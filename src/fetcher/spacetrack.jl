@@ -178,7 +178,7 @@ fails, an [`OdmFetchError`](@ref) is thrown.
     `nothing`, no satellite name is used. If both `satellite_name` and `satellite_number`
     are provided, `satellite_number` takes precedence.
     (**Default**: `nothing`)
-- `satellite_number::Union{Nothing, Number}`: The NORAD catalog number of the satellite to
+- `satellite_number::Union{Nothing, Integer}`: The NORAD catalog number of the satellite to
     fetch the OMMs for. This field is appended to the predicates using the `NORAD_CAT_ID`
     field.
     If `nothing`, no satellite number is used. If both `satellite_name` and
