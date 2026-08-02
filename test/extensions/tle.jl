@@ -64,6 +64,31 @@
         @test tle.mean_motion ≈ expected_n atol = 1e-6
     end
 
+    # == Unconvertible BTERM and AGOM ======================================================
+
+    @testset "Unconvertible BTERM and AGOM" begin
+        omm_bterm = OrbitMeanElementsMessage(omm; bstar = nothing, bterm = 0.0001)
+        exception = try
+            convert(TLE, omm_bterm)
+            nothing
+        catch exception
+            exception
+        end
+        @test exception isa ErrorException
+        @test occursin("BTERM", exception.msg)
+
+        omm_agom = OrbitMeanElementsMessage(omm; mean_motion_ddot = nothing, agom = 0.01)
+        exception = try
+            convert(TLE, omm_agom)
+            nothing
+        catch exception
+            exception
+        end
+        @test exception isa ErrorException
+        @test occursin("AGOM", exception.msg)
+        @test occursin("solar radiation pressure", exception.msg)
+    end
+
     # == Missing norad_cat_id ==============================================================
 
     @testset "Default norad_cat_id" begin

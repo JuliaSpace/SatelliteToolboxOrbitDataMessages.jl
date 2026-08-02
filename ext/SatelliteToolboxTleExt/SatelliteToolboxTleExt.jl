@@ -48,7 +48,10 @@ function convert(::Type{TLE}, omm::OrbitMeanElementsMessage)
     # that the provided values are already divided by the necessary factors. So, for now,
     # we assume they are already adjusted. This may need to be revisited later.
     isnothing(data.bterm) || error("Cannot convert OMM `BTERM` to a TLE `BSTAR` field.")
-    isnothing(data.agom) || error("Cannot convert OMM `AGOM` to a TLE mean-motion field.")
+    isnothing(data.agom) || error(
+        "Cannot convert OMM `AGOM` to TLE because a TLE has no solar radiation pressure " *
+        "field."
+    )
 
     required_fields = (
         ("classification_type", data.classification_type),
