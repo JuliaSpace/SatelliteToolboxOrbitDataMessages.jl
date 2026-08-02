@@ -245,6 +245,14 @@ end
 
 # == Header Parsing ========================================================================
 
+# Known fields of the OMM header section.
+const _OMM_HEADER_FIELDS = (
+    "CLASSIFICATION",
+    "CREATION_DATE",
+    "ORIGINATOR",
+    "MESSAGE_ID",
+)
+
 """
     _parse_omm_header(xml::Cursor, strict::Bool, version::VersionNumber) -> OmmHeader
 
@@ -257,7 +265,7 @@ function _parse_omm_header(xml::XML.Cursor, strict::Bool, version::VersionNumber
     creation_date  = nothing
     originator     = nothing
     message_id     = nothing
-    seen           = Set{String}()
+    seen           = UInt32(0)
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
@@ -269,17 +277,16 @@ function _parse_omm_header(xml::XML.Cursor, strict::Bool, version::VersionNumber
             continue
         end
 
-        lt ∉ (
-            "CLASSIFICATION",
-            "CREATION_DATE",
-            "ORIGINATOR",
-            "MESSAGE_ID",
-        ) && throw(ArgumentError("Unknown OMM header field `$lt`."))
+        # Detect unknown and duplicate fields using a bitmask over the known field list,
+        # avoiding a per-call `Set` allocation.
+        i = findfirst(==(lt), _OMM_HEADER_FIELDS)
+        isnothing(i) && throw(ArgumentError("Unknown OMM header field `$lt`."))
         strict && version == v"2.0" && lt ∈ ("CLASSIFICATION", "MESSAGE_ID") && throw(
             ArgumentError("OMM header field `$lt` is not valid in OMM version 2.0.")
         )
-        lt in seen && throw(ArgumentError("Duplicate OMM header field `$lt`."))
-        push!(seen, lt)
+        seen & (UInt32(1) << i) != 0 &&
+            throw(ArgumentError("Duplicate OMM header field `$lt`."))
+        seen |= UInt32(1) << i
 
         if lt == "CLASSIFICATION"
             classification = v
@@ -389,6 +396,17 @@ function _parse_omm_segment(xml::XML.Cursor, strict::Bool, version::VersionNumbe
     return OmmSegment(metadata, data)
 end
 
+# Known fields of the OMM metadata section.
+const _OMM_METADATA_FIELDS = (
+    "OBJECT_NAME",
+    "OBJECT_ID",
+    "CENTER_NAME",
+    "REF_FRAME",
+    "REF_FRAME_EPOCH",
+    "TIME_SYSTEM",
+    "MEAN_ELEMENT_THEORY",
+)
+
 """
     _parse_omm_metadata(xml::Cursor, strict::Bool) -> OmmMetadata
 
@@ -404,7 +422,7 @@ function _parse_omm_metadata(xml::XML.Cursor, strict::Bool)
     ref_frame_epoch     = nothing
     time_system         = nothing
     mean_element_theory = nothing
-    seen                = Set{String}()
+    seen                = UInt32(0)
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
@@ -416,17 +434,11 @@ function _parse_omm_metadata(xml::XML.Cursor, strict::Bool)
             continue
         end
 
-        lt ∉ (
-            "OBJECT_NAME",
-            "OBJECT_ID",
-            "CENTER_NAME",
-            "REF_FRAME",
-            "REF_FRAME_EPOCH",
-            "TIME_SYSTEM",
-            "MEAN_ELEMENT_THEORY",
-        ) && throw(ArgumentError("Unknown OMM metadata field `$lt`."))
-        lt in seen && throw(ArgumentError("Duplicate OMM metadata field `$lt`."))
-        push!(seen, lt)
+        i = findfirst(==(lt), _OMM_METADATA_FIELDS)
+        isnothing(i) && throw(ArgumentError("Unknown OMM metadata field `$lt`."))
+        seen & (UInt32(1) << i) != 0 &&
+            throw(ArgumentError("Duplicate OMM metadata field `$lt`."))
+        seen |= UInt32(1) << i
 
         if lt == "OBJECT_NAME"
             object_name = v
@@ -490,6 +502,15 @@ function _parse_omm_metadata(xml::XML.Cursor, strict::Bool)
     )
 end
 
+# Known sections of the OMM data element.
+const _OMM_DATA_SECTIONS = (
+    "meanElements",
+    "spacecraftParameters",
+    "tleParameters",
+    "covarianceMatrix",
+    "userDefinedParameters",
+)
+
 """
     _parse_omm_data(xml::Cursor, strict::Bool, version::VersionNumber) -> OmmData
 
@@ -503,7 +524,7 @@ function _parse_omm_data(xml::XML.Cursor, strict::Bool, version::VersionNumber)
     tle_parameters::Union{Nothing, _OmmTleParametersNT} = nothing
     covariance_matrix::Union{Nothing, OmmCovarianceMatrix} = nothing
     user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}} = nothing
-    seen_sections = Set{String}()
+    seen_sections = UInt32(0)
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
@@ -512,15 +533,12 @@ function _parse_omm_data(xml::XML.Cursor, strict::Bool, version::VersionNumber)
             push!(data_comments, _omm_scalar_value(node))
             continue
         end
-        lt ∉ (
-            "meanElements",
-            "spacecraftParameters",
-            "tleParameters",
-            "covarianceMatrix",
-            "userDefinedParameters",
-        ) && throw(ArgumentError("Unknown OMM data section `$lt`."))
-        lt in seen_sections && throw(ArgumentError("Duplicate OMM data section `$lt`."))
-        push!(seen_sections, lt)
+
+        i = findfirst(==(lt), _OMM_DATA_SECTIONS)
+        isnothing(i) && throw(ArgumentError("Unknown OMM data section `$lt`."))
+        seen_sections & (UInt32(1) << i) != 0 &&
+            throw(ArgumentError("Duplicate OMM data section `$lt`."))
+        seen_sections |= UInt32(1) << i
 
         if lt == "meanElements"
             mean_elements = _parse_omm_mean_elements(node, strict)
@@ -555,6 +573,19 @@ function _parse_omm_data(xml::XML.Cursor, strict::Bool, version::VersionNumber)
     )
 end
 
+# Known fields of the OMM `meanElements` section.
+const _OMM_MEAN_ELEMENTS_FIELDS = (
+    "EPOCH",
+    "SEMI_MAJOR_AXIS",
+    "MEAN_MOTION",
+    "ECCENTRICITY",
+    "INCLINATION",
+    "RA_OF_ASC_NODE",
+    "ARG_OF_PERICENTER",
+    "MEAN_ANOMALY",
+    "GM",
+)
+
 # Concrete `NamedTuple` type returned by `_parse_omm_mean_elements`. Using a fixed type
 # keeps the return type value-independent, avoiding dynamic dispatch when the result is
 # splatted into the `OmmData` constructor.
@@ -587,7 +618,7 @@ function _parse_omm_mean_elements(xml::XML.Cursor, strict::Bool)
     arg_of_pericenter = nothing
     mean_anomaly = nothing
     GM = nothing
-    seen = Set{String}()
+    seen = UInt32(0)
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
@@ -597,19 +628,12 @@ function _parse_omm_mean_elements(xml::XML.Cursor, strict::Bool)
             push!(comments, v)
             continue
         end
-        lt ∉ (
-            "EPOCH",
-            "SEMI_MAJOR_AXIS",
-            "MEAN_MOTION",
-            "ECCENTRICITY",
-            "INCLINATION",
-            "RA_OF_ASC_NODE",
-            "ARG_OF_PERICENTER",
-            "MEAN_ANOMALY",
-            "GM",
-        ) && throw(ArgumentError("Unknown OMM mean-elements field `$lt`."))
-        lt in seen && throw(ArgumentError("Duplicate OMM mean-elements field `$lt`."))
-        push!(seen, lt)
+
+        i = findfirst(==(lt), _OMM_MEAN_ELEMENTS_FIELDS)
+        isnothing(i) && throw(ArgumentError("Unknown OMM mean-elements field `$lt`."))
+        seen & (UInt32(1) << i) != 0 &&
+            throw(ArgumentError("Duplicate OMM mean-elements field `$lt`."))
+        seen |= UInt32(1) << i
 
         if lt == "EPOCH"
             isempty(v) && throw(ArgumentError("OMM field `EPOCH` cannot be empty."))
@@ -667,6 +691,15 @@ function _parse_omm_mean_elements(xml::XML.Cursor, strict::Bool)
     ))
 end
 
+# Known fields of the OMM `spacecraftParameters` section.
+const _OMM_SPACECRAFT_PARAMETERS_FIELDS = (
+    "MASS",
+    "SOLAR_RAD_AREA",
+    "SOLAR_RAD_COEFF",
+    "DRAG_AREA",
+    "DRAG_COEFF",
+)
+
 # Concrete `NamedTuple` type returned by the `spacecraftParameters` section parsers. See
 # the comment on `_OmmMeanElementsNT` for the rationale.
 const _OmmSpacecraftParametersNT = @NamedTuple{
@@ -706,7 +739,7 @@ function _parse_omm_spacecraft_parameters(xml::XML.Cursor, strict::Bool)
     solar_rad_coeff = nothing
     drag_area = nothing
     drag_coeff = nothing
-    seen = Set{String}()
+    seen = UInt32(0)
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
@@ -716,10 +749,12 @@ function _parse_omm_spacecraft_parameters(xml::XML.Cursor, strict::Bool)
             push!(comments, v)
             continue
         end
-        lt ∉ ("MASS", "SOLAR_RAD_AREA", "SOLAR_RAD_COEFF", "DRAG_AREA", "DRAG_COEFF") &&
-            throw(ArgumentError("Unknown OMM spacecraft parameter `$lt`."))
-        lt in seen && throw(ArgumentError("Duplicate OMM spacecraft parameter `$lt`."))
-        push!(seen, lt)
+
+        i = findfirst(==(lt), _OMM_SPACECRAFT_PARAMETERS_FIELDS)
+        isnothing(i) && throw(ArgumentError("Unknown OMM spacecraft parameter `$lt`."))
+        seen & (UInt32(1) << i) != 0 &&
+            throw(ArgumentError("Duplicate OMM spacecraft parameter `$lt`."))
+        seen |= UInt32(1) << i
 
         if lt == "MASS"
             mass = _parse_omm_number(Float64, v, lt)
@@ -743,6 +778,20 @@ function _parse_omm_spacecraft_parameters(xml::XML.Cursor, strict::Bool)
         drag_coeff,
     ))
 end
+
+# Known fields of the OMM `tleParameters` section.
+const _OMM_TLE_PARAMETERS_FIELDS = (
+    "EPHEMERIS_TYPE",
+    "CLASSIFICATION_TYPE",
+    "NORAD_CAT_ID",
+    "ELEMENT_SET_NO",
+    "REV_AT_EPOCH",
+    "BSTAR",
+    "BTERM",
+    "MEAN_MOTION_DOT",
+    "MEAN_MOTION_DDOT",
+    "AGOM",
+)
 
 # Concrete `NamedTuple` type returned by the `tleParameters` section parsers. See the
 # comment on `_OmmMeanElementsNT` for the rationale.
@@ -799,7 +848,7 @@ function _parse_omm_tle_parameters(xml::XML.Cursor, strict::Bool, version::Versi
     mean_motion_dot = nothing
     mean_motion_ddot = nothing
     agom = nothing
-    seen = Set{String}()
+    seen = UInt32(0)
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
@@ -809,23 +858,15 @@ function _parse_omm_tle_parameters(xml::XML.Cursor, strict::Bool, version::Versi
             push!(comments, v)
             continue
         end
-        lt ∉ (
-            "EPHEMERIS_TYPE",
-            "CLASSIFICATION_TYPE",
-            "NORAD_CAT_ID",
-            "ELEMENT_SET_NO",
-            "REV_AT_EPOCH",
-            "BSTAR",
-            "BTERM",
-            "MEAN_MOTION_DOT",
-            "MEAN_MOTION_DDOT",
-            "AGOM",
-        ) && throw(ArgumentError("Unknown OMM TLE parameter `$lt`."))
+
+        i = findfirst(==(lt), _OMM_TLE_PARAMETERS_FIELDS)
+        isnothing(i) && throw(ArgumentError("Unknown OMM TLE parameter `$lt`."))
         strict && version == v"2.0" && lt ∈ ("BTERM", "AGOM") && throw(ArgumentError(
             "OMM TLE parameter `$lt` is not valid in OMM version 2.0."
         ))
-        lt in seen && throw(ArgumentError("Duplicate OMM TLE parameter `$lt`."))
-        push!(seen, lt)
+        seen & (UInt32(1) << i) != 0 &&
+            throw(ArgumentError("Duplicate OMM TLE parameter `$lt`."))
+        seen |= UInt32(1) << i
 
         if lt == "EPHEMERIS_TYPE"
             ephemeris_type = _parse_omm_number(Int, v, lt)
