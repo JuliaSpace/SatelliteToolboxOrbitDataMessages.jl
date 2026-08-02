@@ -35,9 +35,10 @@ Exception thrown when a request to an Orbit Data Message service fails.
 
 - `msg::String`: Description of the request failure.
 - `url::Union{String, Nothing}`: URL of the failed request, if available.
-    (**Default**: `nothing`)
 - `status::Union{Int, Nothing}`: HTTP status code of the failed request, if available.
-    (**Default**: `nothing`)
+
+The keyword constructor `OdmFetchError(msg; url = nothing, status = nothing)` can be used
+to omit the optional fields.
 """
 struct OdmFetchError <: Exception
     msg::String
@@ -64,18 +65,22 @@ end
     create_omm_fetcher(::Type{T}, args...; kwargs...) where T <: AbstractOmmFetcher -> T
 
 Create an Orbit Mean-Elements Message (OMM) fetcher of type `T`.
+
+This fallback method throws an `ArgumentError` when no fetcher of type `T` is registered.
 """
 function create_omm_fetcher(::Type{T}, args...; kwargs...) where T <: AbstractOmmFetcher
     throw(ArgumentError("The OMM fetcher $T is not registered."))
 end
 
 """
-    fetch_omms(fetcher::T; kwargs...) -> Vector{OrbitMeanElementsMessage}
+    fetch_omms(fetcher::T; kwargs...) where T <: AbstractOmmFetcher -> Vector{OrbitMeanElementsMessage}
 
 Fetch Orbit Mean-Elements Messages (OMM) using `fetcher`.
 
-The keywords `kwargs...` are used to customize the search. It depends on the fetcher type
+The keywords `kwargs...` are used to customize the search. They depend on the fetcher type
 `T`.
+
+This fallback method throws an `ArgumentError` when no fetcher of type `T` is registered.
 """
 function fetch_omms(::T; kwargs...) where T <: AbstractOmmFetcher
     throw(ArgumentError("The OMM fetcher $T is not registered."))

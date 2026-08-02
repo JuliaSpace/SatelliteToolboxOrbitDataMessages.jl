@@ -640,8 +640,8 @@ function _spacetrack__login(username::String, password::Base.SecretBuffer)
         return cookiejar
 
     catch e
-        if e isa HTTP.ExceptionRequest.StatusError
-            msg = isnothing(e.response) ? "No server response" : String(e.response.body)
+        if e isa HTTP.Exceptions.StatusError
+            msg = String(e.response.body)
             throw(OdmLoginError(
                 "The Space-Track login request failed with HTTP status $(e.status): $msg"
             ))
