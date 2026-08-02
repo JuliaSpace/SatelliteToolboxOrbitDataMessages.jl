@@ -247,7 +247,9 @@ The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be prov
     (**Default**: `String[]`)
 - `classification::Union{String, Nothing}`: Message classification.
     (**Default**: `nothing`)
-- `creation_date::NanoDate`: Message creation date (**required**).
+- `creation_date::Union{NanoDate, Nothing}`: Message creation date (**required**). It can
+    be set to `nothing` when reconstructing messages parsed in non-strict mode, but such
+    messages cannot be written to a file until a creation date is provided.
 - `originator::String`: Message originator (**required**).
 - `message_id::Union{String, Nothing}`: Unique message identifier.
     (**Default**: `nothing`)
@@ -339,7 +341,7 @@ function OrbitMeanElementsMessage(
     # == Header ============================================================================
     header_comments::Vector{String} = String[],
     classification::Union{String, Nothing} = nothing,
-    creation_date::NanoDate,
+    creation_date::Union{NanoDate, Nothing},
     originator::String,
     message_id::Union{String, Nothing} = nothing,
 

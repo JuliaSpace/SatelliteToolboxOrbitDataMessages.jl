@@ -147,6 +147,19 @@
         @test omm2.body.segment.data.raan == omm.body.segment.data.raan
     end
 
+    # == Reconstruction Without Creation Date ==============================================
+
+    @testset "Reconstruction Without Creation Date" begin
+        # Non-strict parsing tolerates a missing `CREATION_DATE`, so the copy constructor
+        # must accept `creation_date = nothing`.
+        omm = parse_omm(_minimal_omm_xml(; creation_date = ""); strict = false)
+        @test isnothing(omm.header.creation_date)
+
+        omm2 = OrbitMeanElementsMessage(omm; originator = "NEW ORG")
+        @test isnothing(omm2.header.creation_date)
+        @test omm2.header.originator == "NEW ORG"
+    end
+
     @testset "Exactly One Mean-Motion Representation" begin
         kwargs = (;
             creation_date,
