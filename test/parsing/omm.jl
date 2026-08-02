@@ -208,6 +208,27 @@ end
     @test omm.body.segment.data.mean_motion ≈  14.40772474
 end
 
+@testset "OMM Element Depth" begin
+    # An `omm` element nested inside an unsupported root must not be parsed, matching the
+    # traversal performed by `parse_odm`.
+    omm_xml = _minimal_omm_xml()
+    omm_element = match(r"<omm.*</omm>"s, omm_xml).match
+    nested_xml = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <unsupportedRoot>$(omm_element)</unsupportedRoot>
+    """
+
+    @test isnothing(parse_omm(nested_xml))
+
+    # The same element is parsed when it is a direct child of an NDM root.
+    ndm_xml = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <ndm>$(omm_element)</ndm>
+    """
+
+    @test !isnothing(parse_omm(ndm_xml))
+end
+
 @testset "CDATA and Split Text Values" begin
     # Values split into multiple text / CDATA chunks must be concatenated.
     xml = replace(

@@ -33,10 +33,29 @@ function parse_omm(str::AbstractString; strict::Bool = true)
 end
 
 function parse_omm(xml::XML.Cursor; strict::Bool = true)
-    for node in xml
-        nodetype(node) === Element || continue
-        t = _omm_tag(node, strict)
-        t == "omm" && return _parse_omm(node, strict)
+    # Get the document root node.
+    root_node = next!(xml)
+    while !isnothing(root_node) && nodetype(root_node) !== Element
+        root_node = next!(xml)
+    end
+    isnothing(root_node) && return nothing
+
+    t = _omm_tag(root_node, strict)
+    t == "omm" && return _parse_omm(root_node, strict)
+
+    # In a Navigation Data Message (NDM), only the direct children of the root element can
+    # contain OMMs, matching the traversal performed by `parse_odm`.
+    if t == "ndm"
+        result = nothing
+        XML.@for_each_child root_node node begin
+            nodetype(node) === Element || continue
+            if isnothing(result) && _omm_tag(node, strict) == "omm"
+                result = _parse_omm(node, strict)
+            else
+                skip_element!(node)
+            end
+        end
+        return result
     end
 
     return nothing
