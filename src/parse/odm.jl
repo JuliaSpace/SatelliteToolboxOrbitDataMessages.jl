@@ -85,8 +85,11 @@ for (tag, name) in (
     :oem => "Orbit Ephemeris Messages (OEM)",
     :ocm => "Orbit Comprehensive Messages (OCM)",
 )
-    @eval function _parse_message(::Val{$(QuoteNode(tag))}, ::XML.Cursor, ::Bool)
+    @eval function _parse_message(::Val{$(QuoteNode(tag))}, xml::XML.Cursor, ::Bool)
         @warn $("We do not support $name yet.")
+        # Consume the unsupported element so that the caller does not tokenize its entire
+        # subtree node-by-node.
+        skip_element!(xml)
         return nothing
     end
 end
@@ -103,7 +106,14 @@ function _parse_ndm(xml::XML.Cursor, strict::Bool)
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
         t = _omm_tag(node, strict)
-        _is_odm_tag(t) || continue
+
+        if !_is_odm_tag(t)
+            # Consume the unrecognized element so that its subtree is not tokenized
+            # node-by-node.
+            skip_element!(node)
+            continue
+        end
+
         message = _parse_message(Val(Symbol(t)), node, strict)
         isnothing(message) || push!(messages, message)
     end
