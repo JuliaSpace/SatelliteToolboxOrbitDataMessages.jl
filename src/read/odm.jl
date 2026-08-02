@@ -21,11 +21,9 @@ Read an Orbit Data Message (ODM) from the provided `io` stream.
     (**Default**: `true`)
 """
 function read_odm(file::AbstractString; strict::Bool = true)
-    # Open the file and parse the ODM.
-    open(file, "r") do io
-        str = read(io, String)
-        return parse_odm(str; strict)
-    end
+    # Read the file and parse the ODM.
+    str = read(file, String)
+    return parse_odm(str; strict)
 end
 
 function read_odm(io::IO; strict::Bool = true)
