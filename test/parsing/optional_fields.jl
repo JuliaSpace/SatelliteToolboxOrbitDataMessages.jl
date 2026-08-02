@@ -63,6 +63,23 @@
         @test omm.body.segment.metadata.ref_frame_epoch == NanoDate("2000-01-01T12:00:00")
     end
 
+    # == Empty ref_frame_epoch =============================================================
+
+    @testset "Empty ref_frame_epoch" begin
+        xml = replace(
+            _minimal_omm_xml(),
+            "<TIME_SYSTEM>" => "<REF_FRAME_EPOCH></REF_FRAME_EPOCH><TIME_SYSTEM>",
+        )
+
+        # `REF_FRAME_EPOCH` is optional, so an empty tag is tolerated in non-strict mode
+        # and treated as absent.
+        omm = parse_omm(xml; strict = false)
+        @test !isnothing(omm)
+        @test isnothing(omm.body.segment.metadata.ref_frame_epoch)
+
+        @test_throws ArgumentError parse_omm(xml)
+    end
+
     # == All Optional Scalar Fields Set ====================================================
 
     @testset "All Optional Scalar Fields Set" begin

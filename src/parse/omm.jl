@@ -397,10 +397,15 @@ function _parse_omm_metadata(xml::XML.Cursor, strict::Bool)
         elseif lt == "REF_FRAME"
             ref_frame = v
         elseif lt == "REF_FRAME_EPOCH"
-            isempty(v) && throw(ArgumentError(
-                "OMM field `REF_FRAME_EPOCH` cannot be empty."
-            ))
-            ref_frame_epoch = _parse_ndm_date(v)
+            # `REF_FRAME_EPOCH` is optional, so we tolerate an empty tag in non-strict
+            # mode and treat it as absent.
+            if isempty(v)
+                strict && throw(ArgumentError(
+                    "OMM field `REF_FRAME_EPOCH` cannot be empty."
+                ))
+            else
+                ref_frame_epoch = _parse_ndm_date(v)
+            end
         elseif lt == "TIME_SYSTEM"
             time_system = v
         elseif lt == "MEAN_ELEMENT_THEORY"
