@@ -120,6 +120,15 @@ const _OMM_STRUCTURAL_TAGS = Dict(
     "userdefinedparameters" => "userDefinedParameters",
 )
 
+# Canonical structural tag names for the fast-path exact match in `_omm_tag`.
+const _OMM_CANONICAL_STRUCTURAL_TAGS = Set{String}(values(_OMM_STRUCTURAL_TAGS))
+
+# Map all-uppercase structural tag names to their canonical casing for the `_omm_tag` fast
+# path that avoids lowercasing every tag.
+const _OMM_UPPERCASE_STRUCTURAL_TAGS = Dict{String, String}(
+    uppercase(k) => v for (k, v) in _OMM_STRUCTURAL_TAGS
+)
+
 """
     _omm_tag(node::Cursor, strict::Bool) -> Union{String, Nothing}
 
@@ -129,6 +138,15 @@ Return the canonical OMM tag for `node`, matching case-insensitively unless `str
 function _omm_tag(node::XML.Cursor, strict::Bool)
     node_tag = tag(node)
     (strict || isnothing(node_tag)) && return node_tag
+
+    # Fast paths for tags that are already canonical, avoiding the `lowercase` and
+    # `uppercase` allocations for every node in a well-cased document.
+    node_tag in _OMM_CANONICAL_STRUCTURAL_TAGS && return node_tag
+
+    if !any(islowercase, node_tag)
+        structural_tag = get(_OMM_UPPERCASE_STRUCTURAL_TAGS, node_tag, nothing)
+        return isnothing(structural_tag) ? node_tag : structural_tag
+    end
 
     lowercase_tag = lowercase(node_tag)
     return get(_OMM_STRUCTURAL_TAGS, lowercase_tag, uppercase(node_tag))
