@@ -174,12 +174,13 @@ fails, an [`OdmFetchError`](@ref) is thrown.
     used. This field is appended to the predicates using the `limit` field.
     (**Default**: `nothing`)
 - `satellite_name::Union{Nothing, AbstractString}`: The name of the satellite to fetch the
-    OMMs. This field is appended to the predicates using the `OBJECT_NAME` field. If
+    OMMs for. This field is appended to the predicates using the `OBJECT_NAME` field. If
     `nothing`, no satellite name is used. If both `satellite_name` and `satellite_number`
     are provided, `satellite_number` takes precedence.
     (**Default**: `nothing`)
 - `satellite_number::Union{Nothing, Number}`: The NORAD catalog number of the satellite to
-    fetch the OMMs. This field is appended to the predicates using the `NORAD_CAT_ID` field.
+    fetch the OMMs for. This field is appended to the predicates using the `NORAD_CAT_ID`
+    field.
     If `nothing`, no satellite number is used. If both `satellite_name` and
     `satellite_number` are provided, `satellite_number` takes precedence.
     (**Default**: `nothing`)

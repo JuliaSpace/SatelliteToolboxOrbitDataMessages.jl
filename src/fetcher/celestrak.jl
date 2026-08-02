@@ -37,11 +37,11 @@ end
 """
     create_omm_fetcher(::Type{CelestrakOmmFetcher}; kwargs...) -> CelestrakOmmFetcher
 
-Create an Orbit Mean-Elements Message (OMM) fetcher from Celestrak service.
+Create an Orbit Mean-Elements Message (OMM) fetcher from the Celestrak service.
 
 # Keywords
 
-- `url::String`: Default URL of the Celestrak PHP query endpoint.
+- `url::String`: URL of the Celestrak GP query endpoint.
   (**Default**: "https://celestrak.org/NORAD/elements/gp.php")
 """
 function create_omm_fetcher(

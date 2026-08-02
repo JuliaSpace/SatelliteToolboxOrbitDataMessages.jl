@@ -81,9 +81,9 @@ To add support for a new message type, define a method for the corresponding tag
 _parse_message(::Val{:omm}, xml::XML.Cursor, strict::Bool) = _parse_omm(xml, strict)
 
 for (tag, name) in (
-    :opm => "Orbit Parameter Messages (OPM)",
-    :oem => "Orbit Ephemeris Messages (OEM)",
-    :ocm => "Orbit Comprehensive Messages (OCM)",
+    :opm => "Orbit Parameter Message (OPM) files",
+    :oem => "Orbit Ephemeris Message (OEM) files",
+    :ocm => "Orbit Comprehensive Message (OCM) files",
 )
     @eval function _parse_message(::Val{$(QuoteNode(tag))}, xml::XML.Cursor, ::Bool)
         @warn $("We do not support $name yet.")

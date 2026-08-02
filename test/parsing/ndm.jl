@@ -70,9 +70,9 @@
     <ocm id="CCSDS_OCM_VERS" version="3.0"><header/><body/></ocm>
     """
 
-    opm_warning = "We do not support Orbit Parameter Messages (OPM) yet."
-    oem_warning = "We do not support Orbit Ephemeris Messages (OEM) yet."
-    ocm_warning = "We do not support Orbit Comprehensive Messages (OCM) yet."
+    opm_warning = "We do not support Orbit Parameter Message (OPM) files yet."
+    oem_warning = "We do not support Orbit Ephemeris Message (OEM) files yet."
+    ocm_warning = "We do not support Orbit Comprehensive Message (OCM) files yet."
 
     @testset "Unsupported Stand-Alone ODMs" begin
         @test_logs (:warn, opm_warning) @test isempty(parse_odm(opm_elem))
