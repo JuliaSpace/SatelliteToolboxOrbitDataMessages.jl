@@ -48,6 +48,35 @@
         @test omm.body.segment.data.norad_cat_id == 12345
     end
 
+    # == Defensive Copies ==================================================================
+
+    @testset "Defensive Copies" begin
+        user_defined_parameters = ["KEY" => "VALUE"]
+
+        omm = OrbitMeanElementsMessage(;
+            creation_date        = creation_date,
+            originator           = "TEST",
+            object_name          = "TEST SAT",
+            object_id            = "2025-001A",
+            center_name          = "EARTH",
+            ref_frame            = "TEME",
+            time_system          = "UTC",
+            mean_element_theory  = "SGP4",
+            epoch                = epoch,
+            mean_motion          = 15.0,
+            eccentricity         = 0.001,
+            inclination          = 45.0,
+            raan                 = 100.0,
+            arg_of_pericenter    = 50.0,
+            mean_anomaly         = 200.0,
+            user_defined_parameters = user_defined_parameters,
+        )
+
+        # Mutating the caller's vector must not change the message.
+        push!(user_defined_parameters, "OTHER" => "VALUE")
+        @test omm.body.segment.data.user_defined_parameters == ["KEY" => "VALUE"]
+    end
+
     # == Minimal Keyword Constructor =======================================================
 
     @testset "Minimal Keyword Constructor" begin
