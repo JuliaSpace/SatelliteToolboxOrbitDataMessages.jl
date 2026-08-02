@@ -229,8 +229,13 @@ end
 
 """
     OrbitMeanElementsMessage(; kwargs...) -> OrbitMeanElementsMessage
+    OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...) -> OrbitMeanElementsMessage
 
 Create an Orbit Mean-Elements Message (OMM) from the keyword arguments `kwargs...`.
+
+The second form creates a copy of `omm`, overriding the fields specified in `kwargs...`.
+Any keyword accepted by the first form can be used; the remaining fields are copied from
+`omm`.
 
 This constructor assembles the internal header, metadata, and data sections defined by the
 CCSDS 502.0-B-3 standard, returning a message compatible with version 3.0. The required
@@ -327,14 +332,6 @@ The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be prov
 - `user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}}`: User-defined
     parameters as a vector of `key => value` pairs.
     (**Default**: `nothing`)
-
-    OrbitMeanElementsMessage(
-        omm::OrbitMeanElementsMessage;
-        kwargs...
-    ) -> OrbitMeanElementsMessage
-
-Create a copy of `omm`, overriding the fields specified in `kwargs...`. Any keyword accepted
-by the main constructor can be used; the remaining fields are copied from `omm`.
 """
 function OrbitMeanElementsMessage(
     ;
