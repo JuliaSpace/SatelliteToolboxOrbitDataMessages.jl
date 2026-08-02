@@ -164,11 +164,11 @@ function fetch_omms(
     str = String(response.body)
 
     # Check if some error occurred.
-    if !isnothing(match(r"No GP data found", str))
+    if occursin("No GP data found", str)
         @warn "No OMM found."
         return OrbitMeanElementsMessage[]
 
-    elseif !isnothing(match(r"Invalid query", str))
+    elseif occursin("Invalid query", str)
         throw(OdmFetchError("Invalid query: $query"; url = url))
     end
 
