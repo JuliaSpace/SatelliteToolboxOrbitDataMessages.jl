@@ -131,6 +131,28 @@ end
         cookiejar = _valid_spacetrack_cookiejar()
         @test SatelliteToolboxOrbitDataMessages._spacetrack__is_cookie_valid(cookiejar)
     end
+
+    # == Fetcher Display ===================================================================
+
+    @testset "Fetcher Display" begin
+        fetcher = SpacetrackOmmFetcher("test", _valid_spacetrack_cookiejar())
+        @test occursin("Login expires in", sprint(show, fetcher))
+
+        expired_cookiejar = HTTP.CookieJar()
+        host = "www.space-track.org"
+        cookie_path = host * ";/;chocolatechip"
+        expired_cookiejar.entries[host] = Dict{String, HTTP.Cookie}()
+        expired_cookiejar.entries[host][cookie_path] = HTTP.Cookie(;
+            name    = "chocolatechip",
+            value   = "test",
+            expires = Dates.now(Dates.UTC) - Dates.Hour(1),
+        )
+        expired_fetcher = SpacetrackOmmFetcher("test", expired_cookiejar)
+        @test occursin("Login expired", sprint(show, expired_fetcher))
+
+        unknown_fetcher = SpacetrackOmmFetcher("test", HTTP.CookieJar())
+        @test occursin("Login expires in Unknown", sprint(show, unknown_fetcher))
+    end
 end
 
 @testset "Spacetrack Fetcher Exceptions (Offline)" verbose = true begin
