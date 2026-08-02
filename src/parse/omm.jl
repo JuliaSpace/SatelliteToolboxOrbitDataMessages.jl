@@ -872,6 +872,36 @@ function _parse_omm_tle_parameters(xml::XML.Cursor, strict::Bool, version::Versi
     ))
 end
 
+# Names of the 21 covariance matrix elements in the field order of `OmmCovarianceMatrix`.
+const _OMM_COVARIANCE_ELEMENTS = (
+    "CX_X",
+    "CY_X",
+    "CY_Y",
+    "CZ_X",
+    "CZ_Y",
+    "CZ_Z",
+    "CX_DOT_X",
+    "CX_DOT_Y",
+    "CX_DOT_Z",
+    "CX_DOT_X_DOT",
+    "CY_DOT_X",
+    "CY_DOT_Y",
+    "CY_DOT_Z",
+    "CY_DOT_X_DOT",
+    "CY_DOT_Y_DOT",
+    "CZ_DOT_X",
+    "CZ_DOT_Y",
+    "CZ_DOT_Z",
+    "CZ_DOT_X_DOT",
+    "CZ_DOT_Y_DOT",
+    "CZ_DOT_Z_DOT",
+)
+
+# Map covariance element names to their index in `_OMM_COVARIANCE_ELEMENTS`.
+const _OMM_COVARIANCE_ELEMENT_INDICES = Dict{String, Int}(
+    name => i for (i, name) in enumerate(_OMM_COVARIANCE_ELEMENTS)
+)
+
 """
     _parse_omm_covariance_matrix(xml::Cursor, strict::Bool) -> OmmCovarianceMatrix
 
@@ -879,32 +909,9 @@ Parse an OMM `covarianceMatrix` section at the cursor's current position.
 """
 function _parse_omm_covariance_matrix(xml::XML.Cursor, strict::Bool)
     comments = String[]
-    cov_ref_frame = nothing
-    names = (
-        "CX_X",
-        "CY_X",
-        "CY_Y",
-        "CZ_X",
-        "CZ_Y",
-        "CZ_Z",
-        "CX_DOT_X",
-        "CX_DOT_Y",
-        "CX_DOT_Z",
-        "CX_DOT_X_DOT",
-        "CY_DOT_X",
-        "CY_DOT_Y",
-        "CY_DOT_Z",
-        "CY_DOT_X_DOT",
-        "CY_DOT_Y_DOT",
-        "CZ_DOT_X",
-        "CZ_DOT_Y",
-        "CZ_DOT_Z",
-        "CZ_DOT_X_DOT",
-        "CZ_DOT_Y_DOT",
-        "CZ_DOT_Z_DOT",
-    )
-    values = Dict{String, Union{Nothing, Float64}}(name => nothing for name in names)
-    seen = Set{String}()
+    cov_ref_frame::Union{Nothing, String} = nothing
+    values = Vector{Float64}(undef, length(_OMM_COVARIANCE_ELEMENTS))
+    filled = falses(length(_OMM_COVARIANCE_ELEMENTS))
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
@@ -914,20 +921,23 @@ function _parse_omm_covariance_matrix(xml::XML.Cursor, strict::Bool)
             push!(comments, v)
             continue
         end
-        lt in seen && throw(ArgumentError("Duplicate OMM covariance element `$lt`."))
-        push!(seen, lt)
 
         if lt == "COV_REF_FRAME"
+            !isnothing(cov_ref_frame) && throw(ArgumentError(
+                "Duplicate OMM covariance element `$lt`."
+            ))
             cov_ref_frame = v
-        elseif haskey(values, lt)
-            values[lt] = _parse_omm_number(Float64, v, lt)
         else
-            throw(ArgumentError("Unknown OMM covariance element `$lt`."))
+            i = get(_OMM_COVARIANCE_ELEMENT_INDICES, lt, 0)
+            i == 0 && throw(ArgumentError("Unknown OMM covariance element `$lt`."))
+            filled[i] && throw(ArgumentError("Duplicate OMM covariance element `$lt`."))
+            filled[i] = true
+            values[i] = _parse_omm_number(Float64, v, lt)
         end
     end
 
-    for name in names
-        isnothing(values[name]) && throw(ArgumentError(
+    for (i, name) in enumerate(_OMM_COVARIANCE_ELEMENTS)
+        filled[i] || throw(ArgumentError(
             "OMM covariance matrix is missing required element `$name`."
         ))
     end
@@ -935,7 +945,7 @@ function _parse_omm_covariance_matrix(xml::XML.Cursor, strict::Bool)
     return OmmCovarianceMatrix(
         comments,
         cov_ref_frame,
-        (values[name] for name in names)...
+        NTuple{length(_OMM_COVARIANCE_ELEMENTS), Float64}(values)...
     )
 end
 
