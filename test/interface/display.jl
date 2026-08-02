@@ -257,7 +257,7 @@ OrbitMeanElementsMessage:
             "Message ID     : MESSAGE-1",
             "Comment             : Metadata comment",
             "Ref. Frame Epoch    : 2025-01-01T00:00:00.123456789",
-            "        Comment : Data comment\\nsecond line",
+            "\n          Comment : Data comment\\nsecond line",
             "Comment            : Mean elements comment",
             "Semi-Major Axis    : 7000.0 km",
             "GM                 : 398600.4418 km³/s²",

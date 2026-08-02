@@ -178,8 +178,10 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     # .. Data ..............................................................................
 
+    # The comment fields of the data section are indented two columns past the node name,
+    # following the same pattern used by every other level.
     _print_node(out, "Data", "     ", "└─ ", :satellitetoolbox_odm_node)
-    _print_fields(out, data_fields, data_rail)
+    _print_fields(out, data_fields, data_rail * "  ")
 
     # Build the list of present data subsections so the last one is closed with `└─`.
     data_sections = filter(
