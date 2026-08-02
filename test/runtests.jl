@@ -21,6 +21,7 @@ include("helpers.jl")
         include("parsing/user_defined_parameters.jl")
         include("parsing/covariance_matrix.jl")
         include("parsing/date_formats.jl")
+        include("parsing/omm_versions.jl")
     end
 
     @testset "Constructors" verbose = true begin

@@ -152,9 +152,9 @@ function _parse_omm(xml::XML.Cursor, strict::Bool)
         lt = _omm_tag(node, strict)
         push!(element_tags, lt)
         if lt == "header" && isnothing(header)
-            header = _parse_omm_header(node, strict)
+            header = _parse_omm_header(node, strict, version)
         elseif lt == "body" && isnothing(body)
-            body = _parse_omm_body(node, strict)
+            body = _parse_omm_body(node, strict, version)
         else
             skip_element!(node)
         end
@@ -209,12 +209,12 @@ end
 # == Header Parsing ========================================================================
 
 """
-    _parse_omm_header(xml::Cursor, strict::Bool) -> OmmHeader
+    _parse_omm_header(xml::Cursor, strict::Bool, version::VersionNumber) -> OmmHeader
 
-Parse the header of an Orbit Mean-Elements Message (OMM) from a `Cursor` `xml`
-representation.
+Parse the header of an Orbit Mean-Elements Message (OMM) with schema `version` from a
+`Cursor` `xml` representation.
 """
-function _parse_omm_header(xml::XML.Cursor, strict::Bool)
+function _parse_omm_header(xml::XML.Cursor, strict::Bool, version::VersionNumber)
     comments       = String[]
     classification = nothing
     creation_date  = nothing
@@ -238,6 +238,9 @@ function _parse_omm_header(xml::XML.Cursor, strict::Bool)
             "ORIGINATOR",
             "MESSAGE_ID",
         ) && throw(ArgumentError("Unknown OMM header field `$lt`."))
+        strict && version == v"2.0" && lt ∈ ("CLASSIFICATION", "MESSAGE_ID") && throw(
+            ArgumentError("OMM header field `$lt` is not valid in OMM version 2.0.")
+        )
         lt in seen && throw(ArgumentError("Duplicate OMM header field `$lt`."))
         push!(seen, lt)
 
@@ -282,12 +285,12 @@ end
 # == Body Parsing ==========================================================================
 
 """
-    _parse_omm_body(xml::Cursor, strict::Bool) -> OmmBody
+    _parse_omm_body(xml::Cursor, strict::Bool, version::VersionNumber) -> OmmBody
 
-Parse the body of an Orbit Mean-Elements Message (OMM) from a `Cursor` `xml`
-representation.
+Parse the body of an Orbit Mean-Elements Message (OMM) with schema `version` from a
+`Cursor` `xml` representation.
 """
-function _parse_omm_body(xml::XML.Cursor, strict::Bool)
+function _parse_omm_body(xml::XML.Cursor, strict::Bool, version::VersionNumber)
     segment = nothing
     segment_count = 0
     XML.@for_each_child xml node begin
@@ -296,7 +299,7 @@ function _parse_omm_body(xml::XML.Cursor, strict::Bool)
             throw(ArgumentError("Unknown OMM body element."))
         segment_count += 1
         if segment_count == 1
-            segment = _parse_omm_segment(node, strict)
+            segment = _parse_omm_segment(node, strict, version)
         else
             skip_element!(node)
         end
@@ -313,12 +316,12 @@ end
 # -- Body Segment Parsing ------------------------------------------------------------------
 
 """
-    _parse_omm_segment(xml::Cursor, strict::Bool) -> OmmSegment
+    _parse_omm_segment(xml::Cursor, strict::Bool, version::VersionNumber) -> OmmSegment
 
-Parse a segment of the body of an Orbit Mean-Elements Message (OMM) from a `Cursor` `xml`
-representation.
+Parse a segment of the body of an Orbit Mean-Elements Message (OMM) with schema `version`
+from a `Cursor` `xml` representation.
 """
-function _parse_omm_segment(xml::XML.Cursor, strict::Bool)
+function _parse_omm_segment(xml::XML.Cursor, strict::Bool, version::VersionNumber)
     metadata = nothing
     data = nothing
     XML.@for_each_child xml node begin
@@ -335,7 +338,7 @@ function _parse_omm_segment(xml::XML.Cursor, strict::Bool)
             !isnothing(data) && throw(ArgumentError(
                 "The OMM segment contains duplicate data sections."
             ))
-            data = _parse_omm_data(node, strict)
+            data = _parse_omm_data(node, strict, version)
         end
     end
 
@@ -451,12 +454,12 @@ function _parse_omm_metadata(xml::XML.Cursor, strict::Bool)
 end
 
 """
-    _parse_omm_data(xml::Cursor, strict::Bool) -> OmmData
+    _parse_omm_data(xml::Cursor, strict::Bool, version::VersionNumber) -> OmmData
 
-Parse the data of the segment body of an Orbit Mean-Elements Message (OMM) from a
-`Cursor` `xml` representation.
+Parse the data of the segment body of an Orbit Mean-Elements Message (OMM) with schema
+`version` from a `Cursor` `xml` representation.
 """
-function _parse_omm_data(xml::XML.Cursor, strict::Bool)
+function _parse_omm_data(xml::XML.Cursor, strict::Bool, version::VersionNumber)
     data_comments = String[]
     mean_elements = nothing
     spacecraft_parameters = nothing
@@ -487,7 +490,7 @@ function _parse_omm_data(xml::XML.Cursor, strict::Bool)
         elseif lt == "spacecraftParameters"
             spacecraft_parameters = _parse_omm_spacecraft_parameters(node, strict)
         elseif lt == "tleParameters"
-            tle_parameters = _parse_omm_tle_parameters(node, strict)
+            tle_parameters = _parse_omm_tle_parameters(node, strict, version)
         elseif lt == "covarianceMatrix"
             covariance_matrix = _parse_omm_covariance_matrix(node, strict)
         else
@@ -699,11 +702,12 @@ function _empty_omm_tle_parameters()
 end
 
 """
-    _parse_omm_tle_parameters(xml::Cursor, strict::Bool) -> NamedTuple
+    _parse_omm_tle_parameters(xml::Cursor, strict::Bool, version::VersionNumber) -> NamedTuple
 
-Parse an OMM `tleParameters` section at the cursor's current position.
+Parse an OMM `tleParameters` section with schema `version` at the cursor's current
+position.
 """
-function _parse_omm_tle_parameters(xml::XML.Cursor, strict::Bool)
+function _parse_omm_tle_parameters(xml::XML.Cursor, strict::Bool, version::VersionNumber)
     comments = String[]
     ephemeris_type = nothing
     classification_type = nothing
@@ -737,6 +741,9 @@ function _parse_omm_tle_parameters(xml::XML.Cursor, strict::Bool)
             "MEAN_MOTION_DDOT",
             "AGOM",
         ) && throw(ArgumentError("Unknown OMM TLE parameter `$lt`."))
+        strict && version == v"2.0" && lt ∈ ("BTERM", "AGOM") && throw(ArgumentError(
+            "OMM TLE parameter `$lt` is not valid in OMM version 2.0."
+        ))
         lt in seen && throw(ArgumentError("Duplicate OMM TLE parameter `$lt`."))
         push!(seen, lt)
 
@@ -766,14 +773,26 @@ function _parse_omm_tle_parameters(xml::XML.Cursor, strict::Bool)
         end
     end
 
-    (isnothing(bstar) == isnothing(bterm)) && throw(ArgumentError(
-        "OMM TLE parameters must contain exactly one of `BSTAR` and `BTERM`."
-    ))
+    if strict && version == v"2.0"
+        # In OMM version 2.0, `BSTAR` and `MEAN_MOTION_DDOT` are required fields, and
+        # `BTERM` and `AGOM` do not exist.
+        isnothing(bstar) && throw(ArgumentError(
+            "OMM TLE parameters are missing required field `BSTAR`."
+        ))
+        isnothing(mean_motion_ddot) && throw(ArgumentError(
+            "OMM TLE parameters are missing required field `MEAN_MOTION_DDOT`."
+        ))
+    else
+        (isnothing(bstar) == isnothing(bterm)) && throw(ArgumentError(
+            "OMM TLE parameters must contain exactly one of `BSTAR` and `BTERM`."
+        ))
+        (isnothing(mean_motion_ddot) == isnothing(agom)) && throw(ArgumentError(
+            "OMM TLE parameters must contain exactly one of `MEAN_MOTION_DDOT` and `AGOM`."
+        ))
+    end
+
     isnothing(mean_motion_dot) && throw(ArgumentError(
         "OMM TLE parameters are missing required field `MEAN_MOTION_DOT`."
-    ))
-    (isnothing(mean_motion_ddot) == isnothing(agom)) && throw(ArgumentError(
-        "OMM TLE parameters must contain exactly one of `MEAN_MOTION_DDOT` and `AGOM`."
     ))
 
     return (
