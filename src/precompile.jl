@@ -31,9 +31,18 @@
     </omm>
     """
 
+    ndm_xml = "<ndm>$omm_xml</ndm>"
+
     @compile_workload begin
         omm = parse_omm(omm_xml)
+
+        # `parse_omms` is the entry point used by the fetchers, so precompiling it also
+        # covers the fetch hot path without network access.
+        parse_omms(ndm_xml)
+
         write_omm(IOBuffer(), omm)
+        write_odm(IOBuffer(), [omm])
+        show(IOBuffer(), omm)
         show(IOBuffer(), MIME("text/plain"), omm)
     end
 end
