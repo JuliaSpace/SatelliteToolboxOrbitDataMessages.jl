@@ -353,7 +353,10 @@ function fetch_omms(
 
     # == Query Predicates ==================================================================
 
-    query_predicates = Pair{String, Union{HTML{String}, String}}[]
+    # The values are stored as the final URL segments: plain values are URI-escaped at push
+    # time, whereas pre-escaped operator strings (`HTML{String}`) are stored verbatim. This
+    # keeps the vector eltype concrete.
+    query_predicates = Pair{String, String}[]
 
     # -- Time Interval ---------------------------------------------------------------------
 
@@ -370,7 +373,7 @@ function fetch_omms(
             "--" *
             Dates.format(end_date, "YYYY-mm-dd%20HH:MM:SS")
 
-        push!(query_predicates, "EPOCH" => HTML{String}(v))
+        push!(query_predicates, "EPOCH" => v)
 
         # If the interval is specified and the space data is "gp", we switch to
         # "gp_history".
@@ -398,7 +401,7 @@ function fetch_omms(
 
         order_by_predicate = join(order_by_components, ',')
         !isempty(order_by_predicate) &&
-            push!(query_predicates, "orderby" => HTML{String}(order_by_predicate))
+            push!(query_predicates, "orderby" => order_by_predicate)
     end
 
     # -- Query Limits ----------------------------------------------------------------------
@@ -416,13 +419,13 @@ function fetch_omms(
             ))
 
             v = "$Δl,$(l₀ - 1)"
-            push!(query_predicates, "limit" => HTML{String}(v))
+            push!(query_predicates, "limit" => v)
         else
             query_limits < 1 && throw(ArgumentError(
                 "The query limits must be greater than or equal to 1."
             ))
 
-            push!(query_predicates, "limit" => HTML{String}(string(query_limits)))
+            push!(query_predicates, "limit" => string(query_limits))
         end
     end
 
@@ -434,25 +437,27 @@ function fetch_omms(
             "The satellite number must be positive."
         ))
 
-        push!(query_predicates, "NORAD_CAT_ID" => string(satellite_number))
+        push!(query_predicates, "NORAD_CAT_ID" => URIs.escapeuri(string(satellite_number)))
 
     elseif !isnothing(satellite_name)
         isempty(satellite_name) && throw(ArgumentError("The satellite name is empty."))
 
-        push!(query_predicates, "OBJECT_NAME" => satellite_name)
+        push!(query_predicates, "OBJECT_NAME" => URIs.escapeuri(satellite_name))
     end
 
     # -- Other Predicates ------------------------------------------------------------------
 
     !isnothing(predicates) && for (k, v) in predicates
-        push!(query_predicates, k => v isa HTML{String} ? v : string(v))
+        push!(
+            query_predicates,
+            k => v isa HTML{String} ? v.content : URIs.escapeuri(string(v))
+        )
     end
 
     # == Build Query URL ===================================================================
 
     query_components = map(query_predicates) do (key, value)
-        v = value isa HTML{String} ? value.content : URIs.escapeuri(string(value))
-        return "/$key/$v"
+        return "/$key/$value"
     end
     raw_query = join(query_components)
 
@@ -534,48 +539,47 @@ function _spacetrack__cookie_expire_date(cookiejar::HTTP.CookieJar)
 end
 
 """
-    _spacetrack__is_cookie_valid(cookiejar::Union{HTTP.CookieJar, Nothing}) -> Bool
+    _spacetrack__is_cookie_valid(cookiejar::HTTP.CookieJar) -> Bool
 
 Check if the spacetrack cookie in the `cookiejar` is valid. To load the `cookiejar`, use
 the function `_spacetrack__load_cookiejar`.
 """
-_spacetrack__is_cookie_valid(::Nothing) = false
-
 function _spacetrack__is_cookie_valid(cookiejar::HTTP.CookieJar)
     expires = _spacetrack__cookie_expire_date(cookiejar)
     return !isnothing(expires) && (expires > Dates.now(Dates.UTC))
 end
 
 """
-    _spacetrack__load_cookiejar(username::String) -> Union{HTTP.CookieJar, Nothing}
+    _spacetrack__load_cookiejar(username::String) -> HTTP.CookieJar
 
-Load the cookie jar for the given `username` from the scratch space. If the cookie file does
-not exist or could not be loaded, it returns `nothing`.
+Load the cookie jar for the given `username` from the scratch space. If the cookie file
+does not exist or could not be loaded, it returns an empty cookie jar, which is treated as
+an invalid login by `_spacetrack__is_cookie_valid`.
 """
 function _spacetrack__load_cookiejar(username::String)
     cache_dir   = @get_scratch!("spacetrack")
     cookie_file = joinpath(cache_dir, "cookies-$username")
+    cookiejar   = HTTP.CookieJar()
 
-    # If the cookie file does not exist, return nothing.
-    !isfile(cookie_file) && return nothing
+    # If the cookie file does not exist, return an empty cookie jar.
+    !isfile(cookie_file) && return cookiejar
 
     # Load the cookies from the file.
     try
         cookie_entries = deserialize(cookie_file)
-        cookiejar      = HTTP.CookieJar()
 
         for entry in cookie_entries
             push!(cookiejar.entries, entry)
         end
-
-        return cookiejar
     catch e
         @error """
             Could not load cookies from file.
               $e
             """
-        return nothing
+        empty!(cookiejar.entries)
     end
+
+    return cookiejar
 end
 
 """

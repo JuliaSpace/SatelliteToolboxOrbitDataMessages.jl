@@ -103,10 +103,12 @@ end
         )
     end
 
-    # == _spacetrack__is_cookie_valid(nothing) =============================================
+    # == Empty Cookie Jar ==================================================================
 
-    @testset "Cookie Validity (nothing)" begin
-        @test !SatelliteToolboxOrbitDataMessages._spacetrack__is_cookie_valid(nothing)
+    @testset "Cookie Validity (Empty Jar)" begin
+        @test !SatelliteToolboxOrbitDataMessages._spacetrack__is_cookie_valid(
+            HTTP.CookieJar()
+        )
     end
 
     # == Expired Cookie ====================================================================
