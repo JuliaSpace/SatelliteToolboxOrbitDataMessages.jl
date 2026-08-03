@@ -27,6 +27,7 @@ include("./api.jl")
 
 include("./printing.jl")
 include("./show.jl")
+include("./kvn.jl")
 include("./xml.jl")
 
 include("./fetcher/api.jl")

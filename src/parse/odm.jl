@@ -43,7 +43,7 @@ function parse_odm(xml::XML.Cursor; strict::Bool = true)
     isnothing(root_node) && throw(ArgumentError("The XML document has no root element."))
 
     # Process the root node.
-    t = _omm_tag(root_node, strict)
+    t = _xml_omm__tag(root_node, strict)
 
     t == "ndm" && return _parse_ndm(root_node, strict)
 
@@ -78,7 +78,7 @@ return `nothing`.
 To add support for a new message type, define a method for the corresponding tag, e.g.
 `_parse_message(::Val{:opm}, xml::XML.Cursor, strict::Bool)`.
 """
-_parse_message(::Val{:omm}, xml::XML.Cursor, strict::Bool) = _parse_omm(xml, strict)
+_parse_message(::Val{:omm}, xml::XML.Cursor, strict::Bool) = _xml_omm__parse(xml, strict)
 
 for (tag, name) in (
     :opm => "Orbit Parameter Message (OPM) files",
@@ -105,7 +105,7 @@ function _parse_ndm(xml::XML.Cursor, strict::Bool)
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
-        t = _omm_tag(node, strict)
+        t = _xml_omm__tag(node, strict)
 
         if !_is_odm_tag(t)
             # Consume the unrecognized element so that its subtree is not tokenized
