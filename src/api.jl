@@ -13,7 +13,7 @@ Namespace with accessor functions for the fields of Orbit Data Messages (ODM).
 
 The accessors flatten the nested CCSDS hierarchy so that the most common fields can be
 obtained without navigating the message structure, e.g. `ODM.epoch(omm)` instead of
-`omm.body.segment.data.epoch`. The functions live in this module to avoid polluting the
+`omm.data.epoch`. The functions live in this module to avoid polluting the
 namespace with the field names; access them qualified, or opt in with
 `using SatelliteToolboxOrbitDataMessages.ODM`.
 """
@@ -83,7 +83,7 @@ for (fname, field, rtype, desc) in _OMM_METADATA_ACCESSORS
         """
     @eval begin
         export $fname
-        @doc $docstr $fname(omm::OrbitMeanElementsMessage) = omm.body.segment.metadata.$field
+        @doc $docstr $fname(omm::OrbitMeanElementsMessage) = omm.metadata.$field
     end
 end
 
@@ -220,7 +220,7 @@ for (fname, field, rtype, desc) in _OMM_DATA_ACCESSORS
         """
     @eval begin
         export $fname
-        @doc $docstr $fname(omm::OrbitMeanElementsMessage) = omm.body.segment.data.$field
+        @doc $docstr $fname(omm::OrbitMeanElementsMessage) = omm.data.$field
     end
 end
 

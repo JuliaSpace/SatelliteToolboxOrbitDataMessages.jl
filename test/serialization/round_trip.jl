@@ -34,12 +34,12 @@
             @test omm.header.creation_date   ==  omm_parse_omm.header.creation_date
             @test omm.header.originator      ==  omm_parse_omm.header.originator
             @test omm.header.message_id      === omm_parse_omm.header.message_id
-            @test omm.body.segment.metadata.object_name ==
-                omm_parse_omm.body.segment.metadata.object_name
-            @test omm.body.segment.data.epoch ==
-                omm_parse_omm.body.segment.data.epoch
-            @test omm.body.segment.data.mean_motion ≈
-                omm_parse_omm.body.segment.data.mean_motion
+            @test omm.metadata.object_name ==
+                omm_parse_omm.metadata.object_name
+            @test omm.data.epoch ==
+                omm_parse_omm.data.epoch
+            @test omm.data.mean_motion ≈
+                omm_parse_omm.data.mean_motion
         end
     end
 
@@ -56,14 +56,14 @@
         @test omm_reparsed.header.comments == omm_file.header.comments
         @test omm_reparsed.header.creation_date == omm_file.header.creation_date
         @test omm_reparsed.header.originator == omm_file.header.originator
-        @test omm_reparsed.body.segment.metadata.comments ==
-            omm_file.body.segment.metadata.comments
-        @test omm_reparsed.body.segment.metadata.object_name ==
-            omm_file.body.segment.metadata.object_name
+        @test omm_reparsed.metadata.comments ==
+            omm_file.metadata.comments
+        @test omm_reparsed.metadata.object_name ==
+            omm_file.metadata.object_name
 
         # Compare the data fields (skip user_defined_parameters ordering for now).
-        d1 = omm_reparsed.body.segment.data
-        d2 = omm_file.body.segment.data
+        d1 = omm_reparsed.data
+        d2 = omm_file.data
 
         @test d1.epoch             == d2.epoch
         @test d1.semi_major_axis   === d2.semi_major_axis
@@ -105,7 +105,7 @@
         @test first(vodm_reparsed) isa OrbitMeanElementsMessage
         @test first(vodm_reparsed).header.creation_date == omm_file.header.creation_date
         @test first(vodm_reparsed).header.originator   == omm_file.header.originator
-        @test first(vodm_reparsed).body.segment.metadata.object_name ==
-            omm_file.body.segment.metadata.object_name
+        @test first(vodm_reparsed).metadata.object_name ==
+            omm_file.metadata.object_name
     end
 end

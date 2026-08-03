@@ -13,12 +13,12 @@ import Base: convert
 
 function convert(::Type{TLE}, omm::OrbitMeanElementsMessage)
     # We should only convert to TLE if the mean element theory is SGP4.
-    omm.body.segment.metadata.mean_element_theory != "SGP4" &&
+    omm.metadata.mean_element_theory != "SGP4" &&
         error("Cannot convert OMM to TLE because the mean element theory is not SGP4.")
 
     # Extract the necessary fields from the OMM.
-    data     = omm.body.segment.data
-    metadata = omm.body.segment.metadata
+    data     = omm.data
+    metadata = omm.metadata
 
     # Convert the epoch to TLE format.
     epoch_year = mod(year(data.epoch), 100)

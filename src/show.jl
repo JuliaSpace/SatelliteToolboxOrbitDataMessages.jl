@@ -7,9 +7,9 @@
 # == OrbitMeanElementsMessage ==============================================================
 
 function Base.show(io::IO, omm::OrbitMeanElementsMessage)
-    obj_name = omm.body.segment.metadata.object_name
-    obj_id   = omm.body.segment.metadata.object_id
-    epoch    = omm.body.segment.data.epoch
+    obj_name = omm.metadata.object_name
+    obj_id   = omm.metadata.object_id
+    epoch    = omm.data.epoch
     output   = "OMM: $obj_name [$obj_id] (Epoch = $epoch)"
 
     print(io, output)
@@ -34,7 +34,7 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     # == Metadata ==========================================================================
 
-    metadata = omm.body.segment.metadata
+    metadata = omm.metadata
 
     metadata_fields = NTuple{3, String}[]
     for comment in metadata.comments
@@ -50,7 +50,7 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     # == Data ==============================================================================
 
-    data = omm.body.segment.data
+    data = omm.data
 
     data_fields = NTuple{3, String}[]
     for comment in data.comments
@@ -147,11 +147,8 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     out = IOContext(IOBuffer(), :color => get(io, :color, false))
 
-    # Rails used to draw the tree. `Segment` is the only child of `Body`, hence the space
-    # below it; `Metadata`/`Data` and the data subsections carry a `│` rail while they still
-    # have siblings.
-    metadata_rail = "     │    "
-    data_rail     = "        "
+    # Rail used to draw the tree of data subsections under the `Data` section.
+    data_rail = "  "
 
     _print_node(
         out,
@@ -166,20 +163,15 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
     _print_node(out, "Header", "  ", "", :satellitetoolbox_odm_section)
     _print_fields(out, header_fields, "    ")
 
-    # -- Body ------------------------------------------------------------------------------
+    # -- Metadata --------------------------------------------------------------------------
 
-    _print_node(out, "Body", "  ", "", :satellitetoolbox_odm_section)
-    _print_node(out, "Segment", "  ", "└─ ", :satellitetoolbox_odm_node)
+    _print_node(out, "Metadata", "  ", "", :satellitetoolbox_odm_section)
+    _print_fields(out, metadata_fields, "    ")
 
-    # .. Metadata ..........................................................................
+    # -- Data ------------------------------------------------------------------------------
 
-    _print_node(out, "Metadata", "     ", "├─ ", :satellitetoolbox_odm_node)
-    _print_fields(out, metadata_fields, metadata_rail)
-
-    # .. Data ..............................................................................
-
-    _print_node(out, "Data", "     ", "└─ ", :satellitetoolbox_odm_node)
-    _print_fields(out, data_fields, data_rail)
+    _print_node(out, "Data", "  ", "", :satellitetoolbox_odm_section)
+    _print_fields(out, data_fields, "    ")
 
     # Build the list of present data subsections so the last one is closed with `└─`.
     data_sections = filter(

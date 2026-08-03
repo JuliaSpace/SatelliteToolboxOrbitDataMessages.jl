@@ -25,11 +25,11 @@
         # The output must be parseable and round-trip the key fields.
         reparsed = parse_omm(out)
         @test !isnothing(reparsed)
-        @test reparsed.body.segment.metadata.object_name == "AMAZONIA 1"
-        @test reparsed.body.segment.metadata.object_id   == "2021-015A"
-        @test reparsed.body.segment.data.epoch ==
+        @test reparsed.metadata.object_name == "AMAZONIA 1"
+        @test reparsed.metadata.object_id   == "2021-015A"
+        @test reparsed.data.epoch ==
             NanoDate("2025-12-30T18:12:04.533984")
-        @test reparsed.body.segment.data.mean_motion ≈ 14.40772474 atol = 1e-6
+        @test reparsed.data.mean_motion ≈ 14.40772474 atol = 1e-6
 
         # Structural invariants.
         @test startswith(out, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")

@@ -43,9 +43,9 @@
         @test omm.header.comments == ["Test header", "Second header comment"]
         @test omm.header.classification == "UNCLASSIFIED"
         @test omm.header.message_id == "MSG-001"
-        @test omm.body.segment.data.mass == 100.0
-        @test omm.body.segment.data.bstar ≈ 1e-4
-        @test omm.body.segment.data.norad_cat_id == 12345
+        @test omm.data.mass == 100.0
+        @test omm.data.bstar ≈ 1e-4
+        @test omm.data.norad_cat_id == 12345
     end
 
     # == Minimal Keyword Constructor =======================================================
@@ -73,12 +73,12 @@
         @test isempty(omm.header.comments)
         @test omm.header.classification === nothing
         @test omm.header.message_id === nothing
-        @test omm.body.segment.data.semi_major_axis === nothing
-        @test omm.body.segment.data.mean_motion == 15.0
-        @test omm.body.segment.data.GM === nothing
-        @test omm.body.segment.data.mass === nothing
-        @test omm.body.segment.data.bstar === nothing
-        @test omm.body.segment.data.user_defined_parameters === nothing
+        @test omm.data.semi_major_axis === nothing
+        @test omm.data.mean_motion == 15.0
+        @test omm.data.GM === nothing
+        @test omm.data.mass === nothing
+        @test omm.data.bstar === nothing
+        @test omm.data.user_defined_parameters === nothing
     end
 
     # == Reconstruction Override One Field =================================================
@@ -104,12 +104,12 @@
 
         omm2 = OrbitMeanElementsMessage(omm; object_name = "NEW NAME")
 
-        @test omm2.body.segment.metadata.object_name == "NEW NAME"
+        @test omm2.metadata.object_name == "NEW NAME"
         # All other fields preserved.
         @test omm2.header.originator == omm.header.originator
-        @test omm2.body.segment.metadata.object_id == omm.body.segment.metadata.object_id
-        @test omm2.body.segment.data.epoch == omm.body.segment.data.epoch
-        @test omm2.body.segment.data.eccentricity == omm.body.segment.data.eccentricity
+        @test omm2.metadata.object_id == omm.metadata.object_id
+        @test omm2.data.epoch == omm.data.epoch
+        @test omm2.data.eccentricity == omm.data.eccentricity
     end
 
     # == Reconstruction Override Multiple Fields ===========================================
@@ -139,12 +139,12 @@
             inclination = 50.0,
         )
 
-        @test omm2.body.segment.metadata.object_name == "NEW NAME"
+        @test omm2.metadata.object_name == "NEW NAME"
         @test omm2.header.originator == "NEW ORG"
-        @test omm2.body.segment.data.inclination == 50.0
+        @test omm2.data.inclination == 50.0
         # Unchanged fields.
-        @test omm2.body.segment.metadata.object_id == omm.body.segment.metadata.object_id
-        @test omm2.body.segment.data.raan == omm.body.segment.data.raan
+        @test omm2.metadata.object_id == omm.metadata.object_id
+        @test omm2.data.raan == omm.data.raan
     end
 
     @testset "Exactly One Mean-Motion Representation" begin

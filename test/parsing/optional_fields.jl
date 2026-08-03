@@ -15,20 +15,20 @@
         @test isempty(omm.header.comments)
         @test omm.header.classification    === nothing
         @test omm.header.message_id        === nothing
-        @test isempty(omm.body.segment.metadata.comments)
-        @test omm.body.segment.metadata.ref_frame_epoch === nothing
-        @test isempty(omm.body.segment.data.comments)
-        @test isempty(omm.body.segment.data.mean_elements_comments)
-        @test omm.body.segment.data.semi_major_axis      === nothing
-        @test omm.body.segment.data.GM                   === nothing
-        @test isempty(omm.body.segment.data.spacecraft_parameters_comments)
-        @test omm.body.segment.data.mass                    === nothing
-        @test isempty(omm.body.segment.data.tle_parameters_comments)
-        @test omm.body.segment.data.ephemeris_type          === nothing
-        @test omm.body.segment.data.classification_type     === nothing
-        @test omm.body.segment.data.norad_cat_id            === nothing
-        @test omm.body.segment.data.bstar                   === nothing
-        @test omm.body.segment.data.user_defined_parameters === nothing
+        @test isempty(omm.metadata.comments)
+        @test omm.metadata.ref_frame_epoch === nothing
+        @test isempty(omm.data.comments)
+        @test isempty(omm.data.mean_elements_comments)
+        @test omm.data.semi_major_axis      === nothing
+        @test omm.data.GM                   === nothing
+        @test isempty(omm.data.spacecraft_parameters_comments)
+        @test omm.data.mass                    === nothing
+        @test isempty(omm.data.tle_parameters_comments)
+        @test omm.data.ephemeris_type          === nothing
+        @test omm.data.classification_type     === nothing
+        @test omm.data.norad_cat_id            === nothing
+        @test omm.data.bstar                   === nothing
+        @test omm.data.user_defined_parameters === nothing
     end
 
     # == semi_major_axis Without mean_motion ===============================================
@@ -38,8 +38,8 @@
         omm = parse_omm(xml)
 
         @test !isnothing(omm)
-        @test omm.body.segment.data.semi_major_axis ≈ 7134.084
-        @test isnothing(omm.body.segment.data.mean_motion)
+        @test omm.data.semi_major_axis ≈ 7134.084
+        @test isnothing(omm.data.mean_motion)
     end
 
     # == mean_motion Without semi_major_axis ===============================================
@@ -49,8 +49,8 @@
         omm = parse_omm(xml)
 
         @test !isnothing(omm)
-        @test omm.body.segment.data.mean_motion ≈ 14.40772474
-        @test isnothing(omm.body.segment.data.semi_major_axis)
+        @test omm.data.mean_motion ≈ 14.40772474
+        @test isnothing(omm.data.semi_major_axis)
     end
 
     # == ref_frame_epoch Set ===============================================================
@@ -60,7 +60,7 @@
         omm = parse_omm(xml)
 
         @test !isnothing(omm)
-        @test omm.body.segment.metadata.ref_frame_epoch == NanoDate("2000-01-01T12:00:00")
+        @test omm.metadata.ref_frame_epoch == NanoDate("2000-01-01T12:00:00")
     end
 
     # == All Optional Scalar Fields Set ====================================================
@@ -94,11 +94,11 @@
             tle_params_xml = tle_xml
         )
         omm = parse_omm(xml)
-        data = omm.body.segment.data
+        data = omm.data
 
         @test omm.header.classification == "UNCLASSIFIED"
         @test omm.header.message_id == "OMM-1"
-        @test omm.body.segment.metadata.comments == ["metadata"]
+        @test omm.metadata.comments == ["metadata"]
         @test data.GM == 398600.4418
         @test data.spacecraft_parameters_comments == ["spacecraft parameters"]
         @test data.mass == 100.0

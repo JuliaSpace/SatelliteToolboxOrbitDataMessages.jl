@@ -15,7 +15,7 @@
 
         @test !isnothing(omm)
         @test omm.header.creation_date == NanoDate("2025-12-30T23:36:37")
-        @test omm.body.segment.data.epoch == NanoDate("2025-12-30T18:12:04.533984")
+        @test omm.data.epoch == NanoDate("2025-12-30T18:12:04.533984")
     end
 
     @testset "Calendar Format With Z Suffix" begin
@@ -27,7 +27,7 @@
 
         @test !isnothing(omm)
         @test omm.header.creation_date == NanoDate("2025-12-30T23:36:37")
-        @test omm.body.segment.data.epoch == NanoDate("2025-12-30T18:12:04.533984")
+        @test omm.data.epoch == NanoDate("2025-12-30T18:12:04.533984")
     end
 
     @testset "Ordinal Day-of-Year Format (YYYY-DDDThh:mm:ss[.d→d][Z])" begin
@@ -40,7 +40,7 @@
 
         @test !isnothing(omm)
         @test omm.header.creation_date == NanoDate("2025-12-31T23:36:37")
-        @test omm.body.segment.data.epoch == NanoDate("2025-12-31T18:12:04.533984")
+        @test omm.data.epoch == NanoDate("2025-12-31T18:12:04.533984")
     end
 
     @testset "Ordinal Day-of-Year Format With Z Suffix" begin
@@ -52,7 +52,7 @@
 
         @test !isnothing(omm)
         @test omm.header.creation_date == NanoDate("2025-12-31T23:36:37")
-        @test omm.body.segment.data.epoch == NanoDate("2025-12-31T18:12:04.533984")
+        @test omm.data.epoch == NanoDate("2025-12-31T18:12:04.533984")
     end
 
     @testset "Ordinal Day 001 = January 1" begin
@@ -64,7 +64,7 @@
 
         @test !isnothing(omm)
         @test omm.header.creation_date == NanoDate("2025-01-01T00:00:00")
-        @test omm.body.segment.data.epoch == NanoDate("2025-01-01T00:00:00")
+        @test omm.data.epoch == NanoDate("2025-01-01T00:00:00")
     end
 
     @testset "Leap Year Day 366 = December 31" begin
@@ -77,7 +77,7 @@
 
         @test !isnothing(omm)
         @test omm.header.creation_date == NanoDate("2024-12-31T12:00:00")
-        @test omm.body.segment.data.epoch == NanoDate("2024-12-31T12:00:00")
+        @test omm.data.epoch == NanoDate("2024-12-31T12:00:00")
     end
 
     @testset "Invalid Ordinal Days" begin
@@ -115,7 +115,7 @@
         @test !isnothing(omm)
         # 2025-060 = 2025-03-01 (non-leap year).
         @test omm.header.creation_date == NanoDate("2025-03-01T12:30:45")
-        @test omm.body.segment.data.epoch == NanoDate("2025-03-01T12:30:45")
+        @test omm.data.epoch == NanoDate("2025-03-01T12:30:45")
     end
 
     @testset "Ref Frame Epoch in Ordinal Format" begin
@@ -126,7 +126,7 @@
 
         @test !isnothing(omm)
         # 2025-200 = 2025-07-19.
-        @test omm.body.segment.metadata.ref_frame_epoch == NanoDate("2025-07-19T00:00:00")
+        @test omm.metadata.ref_frame_epoch == NanoDate("2025-07-19T00:00:00")
     end
 
     @testset "Round-Trip Preserves Calendar Format Values" begin
@@ -144,7 +144,7 @@
 
         @test !isnothing(omm_reparsed)
         @test omm_reparsed.header.creation_date == omm.header.creation_date
-        @test omm_reparsed.body.segment.data.epoch == omm.body.segment.data.epoch
+        @test omm_reparsed.data.epoch == omm.data.epoch
     end
 
     @testset "Nanosecond Round-Trip" begin
@@ -153,6 +153,6 @@
         buf = IOBuffer()
         write_omm(buf, omm)
 
-        @test parse_omm(String(take!(buf))).body.segment.data.epoch == epoch
+        @test parse_omm(String(take!(buf))).data.epoch == epoch
     end
 end

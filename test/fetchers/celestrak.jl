@@ -75,7 +75,7 @@
             if !isnothing(result) && !isempty(result)
                 omm = first(result)
                 @test omm isa OrbitMeanElementsMessage
-                @test omm.body.segment.data.norad_cat_id == 25544
+                @test omm.data.norad_cat_id == 25544
             end
         end
     end

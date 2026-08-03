@@ -11,7 +11,7 @@
 
         @test !isnothing(omm)
 
-        cov = omm.body.segment.data.covariance_matrix
+        cov = omm.data.covariance_matrix
         @test !isnothing(cov)
         @test cov.comments == ["This is a covariance matrix"]
         @test cov.cov_ref_frame == "ITRF"
@@ -69,7 +69,7 @@
 
         @test !isnothing(omm)
 
-        cov = omm.body.segment.data.covariance_matrix
+        cov = omm.data.covariance_matrix
         @test !isnothing(cov)
         @test isempty(cov.comments)
         @test isnothing(cov.cov_ref_frame)
@@ -82,7 +82,7 @@
         omm = parse_omm(xml)
 
         @test !isnothing(omm)
-        @test isnothing(omm.body.segment.data.covariance_matrix)
+        @test isnothing(omm.data.covariance_matrix)
     end
 
     @testset "Missing Required Element Throws" begin
@@ -127,8 +127,8 @@
 
         @test !isnothing(omm_reparsed)
 
-        cov1 = omm.body.segment.data.covariance_matrix
-        cov2 = omm_reparsed.body.segment.data.covariance_matrix
+        cov1 = omm.data.covariance_matrix
+        cov2 = omm_reparsed.data.covariance_matrix
 
         @test !isnothing(cov2)
         @test cov1.comments      == cov2.comments

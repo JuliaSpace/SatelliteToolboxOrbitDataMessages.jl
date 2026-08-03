@@ -45,7 +45,7 @@ end
             if !isempty(result)
                 omm = first(result)
                 @test omm isa OrbitMeanElementsMessage
-                @test omm.body.segment.metadata.object_name == "AMAZONIA 1"
+                @test omm.metadata.object_name == "AMAZONIA 1"
             end
         else
             @test_skip "Could not login to Space-Track"
@@ -66,7 +66,7 @@ end
             @test result isa Vector{OrbitMeanElementsMessage}
             @test !isempty(result)
             for omm in result
-                @test omm.body.segment.data.norad_cat_id == 47699
+                @test omm.data.norad_cat_id == 47699
             end
         else
             @test_skip "Could not login to Space-Track"
@@ -89,7 +89,7 @@ end
             )
             @test result isa Vector{OrbitMeanElementsMessage}
             for omm in result
-                @test 40000 <= omm.body.segment.data.norad_cat_id <= 40100
+                @test 40000 <= omm.data.norad_cat_id <= 40100
             end
         else
             @test_skip "Could not login to Space-Track"

@@ -15,12 +15,12 @@
 
     for (fname, field, _, _) in ODM._OMM_METADATA_ACCESSORS
         accessor = getfield(ODM, fname)
-        @test accessor(omm) === getfield(omm.body.segment.metadata, field)
+        @test accessor(omm) === getfield(omm.metadata, field)
     end
 
     for (fname, field, _, _) in ODM._OMM_DATA_ACCESSORS
         accessor = getfield(ODM, fname)
-        @test accessor(omm) === getfield(omm.body.segment.data, field)
+        @test accessor(omm) === getfield(omm.data, field)
     end
 
     # Spot-check some accessors against the fixture values.

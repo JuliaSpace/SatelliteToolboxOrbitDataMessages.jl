@@ -13,9 +13,8 @@ function is idempotent: faces already registered are not overwritten.
 The registered faces are:
 
 - `:satellitetoolbox_odm_title`: Structure name (e.g., `OrbitMeanElementsMessage:`).
-- `:satellitetoolbox_odm_section`: Top-level sections (`Header` and `Body`).
-- `:satellitetoolbox_odm_node`: Tree nodes (`Segment`, `Metadata`, `Data`, and the data
-    subsection titles).
+- `:satellitetoolbox_odm_section`: Top-level sections (`Header`, `Metadata`, and `Data`).
+- `:satellitetoolbox_odm_node`: Tree nodes (the data subsection titles).
 - `:satellitetoolbox_odm_tree`: Tree rails and connectors.
 - `:satellitetoolbox_odm_field`: Field names.
 - `:satellitetoolbox_odm_unit`: Field units.

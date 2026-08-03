@@ -147,19 +147,6 @@ end
     user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}} = nothing
 end
 
-# -- Segment -------------------------------------------------------------------------------
-
-@kwdef struct OmmSegment
-    metadata::OmmMetadata
-    data::OmmData
-end
-
-# -- Body ----------------------------------------------------------------------------------
-
-@kwdef struct OmmBody
-    segment::OmmSegment
-end
-
 # -- OMM -----------------------------------------------------------------------------------
 
 """
@@ -167,10 +154,9 @@ end
 
 Orbit Mean-Elements Message (OMM) as defined by the CCSDS 502.0-B-3 standard.
 
-The structure follows the nested hierarchy of the standard: a `header`, and a `body` that
-contains a segment with the metadata and data sections. The individual fields can be
-accessed through this hierarchy, for example `omm.body.segment.metadata.object_name` or
-`omm.body.segment.data.epoch`.
+The structure contains the three sections defined by the standard: a `header`, a
+`metadata`, and a `data` section. The individual fields can be accessed directly through
+these sections, for example `omm.metadata.object_name` or `omm.data.epoch`.
 
 To create a message, use the keyword constructor `OrbitMeanElementsMessage(; kwargs...)`,
 which assembles all the internal sections automatically.
@@ -179,12 +165,14 @@ which assembles all the internal sections automatically.
 
 - `version::VersionNumber`: OMM format version (2.0 or 3.0).
 - `header::OmmHeader`: Message header (creation date, originator, etc.).
-- `body::OmmBody`: Message body containing the metadata and the mean elements data.
+- `metadata::OmmMetadata`: Message metadata (object identification, reference frame, etc.).
+- `data::OmmData`: Mean elements data (mean Keplerian elements, TLE parameters, etc.).
 """
 struct OrbitMeanElementsMessage <: OrbitDataMessage
     version::VersionNumber
     header::OmmHeader
-    body::OmmBody
+    metadata::OmmMetadata
+    data::OmmData
 end
 
 # == Equality and Hashing ==================================================================
@@ -197,8 +185,6 @@ for T in (
     :OmmMetadata,
     :OmmCovarianceMatrix,
     :OmmData,
-    :OmmSegment,
-    :OmmBody,
     :OrbitMeanElementsMessage,
 )
     @eval begin
@@ -479,11 +465,7 @@ function OrbitMeanElementsMessage(
         user_defined_parameters,
     )
 
-    segment = OmmSegment(metadata, data)
-
-    body = OmmBody(segment)
-
-    return OrbitMeanElementsMessage(v"3.0", header, body)
+    return OrbitMeanElementsMessage(v"3.0", header, metadata, data)
 end
 
 function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
@@ -499,62 +481,61 @@ function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
 
         # == Metadata ======================================================================
 
-        metadata_comments   = omm.body.segment.metadata.comments,
-        object_name         = omm.body.segment.metadata.object_name,
-        object_id           = omm.body.segment.metadata.object_id,
-        center_name         = omm.body.segment.metadata.center_name,
-        ref_frame           = omm.body.segment.metadata.ref_frame,
-        ref_frame_epoch     = omm.body.segment.metadata.ref_frame_epoch,
-        time_system         = omm.body.segment.metadata.time_system,
-        mean_element_theory = omm.body.segment.metadata.mean_element_theory,
+        metadata_comments   = omm.metadata.comments,
+        object_name         = omm.metadata.object_name,
+        object_id           = omm.metadata.object_id,
+        center_name         = omm.metadata.center_name,
+        ref_frame           = omm.metadata.ref_frame,
+        ref_frame_epoch     = omm.metadata.ref_frame_epoch,
+        time_system         = omm.metadata.time_system,
+        mean_element_theory = omm.metadata.mean_element_theory,
 
         # == Data ==========================================================================
 
         # -- Mean Keplerian Elements -------------------------------------------------------
 
-        data_comments          = omm.body.segment.data.comments,
-        mean_elements_comments = omm.body.segment.data.mean_elements_comments,
-        epoch             = omm.body.segment.data.epoch,
-        semi_major_axis   = omm.body.segment.data.semi_major_axis,
-        mean_motion       = omm.body.segment.data.mean_motion,
-        eccentricity      = omm.body.segment.data.eccentricity,
-        inclination       = omm.body.segment.data.inclination,
-        raan              = omm.body.segment.data.raan,
-        arg_of_pericenter = omm.body.segment.data.arg_of_pericenter,
-        mean_anomaly      = omm.body.segment.data.mean_anomaly,
-        GM                = omm.body.segment.data.GM,
+        data_comments          = omm.data.comments,
+        mean_elements_comments = omm.data.mean_elements_comments,
+        epoch                  = omm.data.epoch,
+        semi_major_axis        = omm.data.semi_major_axis,
+        mean_motion            = omm.data.mean_motion,
+        eccentricity           = omm.data.eccentricity,
+        inclination            = omm.data.inclination,
+        raan                   = omm.data.raan,
+        arg_of_pericenter      = omm.data.arg_of_pericenter,
+        mean_anomaly           = omm.data.mean_anomaly,
+        GM                     = omm.data.GM,
 
         # -- Spacecraft Data ---------------------------------------------------------------
 
-        spacecraft_parameters_comments =
-            omm.body.segment.data.spacecraft_parameters_comments,
-        mass                    = omm.body.segment.data.mass,
-        solar_rad_area          = omm.body.segment.data.solar_rad_area,
-        solar_rad_coeff         = omm.body.segment.data.solar_rad_coeff,
-        drag_area               = omm.body.segment.data.drag_area,
-        drag_coeff              = omm.body.segment.data.drag_coeff,
+        spacecraft_parameters_comments = omm.data.spacecraft_parameters_comments,
+        mass                           = omm.data.mass,
+        solar_rad_area                 = omm.data.solar_rad_area,
+        solar_rad_coeff                = omm.data.solar_rad_coeff,
+        drag_area                      = omm.data.drag_area,
+        drag_coeff                     = omm.data.drag_coeff,
 
         # -- TLE Related Parameters --------------------------------------------------------
 
-        tle_parameters_comments = omm.body.segment.data.tle_parameters_comments,
-        ephemeris_type         = omm.body.segment.data.ephemeris_type,
-        classification_type    = omm.body.segment.data.classification_type,
-        norad_cat_id           = omm.body.segment.data.norad_cat_id,
-        element_set_number     = omm.body.segment.data.element_set_number,
-        rev_at_epoch           = omm.body.segment.data.rev_at_epoch,
-        bstar                  = omm.body.segment.data.bstar,
-        bterm                  = omm.body.segment.data.bterm,
-        mean_motion_dot        = omm.body.segment.data.mean_motion_dot,
-        mean_motion_ddot       = omm.body.segment.data.mean_motion_ddot,
-        agom                   = omm.body.segment.data.agom,
+        tle_parameters_comments = omm.data.tle_parameters_comments,
+        ephemeris_type          = omm.data.ephemeris_type,
+        classification_type     = omm.data.classification_type,
+        norad_cat_id            = omm.data.norad_cat_id,
+        element_set_number      = omm.data.element_set_number,
+        rev_at_epoch            = omm.data.rev_at_epoch,
+        bstar                   = omm.data.bstar,
+        bterm                   = omm.data.bterm,
+        mean_motion_dot         = omm.data.mean_motion_dot,
+        mean_motion_ddot        = omm.data.mean_motion_ddot,
+        agom                    = omm.data.agom,
 
         # -- Covariance Matrix -------------------------------------------------------------
 
-        covariance_matrix      = omm.body.segment.data.covariance_matrix,
+        covariance_matrix = omm.data.covariance_matrix,
 
         # -- User-Defined Parameters -------------------------------------------------------
 
-        user_defined_parameters = omm.body.segment.data.user_defined_parameters,
+        user_defined_parameters = omm.data.user_defined_parameters,
 
         kwargs...
     )

@@ -11,7 +11,7 @@
         xml = _minimal_omm_xml()
         omm = parse_omm(xml)
         @test !isnothing(omm)
-        @test isnothing(omm.body.segment.data.user_defined_parameters)
+        @test isnothing(omm.data.user_defined_parameters)
     end
 
     # == Missing Parameter Attribute =======================================================
@@ -37,7 +37,7 @@
         omm = parse_omm(xml)
 
         @test !isnothing(omm)
-        udp = omm.body.segment.data.user_defined_parameters
+        udp = omm.data.user_defined_parameters
         @test !isnothing(udp)
         @test length(udp) == 2
         @test udp[1].first == "KEY"
@@ -54,7 +54,7 @@
         """
         omm = parse_omm(_minimal_omm_xml(; user_defined_xml = ud_xml))
 
-        @test only(omm.body.segment.data.user_defined_parameters) ==
+        @test only(omm.data.user_defined_parameters) ==
             ("A&B" => "left & right")
     end
 end
