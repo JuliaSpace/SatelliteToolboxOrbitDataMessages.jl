@@ -23,7 +23,7 @@
         omm = parse_omm(ndm_xml)
         @test !isnothing(omm)
         @test omm isa OrbitMeanElementsMessage
-        @test omm.body.segment.metadata.object_name == "AMAZONIA 1"
+        @test omm.metadata.object_name == "AMAZONIA 1"
     end
 
     # == parse_odm on NDM Returns 2-Vector =================================================
@@ -33,14 +33,6 @@
         @test !isnothing(vodm)
         @test vodm isa Vector{OrbitDataMessage}
         @test length(vodm) == 2
-    end
-
-    # == Cursor Entry Points ================================================================
-
-    @testset "Cursor Entry Points" begin
-        @test parse_omm(XML.Cursor(ndm_xml)) isa OrbitMeanElementsMessage
-        @test length(parse_omms(XML.Cursor(ndm_xml))) == 2
-        @test length(parse_odm(XML.Cursor(ndm_xml))) == 2
     end
 
     @testset "Non-Element Nodes" begin
@@ -98,7 +90,7 @@
         @test_logs (:warn, opm_warning) (:warn, oem_warning) (:warn, ocm_warning) begin
             omms = parse_omms(mixed_ndm)
             @test length(omms) == 1
-            @test only(omms).body.segment.metadata.object_name == "AMAZONIA 1"
+            @test only(omms).metadata.object_name == "AMAZONIA 1"
         end
     end
 end

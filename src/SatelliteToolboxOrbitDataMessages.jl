@@ -35,6 +35,8 @@ include("./fetcher/spacetrack.jl")
 
 include("./parse/odm.jl")
 include("./parse/omm.jl")
+include("./parse/xml/odm.jl")
+include("./parse/xml/omm.jl")
 
 include("./read/odm.jl")
 include("./read/omm.jl")

@@ -26,6 +26,71 @@
         @test_throws ArgumentError parse_omm(xml)
     end
 
+    # == Version 2.0 Rules =================================================================
+
+    @testset "Version 2.0 Rules" begin
+        v2_tle_params = """
+        <tleParameters>
+          <BSTAR>1e-4</BSTAR>
+          <MEAN_MOTION_DOT>0</MEAN_MOTION_DOT>
+          <MEAN_MOTION_DDOT>0</MEAN_MOTION_DDOT>
+        </tleParameters>
+        """
+
+        # A valid version 2.0 message must parse.
+        omm = parse_omm(_minimal_omm_xml(; omm_version = "2.0", tle_params_xml = v2_tle_params))
+        @test omm isa OrbitMeanElementsMessage
+        @test omm.version == v"2.0"
+
+        # `CLASSIFICATION` and `MESSAGE_ID` were introduced in version 3.0.
+        @test_throws ArgumentError parse_omm(
+            _minimal_omm_xml(; omm_version = "2.0", classification = "UNCLASSIFIED")
+        )
+        @test_throws ArgumentError parse_omm(
+            _minimal_omm_xml(; omm_version = "2.0", message_id = "MESSAGE-1")
+        )
+
+        # `BTERM` and `AGOM` were introduced in version 3.0, whereas `BSTAR` and
+        # `MEAN_MOTION_DDOT` are required in version 2.0.
+        bterm_params = """
+        <tleParameters>
+          <BTERM>1e-4</BTERM>
+          <MEAN_MOTION_DOT>0</MEAN_MOTION_DOT>
+          <MEAN_MOTION_DDOT>0</MEAN_MOTION_DDOT>
+        </tleParameters>
+        """
+        agom_params = """
+        <tleParameters>
+          <BSTAR>1e-4</BSTAR>
+          <MEAN_MOTION_DOT>0</MEAN_MOTION_DOT>
+          <AGOM>1e-4</AGOM>
+        </tleParameters>
+        """
+        missing_bstar_params = """
+        <tleParameters>
+          <MEAN_MOTION_DOT>0</MEAN_MOTION_DOT>
+          <MEAN_MOTION_DDOT>0</MEAN_MOTION_DDOT>
+        </tleParameters>
+        """
+        missing_ddot_params = """
+        <tleParameters>
+          <BSTAR>1e-4</BSTAR>
+          <MEAN_MOTION_DOT>0</MEAN_MOTION_DOT>
+        </tleParameters>
+        """
+
+        for tle_params_xml in (
+            bterm_params,
+            agom_params,
+            missing_bstar_params,
+            missing_ddot_params,
+        )
+            @test_throws ArgumentError parse_omm(
+                _minimal_omm_xml(; omm_version = "2.0", tle_params_xml)
+            )
+        end
+    end
+
     # == Missing Header ====================================================================
 
     @testset "Missing Header" begin
