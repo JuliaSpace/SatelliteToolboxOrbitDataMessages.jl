@@ -43,6 +43,8 @@ include("./read/omm.jl")
 
 include("./write/odm.jl")
 include("./write/omm.jl")
+include("./write/xml/odm.jl")
+include("./write/xml/omm.jl")
 
 include("./precompile.jl")
 
