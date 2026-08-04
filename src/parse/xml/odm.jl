@@ -41,7 +41,11 @@ function _xml_odm__parse(str::AbstractString, strict::Bool)
 end
 
 """
-    _xml_odm__parse_message(::Val{tag}, xml::Cursor, strict::Bool) -> Union{Nothing, OrbitDataMessage}
+    _xml_odm__parse_message(
+        ::Val{tag},
+        xml::Cursor,
+        strict::Bool
+    ) -> Union{Nothing, OrbitDataMessage}
 
 Parse the ODM message with the root `tag` at the current position of the `Cursor` `xml`,
 dispatching on `Val(tag)`, and return the parsed message. Message types that are not
@@ -51,8 +55,9 @@ To add support for a new message type, define a method for the corresponding tag
 `_xml_odm__parse_message(::Val{:opm}, xml::XML.Cursor, strict::Bool)`, returning the
 assembled message.
 """
-_xml_odm__parse_message(::Val{:omm}, xml::XML.Cursor, strict::Bool) =
-    _omm_assemble(_xml_omm__parse_element(xml, strict))
+function _xml_odm__parse_message(::Val{:omm}, xml::XML.Cursor, strict::Bool)
+    return _omm_assemble(_xml_omm__parse_element(xml, strict))
+end
 
 for (tag, name) in (
     :opm => "Orbit Parameter Messages (OPM)",

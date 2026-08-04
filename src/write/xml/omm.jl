@@ -196,7 +196,12 @@ function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
 end
 
 """
-    _xml_omm__add_section_tags!(node::XML.Node, section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix}, mapping::Vector{Pair{String, Symbol}}, comments::Vector{String}) -> Nothing
+    _xml_omm__add_section_tags!(
+        node::XML.Node,
+        section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix},
+        mapping::Vector{Pair{String, Symbol}},
+        comments::Vector{String}
+    ) -> Nothing
 
 Add the tags of the OMM `section` to the XML `node`. The added tags and their fields are
 given by `mapping`, whose order is preserved in the output, and the section `comments` are
