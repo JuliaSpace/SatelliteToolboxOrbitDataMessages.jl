@@ -216,14 +216,20 @@ const _OMM_COVARIANCE_KEYWORD_TO_FIELD = Dict{String, Symbol}(
     (uppercase(String(field)) => field for field in _OMM_COVARIANCE_MATRIX_FIELDS)...,
 )
 
-# All the keywords of the data section, excluding the covariance matrix, whose fields are
-# stored in a nested dictionary. The per-section mappings above are required by formats
-# with a nested structure (e.g. XML), whereas flat formats (e.g. KVN) can use this merged
-# mapping directly.
-const _OMM_DATA_KEYWORD_TO_FIELD = merge(
-    _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD,
-    _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD,
-    _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD,
+# All the OMM keywords merged into a single mapping from the CCSDS keyword to the section
+# index and the corresponding message field. The section index refers to the section order
+# used by the KVN parser (see `_kvn_omm__parse`): 1) header, 2) metadata, 3) mean
+# elements, 4) spacecraft parameters, 5) TLE parameters, and 6) covariance matrix. The
+# per-section mappings above are required by formats with a nested structure (e.g. XML),
+# whereas flat formats (e.g. KVN) can use this merged mapping to resolve any keyword with
+# a single lookup.
+const _OMM_KVN_KEYWORD_TO_SECTION_AND_FIELD = Dict{String, Tuple{Int, Symbol}}(
+    (k => (1, f) for (k, f) in _OMM_HEADER_KEYWORD_TO_FIELD)...,
+    (k => (2, f) for (k, f) in _OMM_METADATA_KEYWORD_TO_FIELD)...,
+    (k => (3, f) for (k, f) in _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD)...,
+    (k => (4, f) for (k, f) in _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD)...,
+    (k => (5, f) for (k, f) in _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD)...,
+    (k => (6, f) for (k, f) in _OMM_COVARIANCE_KEYWORD_TO_FIELD)...,
 )
 
 # Types of the OMM fields. Fields that are not listed here are `Float64`.

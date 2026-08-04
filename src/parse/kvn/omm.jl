@@ -20,23 +20,19 @@ function _kvn_omm__parse(str::AbstractString)
     covariance_fields       = Dict{Symbol, Any}()
     user_defined_parameters = Pair{String, String}[]
 
-    # Tuples with the keyword mapping of each OMM section, the dictionary in which its
-    # fields are stored, and the dictionary key that holds its comments. The KVN format is
-    # flat, so the keyword sets of all sections are searched in sequence. The covariance
-    # matrix fields are kept in a separate dictionary because they belong to
-    # `OmmCovarianceMatrix`, which is assembled from the nested
+    # Tuples with the dictionary in which the fields of each OMM section are stored and
+    # the dictionary key that holds its comments, in the section order of
+    # `_OMM_KVN_KEYWORD_TO_SECTION_AND_FIELD`, which resolves any keyword with a single
+    # lookup. The covariance matrix fields are kept in a separate dictionary because they
+    # belong to `OmmCovarianceMatrix`, which is assembled from the nested
     # `data_fields[:covariance_matrix]`.
-    section_mappings = (
-        (_OMM_HEADER_KEYWORD_TO_FIELD, header_fields, :comments),
-        (_OMM_METADATA_KEYWORD_TO_FIELD, metadata_fields, :comments),
-        (_OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD, data_fields, :mean_elements_comments),
-        (
-            _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD,
-            data_fields,
-            :spacecraft_parameters_comments
-        ),
-        (_OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD, data_fields, :tle_parameters_comments),
-        (_OMM_COVARIANCE_KEYWORD_TO_FIELD, covariance_fields, :comments),
+    sections = (
+        (header_fields, :comments),
+        (metadata_fields, :comments),
+        (data_fields, :mean_elements_comments),
+        (data_fields, :spacecraft_parameters_comments),
+        (data_fields, :tle_parameters_comments),
+        (covariance_fields, :comments),
     )
 
     # Comments precede the content of the section they refer to in KVN files. Hence, we
@@ -103,20 +99,19 @@ function _kvn_omm__parse(str::AbstractString)
             continue
         end
 
-        recognized = false
+        section_and_field = get(_OMM_KVN_KEYWORD_TO_SECTION_AND_FIELD, key, nothing)
 
-        for (mapping, fields, comments_key) in section_mappings
-            field = get(mapping, key, nothing)
-            isnothing(field) && continue
-
-            last_comments = flush_comments!(fields, comments_key)
-
-            fields[field] = _omm_parse_field(_omm_field_type(field), value, key)
-            recognized = true
-            break
+        if isnothing(section_and_field)
+            @warn "Unrecognized KVN keyword in line $l: $key."
+            continue
         end
 
-        recognized || @warn "Unrecognized KVN keyword in line $l: $key."
+        section, field       = section_and_field
+        fields, comments_key = sections[section]
+
+        last_comments = flush_comments!(fields, comments_key)
+
+        fields[field] = _omm_parse_field(_omm_field_type(field), value, key)
     end
 
     # Assign the trailing comments to the section of the last recognized keyword,
