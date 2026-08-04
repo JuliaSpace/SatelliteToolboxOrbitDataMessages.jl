@@ -26,6 +26,7 @@ include("./api.jl")
 ############################################################################################
 
 include("./misc.jl")
+include("./kvn.jl")
 include("./printing.jl")
 include("./show.jl")
 include("./xml.jl")
@@ -36,6 +37,8 @@ include("./fetcher/spacetrack.jl")
 
 include("./parse/odm.jl")
 include("./parse/omm.jl")
+include("./parse/kvn/omm.jl")
+include("./parse/kvn/omms.jl")
 include("./parse/xml/odm.jl")
 include("./parse/xml/omm.jl")
 include("./parse/xml/omms.jl")

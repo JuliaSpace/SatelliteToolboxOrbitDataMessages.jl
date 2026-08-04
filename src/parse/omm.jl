@@ -10,20 +10,34 @@ export parse_omm, parse_omms
     parse_omm(str::AbstractString; kwargs...) -> Union{Nothing, OrbitMeanElementsMessage}
 
 Parse an Orbit Mean-Elements Message (OMM) in the string `str` and return the parsed
-message. The input format must be XML.
+message.
 
 If the XML is a Navigation Data Message (NDM), only the first OMM message is returned. If
 the file does not contain an OMM message, `nothing` is returned.
 
 # Keywords
 
+- `file_type::Symbol`: The input file type. If `:auto`, the file type is inferred from the
+    content. It can be `:auto`, `:kvn`, or `:xml`.
+    (**Default**: `:auto`)
 - `strict::Bool`: Require schema-defined XML tag casing. If `false`, match tags and the OMM
     `id` attribute value case-insensitively.
     (**Default**: `true`)
 """
-function parse_omm(str::AbstractString; strict::Bool = true)
+function parse_omm(str::AbstractString; file_type::Symbol = :auto, strict::Bool = true)
+    if file_type == :auto
+        file_type = occursin(r"^\s*<", str) ? :xml : :kvn
+    end
+
     # Parse the file, obtaining the container with the raw field values.
-    parsed_omm = _xml_omm__parse(str, strict)
+    parsed_omm = if file_type == :xml
+        _xml_omm__parse(str, strict)
+    elseif file_type == :kvn
+        _kvn_omm__parse(str)
+    else
+        throw(ArgumentError("Unsupported file type: $file_type."))
+    end
+
     isnothing(parsed_omm) && return nothing
 
     # Check the mandatory fields and assemble the message.
@@ -43,12 +57,22 @@ an OMM message, an empty vector is returned. If the root tag is not recognized, 
 
 # Keywords
 
+- `file_type::Symbol`: The input file type. If `:auto`, the file type is inferred from the
+    content. It can be `:auto`, `:kvn`, or `:xml`.
+    (**Default**: `:auto`)
 - `strict::Bool`: Require schema-defined XML tag casing. If `false`, match tags and the OMM
     `id` attribute value case-insensitively.
     (**Default**: `true`)
 """
-function parse_omms(str::AbstractString; strict::Bool = true)
-    return _xml_omms__parse(str, strict)
+function parse_omms(str::AbstractString; file_type::Symbol = :auto, strict::Bool = true)
+    if file_type == :auto
+        file_type = occursin(r"^\s*<", str) ? :xml : :kvn
+    end
+
+    file_type == :kvn && return _kvn_omms__parse(str)
+    file_type == :xml && return _xml_omms__parse(str, strict)
+
+    return throw(ArgumentError("Unsupported file type: $file_type."))
 end
 
 ############################################################################################
