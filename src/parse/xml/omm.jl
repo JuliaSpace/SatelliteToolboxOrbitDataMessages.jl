@@ -156,7 +156,7 @@ function _xml_omm__scalar_value(xml::XML.Cursor)
 end
 
 """
-    _xml_omm__parse_section!(fields::Dict{Symbol, Any}, xml::Cursor, strict::Bool, mapping::Dict{String, Symbol}, comments_key::Symbol, description::String) -> Nothing
+    _xml_omm__parse_section!(fields::Dict{Symbol, Any}, xml::Cursor, strict::Bool, mapping::Vector{Pair{String, Symbol}}, comments_key::Symbol, description::String) -> Nothing
 
 Parse an OMM section composed only of scalar elements at the `Cursor` `xml`, storing the raw
 field values in `fields`. The recognized keywords and their fields are given by `mapping`,
@@ -170,7 +170,7 @@ function _xml_omm__parse_section!(
     fields::Dict{Symbol, Any},
     xml::XML.Cursor,
     strict::Bool,
-    mapping::Dict{String, Symbol},
+    mapping::Vector{Pair{String, Symbol}},
     comments_key::Symbol,
     description::String
 )
@@ -187,7 +187,10 @@ function _xml_omm__parse_section!(
             continue
         end
 
-        field = get(mapping, lt, nothing)
+        # The mapping is an ordered vector of pairs, so we perform a linear search. The
+        # sections are small, hence the lookup cost is negligible.
+        i     = findfirst(p -> first(p) == lt, mapping)
+        field = isnothing(i) ? nothing : last(mapping[i])
         isnothing(field) && throw(ArgumentError("Unknown OMM $description `$lt`."))
         lt in seen && throw(ArgumentError("Duplicate OMM $description `$lt`."))
         push!(seen, lt)

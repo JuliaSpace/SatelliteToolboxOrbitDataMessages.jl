@@ -159,16 +159,18 @@ const _OMM_COVARIANCE_MATRIX_FIELDS = (
 # == Keyword Mappings ======================================================================
 
 # The following constants map the CCSDS keywords of each OMM section to the corresponding
-# fields of the message structures. They are shared by all format-specific parsers.
+# fields of the message structures. They are shared by all format-specific parsers. The
+# pairs are stored in the keyword order defined by the CCSDS 502.0-B-3 standard, which
+# must be preserved when writing messages.
 
-const _OMM_HEADER_KEYWORD_TO_FIELD = Dict{String, Symbol}(
+const _OMM_HEADER_KEYWORD_TO_FIELD = Pair{String, Symbol}[
     "CLASSIFICATION" => :classification,
     "CREATION_DATE"  => :creation_date,
     "ORIGINATOR"     => :originator,
     "MESSAGE_ID"     => :message_id,
-)
+]
 
-const _OMM_METADATA_KEYWORD_TO_FIELD = Dict{String, Symbol}(
+const _OMM_METADATA_KEYWORD_TO_FIELD = Pair{String, Symbol}[
     "OBJECT_NAME"         => :object_name,
     "OBJECT_ID"           => :object_id,
     "CENTER_NAME"         => :center_name,
@@ -176,9 +178,9 @@ const _OMM_METADATA_KEYWORD_TO_FIELD = Dict{String, Symbol}(
     "REF_FRAME_EPOCH"     => :ref_frame_epoch,
     "TIME_SYSTEM"         => :time_system,
     "MEAN_ELEMENT_THEORY" => :mean_element_theory,
-)
+]
 
-const _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD = Dict{String, Symbol}(
+const _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD = Pair{String, Symbol}[
     "EPOCH"             => :epoch,
     "SEMI_MAJOR_AXIS"   => :semi_major_axis,
     "MEAN_MOTION"       => :mean_motion,
@@ -188,17 +190,17 @@ const _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD = Dict{String, Symbol}(
     "ARG_OF_PERICENTER" => :arg_of_pericenter,
     "MEAN_ANOMALY"      => :mean_anomaly,
     "GM"                => :GM,
-)
+]
 
-const _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD = Dict{String, Symbol}(
+const _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD = Pair{String, Symbol}[
     "MASS"            => :mass,
     "SOLAR_RAD_AREA"  => :solar_rad_area,
     "SOLAR_RAD_COEFF" => :solar_rad_coeff,
     "DRAG_AREA"       => :drag_area,
     "DRAG_COEFF"      => :drag_coeff,
-)
+]
 
-const _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD = Dict{String, Symbol}(
+const _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD = Pair{String, Symbol}[
     "EPHEMERIS_TYPE"      => :ephemeris_type,
     "CLASSIFICATION_TYPE" => :classification_type,
     "NORAD_CAT_ID"        => :norad_cat_id,
@@ -209,12 +211,12 @@ const _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD = Dict{String, Symbol}(
     "MEAN_MOTION_DOT"     => :mean_motion_dot,
     "MEAN_MOTION_DDOT"    => :mean_motion_ddot,
     "AGOM"                => :agom,
-)
+]
 
-const _OMM_COVARIANCE_KEYWORD_TO_FIELD = Dict{String, Symbol}(
+const _OMM_COVARIANCE_KEYWORD_TO_FIELD = Pair{String, Symbol}[
     "COV_REF_FRAME" => :cov_ref_frame,
     (uppercase(String(field)) => field for field in _OMM_COVARIANCE_MATRIX_FIELDS)...,
-)
+]
 
 # All the OMM keywords merged into a single mapping from the CCSDS keyword to the section
 # index and the corresponding message field. The section index refers to the section order
