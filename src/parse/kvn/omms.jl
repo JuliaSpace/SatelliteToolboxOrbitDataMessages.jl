@@ -5,28 +5,45 @@
 ############################################################################################
 
 """
-    _kvn_omms__parse(str::String) -> OrbitMeanElementsMessage
+    _kvn_omms__parse(str::AbstractString) -> Vector{OrbitMeanElementsMessage}
 
-Parse a set of Orbit Mean-Elements Message (OMM) in the KVN input `str` and return the
-parsed message.
+Parse a set of Orbit Mean-Elements Messages (OMM) in the KVN input `str` and return the
+parsed messages.
 """
-function _kvn_omms__parse(str::String)
-    # There is no standard for KVN OMMs, so we will assume that each OMM is separated by the
-    # `CCSDS_OMM_VERS` keyword.
-    current_file = IOBuffer()
-
+function _kvn_omms__parse(str::AbstractString)
+    # There is no standard for KVN OMMs, so we will assume that each OMM is delimited by
+    # the `CCSDS_OMM_VERS` keyword. The input is sliced into one `SubString` chunk per
+    # message, avoiding any copy of the line contents. Content before the first
+    # `CCSDS_OMM_VERS` line (e.g. blank lines or comments) is ignored.
     omms = OrbitMeanElementsMessage[]
 
-    for line in eachsplit(str, '\n')
-        if startswith(line, "CCSDS_OMM_VERS")
-            # If we have already started a new OMM, we need to parse the previous one.
-            if position(current_file) > 0
-                seekstart(current_file)
-                omm = parse_omm(String(take!(current_file)); file_type = :kvn)
-                push!(omms, omm)
+    i_last      = lastindex(str)
+    chunk_start = nothing
+    pos         = firstindex(str)
+
+    while pos <= i_last
+        nl       = findnext('\n', str, pos)
+        line_end = isnothing(nl) ? i_last : prevind(str, nl)
+        line     = SubString(str, pos, line_end)
+
+        if startswith(lstrip(line), "CCSDS_OMM_VERS")
+            # If we have already started an OMM, we need to parse it before starting the
+            # new one.
+            if !isnothing(chunk_start)
+                chunk = SubString(str, chunk_start, prevind(str, pos))
+                push!(omms, parse_omm(chunk; file_type = :kvn))
             end
+
+            chunk_start = pos
         end
-        write(current_file, line * "\n")
+
+        pos = isnothing(nl) ? i_last + 1 : nextind(str, nl)
+    end
+
+    # Parse the last OMM in the input, if any.
+    if !isnothing(chunk_start)
+        chunk = SubString(str, chunk_start, i_last)
+        push!(omms, parse_omm(chunk; file_type = :kvn))
     end
 
     return omms

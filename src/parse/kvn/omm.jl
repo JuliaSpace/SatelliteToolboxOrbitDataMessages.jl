@@ -5,12 +5,12 @@
 ############################################################################################
 
 """
-    _kvn_omm__parse(str::String) -> OrbitMeanElementsMessage
+    _kvn_omm__parse(str::AbstractString) -> OrbitMeanElementsMessage
 
 Parse the Orbit Mean-Elements Message (OMM) in the KVN input `str` and return the parsed
 message.
 """
-function _kvn_omm__parse(str::String)
+function _kvn_omm__parse(str::AbstractString)
     version                 = nothing
     header_fields           = Dict{Symbol, Any}()
     metadata_fields         = Dict{Symbol, Any}()
