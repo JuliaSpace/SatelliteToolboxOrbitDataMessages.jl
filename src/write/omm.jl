@@ -14,24 +14,28 @@ Write the given `omm` to the provided `io` stream.
     write_omm(io::IO, vomm::AbstractVector{OrbitMeanElementsMessage}; kwargs...) -> Nothing
 
 Write the set of Orbit Mean-Elements Messages in the vector `vomm` to the provided `io`
-stream. In XML format, the messages are wrapped in a Navigation Data Message (NDM)
-document, whereas in KVN format they are written sequentially, delimited by their
-`CCSDS_OMM_VERS` keyword.
+stream. In XML format, the messages are wrapped in a Navigation Data Message (NDM) document,
+whereas in KVN format they are written sequentially, delimited by their `CCSDS_OMM_VERS`
+keyword.
 
     write_omm(file::AbstractString, omm::OrbitMeanElementsMessage; kwargs...) -> Nothing
-    write_omm(file::AbstractString, vomm::AbstractVector{OrbitMeanElementsMessage}; kwargs...) -> Nothing
+    write_omm(
+        file::AbstractString,
+        vomm::AbstractVector{OrbitMeanElementsMessage};
+        kwargs...
+    ) -> Nothing
 
-Write the given `omm` (or the set of messages in `vomm`) to the file at `file`,
-overwriting its contents.
+Write the given `omm` (or the set of messages in `vomm`) to the file at `file`, overwriting
+its contents.
 
 The written version is always `3.0`, regardless of the version stored in the messages.
 
 # Keywords
 
-- `file_type::Symbol`: The output file type, which can be `:xml` or `:kvn`. The methods
-    that write to a file also accept `:auto`, which infers the file type from the file
-    extension (case-insensitive): `.kvn` selects the KVN format, whereas any other
-    extension selects the XML format.
+- `file_type::Symbol`: The output file type, which can be `:xml` or `:kvn`. The methods that
+    write to a file also accept `:auto`, which infers the file type from the file extension
+    (case-insensitive): `.kvn` selects the KVN format, whereas any other extension selects
+    the XML format.
     (**Default**: `:xml` when writing to an `io` stream, `:auto` when writing to a file)
 """
 function write_omm(io::IO, omm::OrbitMeanElementsMessage; file_type::Symbol = :xml)
@@ -84,8 +88,8 @@ end
 Check if `omm` contains all fields required to write an OMM 3.0 output, throwing an
 `ArgumentError` otherwise.
 
-This function is format-agnostic so that every supported file type is validated by the
-same rules.
+This function is format-agnostic so that every supported file type is validated by the same
+rules.
 """
 function _omm_check_writable(omm::OrbitMeanElementsMessage)
     isnothing(omm.header.creation_date) &&

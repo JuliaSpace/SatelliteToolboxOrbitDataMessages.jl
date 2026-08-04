@@ -220,11 +220,11 @@ const _OMM_COVARIANCE_KEYWORD_TO_FIELD = Pair{String, Symbol}[
 
 # All the OMM keywords merged into a single mapping from the CCSDS keyword to the section
 # index and the corresponding message field. The section index refers to the section order
-# used by the KVN parser (see `_kvn_omm__parse`): 1) header, 2) metadata, 3) mean
-# elements, 4) spacecraft parameters, 5) TLE parameters, and 6) covariance matrix. The
-# per-section mappings above are required by formats with a nested structure (e.g. XML),
-# whereas flat formats (e.g. KVN) can use this merged mapping to resolve any keyword with
-# a single lookup.
+# used by the KVN parser (see `_kvn_omm__parse`): 1) header, 2) metadata, 3) mean elements,
+# 4) spacecraft parameters, 5) TLE parameters, and 6) covariance matrix. The per-section
+# mappings above are required by formats with a nested structure (e.g. XML), whereas flat
+# formats (e.g. KVN) can use this merged mapping to resolve any keyword with a single
+# lookup.
 const _OMM_KVN_KEYWORD_TO_SECTION_AND_FIELD = Dict{String, Tuple{Int, Symbol}}(
     (k => (1, f) for (k, f) in _OMM_HEADER_KEYWORD_TO_FIELD)...,
     (k => (2, f) for (k, f) in _OMM_METADATA_KEYWORD_TO_FIELD)...,
@@ -256,8 +256,8 @@ const _OMM_FIELD_TYPE = Dict{Symbol, DataType}(
     :cov_ref_frame       => String,
 )
 
-# Physical units of the OMM fields as defined by the CCSDS 502.0-B-3 standard. Fields
-# that are not listed here are dimensionless.
+# Physical units of the OMM fields as defined by the CCSDS 502.0-B-3 standard. Fields that
+# are not listed here are dimensionless.
 const _OMM_FIELD_UNIT = Dict{Symbol, String}(
     :semi_major_axis   => "km",
     :mean_motion       => "rev/day",
@@ -279,16 +279,15 @@ const _OMM_FIELD_UNIT = Dict{Symbol, String}(
 """
     _omm_field_type(field::Symbol) -> DataType
 
-Return the type of the OMM `field` as defined in `_OMM_FIELD_TYPE`, defaulting to
-`Float64`.
+Return the type of the OMM `field` as defined in `_OMM_FIELD_TYPE`, defaulting to `Float64`.
 """
 _omm_field_type(field::Symbol) = get(_OMM_FIELD_TYPE, field, Float64)
 
 """
     _omm_field_unit(field::Symbol) -> Union{Nothing, String}
 
-Return the physical unit of the OMM `field` as defined in `_OMM_FIELD_UNIT`, or `nothing`
-if the field is dimensionless.
+Return the physical unit of the OMM `field` as defined in `_OMM_FIELD_UNIT`, or `nothing` if
+the field is dimensionless.
 """
 _omm_field_unit(field::Symbol) = get(_OMM_FIELD_UNIT, field, nothing)
 
@@ -324,12 +323,17 @@ function _omm_parse_field(
 end
 
 """
-    _omm_check_mandatory_fields(version::VersionNumber, header_fields::Dict{Symbol, Any}, metadata_fields::Dict{Symbol, Any}, data_fields::Dict{Symbol, Any}) -> Nothing
+    _omm_check_mandatory_fields(
+        version::VersionNumber,
+        header_fields::Dict{Symbol, Any},
+        metadata_fields::Dict{Symbol, Any},
+        data_fields::Dict{Symbol, Any}
+    ) -> Nothing
 
-Check if all mandatory fields of an Orbit Mean-Elements Message (OMM) with `version` (2.0
-or 3.0) are present in the dictionaries `header_fields`, `metadata_fields`, and
-`data_fields` returned by a format-specific parser, throwing an `ArgumentError` otherwise.
-A field whose value is `nothing` is treated as absent.
+Check if all mandatory fields of an Orbit Mean-Elements Message (OMM) with `version` (2.0 or
+3.0) are present in the dictionaries `header_fields`, `metadata_fields`, and `data_fields`
+returned by a format-specific parser, throwing an `ArgumentError` otherwise. A field whose
+value is `nothing` is treated as absent.
 
 This function is format-agnostic so that every supported file type is validated by the same
 rules.
@@ -453,7 +457,12 @@ function _omm_check_mandatory_fields(
 end
 
 """
-    _omm_assemble(version::Union{Nothing, Float64}, header_fields::Dict{Symbol, Any}, metadata_fields::Dict{Symbol, Any}, data_fields::Dict{Symbol, Any}) -> OrbitMeanElementsMessage
+    _omm_assemble(
+        version::Union{Nothing, Float64},
+        header_fields::Dict{Symbol, Any},
+        metadata_fields::Dict{Symbol, Any},
+        data_fields::Dict{Symbol, Any}
+    ) -> OrbitMeanElementsMessage
 
 Assemble an Orbit Mean-Elements Message (OMM) from the information returned by a
 format-specific parser: the format `version` (`nothing` if it is absent in the input) and
@@ -461,15 +470,15 @@ the dictionaries `header_fields`, `metadata_fields`, and `data_fields` with the 
 values of the corresponding sections. The dictionaries only contain the fields that are
 present in the input.
 
-The version and the mandatory fields are validated before the message is created. Then,
-each dictionary is converted to keyword arguments of the corresponding OMM section
-constructor. The covariance matrix, if present, must be stored in
-`data_fields[:covariance_matrix]` as a `Dict{Symbol, Any}` with its raw element values.
+The version and the mandatory fields are validated before the message is created. Then, each
+dictionary is converted to keyword arguments of the corresponding OMM section constructor.
+The covariance matrix, if present, must be stored in `data_fields[:covariance_matrix]` as a
+`Dict{Symbol, Any}` with its raw element values.
 
     _omm_assemble(parsed_omm::NamedTuple) -> OrbitMeanElementsMessage
 
 Assemble an OMM from the container `(; version, header_fields, metadata_fields,
-data_fields)` holding the same information.
+    data_fields)` holding the same information.
 """
 function _omm_assemble(
     version::Union{Nothing, Float64},

@@ -11,10 +11,10 @@ Parse a set of Orbit Mean-Elements Messages (OMM) in the KVN input `str` and ret
 parsed messages.
 """
 function _kvn_omms__parse(str::AbstractString)
-    # There is no standard for KVN OMMs, so we will assume that each OMM is delimited by
-    # the `CCSDS_OMM_VERS` keyword. The input is sliced into one `SubString` chunk per
-    # message, avoiding any copy of the line contents. Content before the first
-    # `CCSDS_OMM_VERS` line (e.g. blank lines or comments) is ignored.
+    # There is no standard for KVN OMMs, so we will assume that each OMM is delimited by the
+    # `CCSDS_OMM_VERS` keyword. The input is sliced into one `SubString` chunk per message,
+    # avoiding any copy of the line contents. Content before the first `CCSDS_OMM_VERS` line
+    # (e.g. blank lines or comments) is ignored.
     omms = OrbitMeanElementsMessage[]
 
     i_last      = lastindex(str)
@@ -27,8 +27,8 @@ function _kvn_omms__parse(str::AbstractString)
         line     = SubString(str, pos, line_end)
 
         if startswith(lstrip(line), "CCSDS_OMM_VERS")
-            # If we have already started an OMM, we need to parse it before starting the
-            # new one.
+            # If we have already started an OMM, we need to parse it before starting the new
+            # one.
             if !isnothing(chunk_start)
                 chunk = SubString(str, chunk_start, prevind(str, pos))
                 push!(omms, parse_omm(chunk; file_type = :kvn))

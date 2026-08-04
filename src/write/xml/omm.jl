@@ -7,8 +7,8 @@
 """
     _xml_omm__write(io::IO, omm::OrbitMeanElementsMessage) -> Nothing
 
-Write the given `omm` to the provided `io` stream as a stand-alone XML document. Hence,
-the XML declaration is included.
+Write the given `omm` to the provided `io` stream as a stand-alone XML document. Hence, the
+XML declaration is included.
 
 The written version is always `3.0`, regardless of the version stored in the `omm`. This
 matches the schema against which the output is validated.
@@ -52,8 +52,8 @@ end
 """
     _xml_omm__write_element(omm::OrbitMeanElementsMessage) -> XML.Node
 
-Convert the given `omm` to an XML element suitable for embedding within another XML
-document (e.g. an NDM). Hence, the XML declaration is omitted.
+Convert the given `omm` to an XML element suitable for embedding within another XML document
+(e.g. an NDM). Hence, the XML declaration is omitted.
 
 The written version is always `3.0`, regardless of the version stored in the `omm`. This
 matches the schema against which the output is validated.
@@ -71,9 +71,9 @@ end
 
 Add the OMM tags from the given `omm` message to the `parent` XML node.
 
-The tags of each section are obtained automatically from the corresponding keyword
-mapping (see `_xml_omm__add_section_tags!`), so the output follows the keyword order
-defined by the CCSDS 502.0-B-3 standard.
+The tags of each section are obtained automatically from the corresponding keyword mapping
+(see `_xml_omm__add_section_tags!`), so the output follows the keyword order defined by the
+CCSDS 502.0-B-3 standard.
 """
 function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
     data = omm.data

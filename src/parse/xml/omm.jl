@@ -91,14 +91,15 @@ function _xml_omm__parse_element(xml::XML.Cursor, strict::Bool)
 
         isnothing(version) && throw(
             ArgumentError(
-                "The OMM element has an invalid `version` attribute: \"$version_attribute\".",
+                "The OMM element has an invalid `version` attribute: " *
+                "\"$version_attribute\".",
             ),
         )
     end
 
-    # The OMM element must contain exactly one `header` followed by one `body`, so we
-    # only need to count the element children and check that the expected tag appears at
-    # each position.
+    # The OMM element must contain exactly one `header` followed by one `body`, so we only
+    # need to count the element children and check that the expected tag appears at each
+    # position.
     header_fields  = nothing
     segment        = nothing
     valid_children = true
@@ -161,7 +162,14 @@ function _xml_omm__scalar_value(xml::XML.Cursor)
 end
 
 """
-    _xml_omm__parse_section!(fields::Dict{Symbol, Any}, xml::Cursor, strict::Bool, mapping::Vector{Pair{String, Symbol}}, comments_key::Symbol, description::String) -> Nothing
+    _xml_omm__parse_section!(
+        fields::Dict{Symbol, Any},
+        xml::Cursor,
+        strict::Bool,
+        mapping::Vector{Pair{String, Symbol}},
+        comments_key::Symbol,
+        description::String
+    ) -> Nothing
 
 Parse an OMM section composed only of scalar elements at the `Cursor` `xml`, storing the raw
 field values in `fields`. The recognized keywords and their fields are given by `mapping`,
@@ -243,7 +251,10 @@ end
 # == Body Parsing ==========================================================================
 
 """
-    _xml_omm__parse_body(xml::Cursor, strict::Bool) -> Tuple{Dict{Symbol, Any}, Dict{Symbol, Any}}
+    _xml_omm__parse_body(
+        xml::Cursor,
+        strict::Bool
+    ) -> Tuple{Dict{Symbol, Any}, Dict{Symbol, Any}}
 
 Parse the body of an Orbit Mean-Elements Message (OMM) from a `Cursor` `xml` representation,
 returning dictionaries with the raw field values of the metadata and data sections of its
@@ -279,7 +290,10 @@ end
 # -- Body Segment Parsing ------------------------------------------------------------------
 
 """
-    _xml_omm__parse_segment(xml::Cursor, strict::Bool) -> Tuple{Dict{Symbol, Any}, Dict{Symbol, Any}}
+    _xml_omm__parse_segment(
+        xml::Cursor,
+        strict::Bool
+    ) -> Tuple{Dict{Symbol, Any}, Dict{Symbol, Any}}
 
 Parse a segment of the body of an Orbit Mean-Elements Message (OMM) from a `Cursor` `xml`
 representation, returning dictionaries with the raw field values of its metadata and data

@@ -14,8 +14,8 @@ Parse the Orbit Data Messages (ODM) in the XML input in `str`, returning a vecto
 parsed messages.
 
 The document can be a stand-alone message or a Navigation Data Message (NDM) wrapping
-multiple messages. Unsupported message types (OPM, OEM, OCM) are skipped with a warning.
-If the root tag is not recognized, an `ArgumentError` is thrown.
+multiple messages. Unsupported message types (OPM, OEM, OCM) are skipped with a warning. If
+the root tag is not recognized, an `ArgumentError` is thrown.
 """
 function _xml_odm__parse(str::AbstractString, strict::Bool)
     # Open the XML file.

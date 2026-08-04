@@ -20,8 +20,8 @@ function _kvn_omm__parse(str::AbstractString)
     covariance_fields       = Dict{Symbol, Any}()
     user_defined_parameters = Pair{String, String}[]
 
-    # Tuples with the dictionary in which the fields of each OMM section are stored and
-    # the dictionary key that holds its comments, in the section order of
+    # Tuples with the dictionary in which the fields of each OMM section are stored and the
+    # dictionary key that holds its comments, in the section order of
     # `_OMM_KVN_KEYWORD_TO_SECTION_AND_FIELD`, which resolves any keyword with a single
     # lookup. The covariance matrix fields are kept in a separate dictionary because they
     # belong to `OmmCovarianceMatrix`, which is assembled from the nested
@@ -36,9 +36,9 @@ function _kvn_omm__parse(str::AbstractString)
     )
 
     # Comments precede the content of the section they refer to in KVN files. Hence, we
-    # buffer consecutive comment lines and assign them to the section of the next
-    # recognized keyword. Comments at the end of the message are assigned to the section
-    # of the last recognized keyword.
+    # buffer consecutive comment lines and assign them to the section of the next recognized
+    # keyword. Comments at the end of the message are assigned to the section of the last
+    # recognized keyword.
     pending_comments = String[]
     last_comments    = nothing
 
@@ -78,7 +78,8 @@ function _kvn_omm__parse(str::AbstractString)
 
             isnothing(version) && throw(
                 ArgumentError(
-                    "Invalid value for the KVN keyword `CCSDS_OMM_VERS` in line $l: $value.",
+                    "Invalid value for the KVN keyword `CCSDS_OMM_VERS` in line $l: " *
+                    "$value.",
                 ),
             )
 

@@ -20,7 +20,10 @@ format.
 
 Write the given `odm` to the file at `file` in XML format, overwriting its contents.
 
-    write_odm(file::AbstractString, vodm::AbstractVector{T}) where T<:OrbitDataMessage -> Nothing
+    write_odm(
+        file::AbstractString,
+        vodm::AbstractVector{T}
+    ) where T<:OrbitDataMessage -> Nothing
 
 Write the set of Orbit Data Messages in the vector `vodm` to the file at `file` in XML
 format, overwriting its contents.
