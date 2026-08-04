@@ -27,8 +27,9 @@ Parsing is strict and case-sensitive by default. Pass `strict = false` to `parse
 `parse_omms`, or `parse_odm` to match XML tags and the required OMM `id` attribute value
 case-insensitively. Permissive mode also preserves an empty OMM header creation date as
 `nothing`, which accommodates known Celestrak OMM 2.0 output without inventing a timestamp.
-Such an incomplete message cannot be written as OMM 3.0. Both modes otherwise reject
-unrecognized tags and malformed or incomplete OMM sections.
+Additionally, a blank `ORIGINATOR` is allowed in OMM version 2.0 regardless of the parsing
+mode, defaulting to an empty string. Such incomplete messages cannot be written as OMM 3.0.
+Both modes otherwise reject unrecognized tags and malformed or incomplete OMM sections.
 
 Throughout this page, we assume the variable `omm_xml` holds the XML string of a single OMM,
 and `ndm_xml` holds a Navigation Data Message (NDM) that bundles two OMMs (`AMAZONIA 1` and

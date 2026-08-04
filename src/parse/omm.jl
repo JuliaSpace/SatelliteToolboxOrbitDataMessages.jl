@@ -346,7 +346,9 @@ function _omm_check_mandatory_fields(
 )
     # == Header ============================================================================
 
-    isnothing(get(header_fields, :originator, nothing)) &&
+    # In OMM version 2.0, we allow a blank `ORIGINATOR` to accommodate real-world files
+    # (e.g. from Celestrak) that omit its value.
+    (version != v"2.0") && isnothing(get(header_fields, :originator, nothing)) &&
         throw(ArgumentError("OMM header is missing required field `ORIGINATOR`."))
 
     if version == v"2.0"
@@ -501,6 +503,12 @@ function _omm_assemble(
     _omm_check_mandatory_fields(omm_version, header_fields, metadata_fields, data_fields)
 
     # == Assembling ========================================================================
+
+    # The `ORIGINATOR` may be absent in OMM version 2.0 (see
+    # `_omm_check_mandatory_fields`). Since the header structure requires it, we default
+    # the value to an empty string.
+    isnothing(get(header_fields, :originator, nothing)) &&
+        (header_fields[:originator] = "")
 
     covariance_fields = get(data_fields, :covariance_matrix, nothing)
 
