@@ -31,8 +31,7 @@ function _xml_omm__write(io::IO, omm::OrbitMeanElementsMessage)
         id = "CCSDS_OMM_VERS",
         version = "3.0",
         var"xmlns:xsi" = "http://www.w3.org/2001/XMLSchema-instance",
-        var"xsi:noNamespaceSchemaLocation" =
-            "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd"
+        var"xsi:noNamespaceSchemaLocation" = "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd",
     )
 
     push!(doc, root)
@@ -60,11 +59,7 @@ The written version is always `3.0`, regardless of the version stored in the `om
 matches the schema against which the output is validated.
 """
 function _xml_omm__write_element(omm::OrbitMeanElementsMessage)
-    element = XML.Element(
-        "omm";
-        id = "CCSDS_OMM_VERS",
-        version = "3.0"
-    )
+    element = XML.Element("omm"; id = "CCSDS_OMM_VERS", version = "3.0")
 
     _xml_omm__add_tags!(element, omm)
 
@@ -89,10 +84,7 @@ function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
     push!(parent, header_node)
 
     _xml_omm__add_section_tags!(
-        header_node,
-        omm.header,
-        _OMM_HEADER_KEYWORD_TO_FIELD,
-        omm.header.comments
+        header_node, omm.header, _OMM_HEADER_KEYWORD_TO_FIELD, omm.header.comments
     )
 
     # == Body ==============================================================================
@@ -109,10 +101,7 @@ function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
     push!(segment_node, metadata_node)
 
     _xml_omm__add_section_tags!(
-        metadata_node,
-        omm.metadata,
-        _OMM_METADATA_KEYWORD_TO_FIELD,
-        omm.metadata.comments
+        metadata_node, omm.metadata, _OMM_METADATA_KEYWORD_TO_FIELD, omm.metadata.comments
     )
 
     # -- Data ------------------------------------------------------------------------------
@@ -131,7 +120,7 @@ function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
         mean_elements_node,
         data,
         _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD,
-        data.mean_elements_comments
+        data.mean_elements_comments,
     )
 
     # .. Spacecraft Parameters .............................................................
@@ -143,7 +132,7 @@ function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
         spacecraft_parameters_node,
         data,
         _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD,
-        data.spacecraft_parameters_comments
+        data.spacecraft_parameters_comments,
     )
 
     isempty(children(spacecraft_parameters_node)) ||
@@ -157,7 +146,7 @@ function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
         tle_parameters_node,
         data,
         _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD,
-        data.tle_parameters_comments
+        data.tle_parameters_comments,
     )
 
     isempty(children(tle_parameters_node)) || push!(data_node, tle_parameters_node)
@@ -172,7 +161,7 @@ function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
             covariance_matrix_node,
             covariance_matrix,
             _OMM_COVARIANCE_KEYWORD_TO_FIELD,
-            covariance_matrix.comments
+            covariance_matrix.comments,
         )
 
         push!(data_node, covariance_matrix_node)
@@ -213,7 +202,7 @@ function _xml_omm__add_section_tags!(
     node::XML.Node,
     section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix},
     mapping::Vector{Pair{String, Symbol}},
-    comments::Vector{String}
+    comments::Vector{String},
 )
     foreach(comment -> _xml_add_tag!(node, "COMMENT", comment), comments)
 

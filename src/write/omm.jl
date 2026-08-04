@@ -42,13 +42,11 @@ function write_omm(io::IO, omm::OrbitMeanElementsMessage; file_type::Symbol = :x
     file_type == :xml && return _xml_omm__write(io, omm)
     file_type == :kvn && return _kvn_omm__write(io, omm)
 
-    throw(ArgumentError("Unsupported file type: $file_type."))
+    return throw(ArgumentError("Unsupported file type: $file_type."))
 end
 
 function write_omm(
-    io::IO,
-    vomm::AbstractVector{OrbitMeanElementsMessage};
-    file_type::Symbol = :xml
+    io::IO, vomm::AbstractVector{OrbitMeanElementsMessage}; file_type::Symbol = :xml
 )
     # Check if the messages contain all fields required for writing.
     foreach(_omm_check_writable, vomm)
@@ -57,20 +55,20 @@ function write_omm(
     file_type == :xml && return _xml_omm__write(io, vomm)
     file_type == :kvn && return _kvn_omm__write(io, vomm)
 
-    throw(ArgumentError("Unsupported file type: $file_type."))
+    return throw(ArgumentError("Unsupported file type: $file_type."))
 end
 
 function write_omm(
     file::AbstractString,
     omm::Union{OrbitMeanElementsMessage, AbstractVector{OrbitMeanElementsMessage}};
-    file_type::Symbol = :auto
+    file_type::Symbol = :auto,
 )
     if file_type == :auto
         file_type = endswith(lowercase(file), ".kvn") ? :kvn : :xml
     end
 
     open(file, "w") do io
-        write_omm(io, omm; file_type)
+        return write_omm(io, omm; file_type)
     end
 
     return nothing
@@ -90,13 +88,11 @@ This function is format-agnostic so that every supported file type is validated 
 same rules.
 """
 function _omm_check_writable(omm::OrbitMeanElementsMessage)
-    isnothing(omm.header.creation_date) && throw(ArgumentError(
-        "Cannot write OMM 3.0 without a creation date."
-    ))
+    isnothing(omm.header.creation_date) &&
+        throw(ArgumentError("Cannot write OMM 3.0 without a creation date."))
 
-    isempty(omm.header.originator) && throw(ArgumentError(
-        "Cannot write OMM 3.0 without an originator."
-    ))
+    isempty(omm.header.originator) &&
+        throw(ArgumentError("Cannot write OMM 3.0 without an originator."))
 
     return nothing
 end

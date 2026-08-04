@@ -22,7 +22,7 @@
     # == Unsupported Version ===============================================================
 
     @testset "Unsupported Version" begin
-        xml = _minimal_omm_xml(omm_version="1.0")
+        xml = _minimal_omm_xml(omm_version = "1.0")
         @test_throws ArgumentError parse_omm(xml)
     end
 
@@ -38,7 +38,9 @@
         """
 
         # A valid version 2.0 message must parse.
-        omm = parse_omm(_minimal_omm_xml(; omm_version = "2.0", tle_params_xml = v2_tle_params))
+        omm = parse_omm(
+            _minimal_omm_xml(; omm_version = "2.0", tle_params_xml = v2_tle_params)
+        )
         @test omm isa OrbitMeanElementsMessage
         @test omm.version == v"2.0"
 
@@ -79,12 +81,8 @@
         </tleParameters>
         """
 
-        for tle_params_xml in (
-            bterm_params,
-            agom_params,
-            missing_bstar_params,
-            missing_ddot_params,
-        )
+        for tle_params_xml in
+            (bterm_params, agom_params, missing_bstar_params, missing_ddot_params)
             @test_throws ArgumentError parse_omm(
                 _minimal_omm_xml(; omm_version = "2.0", tle_params_xml)
             )
@@ -185,21 +183,21 @@
     # == Missing OBJECT_NAME ===============================================================
 
     @testset "Missing OBJECT_NAME" begin
-        xml = _minimal_omm_xml(object_name="")
+        xml = _minimal_omm_xml(object_name = "")
         @test_throws ArgumentError parse_omm(xml)
     end
 
     # == Missing EPOCH =====================================================================
 
     @testset "Missing EPOCH" begin
-        xml = _minimal_omm_xml(epoch="")
+        xml = _minimal_omm_xml(epoch = "")
         @test_throws ArgumentError parse_omm(xml)
     end
 
     # == Missing Both SEMI_MAJOR_AXIS and MEAN_MOTION ======================================
 
     @testset "Missing SEMI_MAJOR_AXIS and MEAN_MOTION" begin
-        xml = _minimal_omm_xml(semi_major_axis="", mean_motion="")
+        xml = _minimal_omm_xml(semi_major_axis = "", mean_motion = "")
         @test_throws ArgumentError parse_omm(xml)
     end
 
@@ -234,9 +232,7 @@
           <MEAN_MOTION_DDOT>0</MEAN_MOTION_DDOT><AGOM>1e-4</AGOM>
         </tleParameters>
         """
-        @test_throws ArgumentError parse_omm(
-            _minimal_omm_xml(tle_params_xml = both_drag)
-        )
+        @test_throws ArgumentError parse_omm(_minimal_omm_xml(tle_params_xml = both_drag))
         @test_throws ArgumentError parse_omm(
             _minimal_omm_xml(tle_params_xml = both_second_derivatives)
         )
@@ -248,7 +244,7 @@
         tle_xml = """
         <tleParameters><CLASSIFICATION_TYPE></CLASSIFICATION_TYPE></tleParameters>
         """
-        xml = _minimal_omm_xml(tle_params_xml=tle_xml)
+        xml = _minimal_omm_xml(tle_params_xml = tle_xml)
         @test_throws ArgumentError parse_omm(xml)
     end
 
@@ -294,18 +290,14 @@ end
     @test occursin("MEAN_MOTION", exception.msg)
 
     exception = try
-        parse_omm(
-            _minimal_omm_xml(;
-                tle_params_xml = """
-                <tleParameters>
-                    <NORAD_CAT_ID>not-a-number</NORAD_CAT_ID>
-                    <BSTAR>0.0001</BSTAR>
-                    <MEAN_MOTION_DOT>0.0</MEAN_MOTION_DOT>
-                    <MEAN_MOTION_DDOT>0.0</MEAN_MOTION_DDOT>
-                </tleParameters>
-                """
-            )
-        )
+        parse_omm(_minimal_omm_xml(; tle_params_xml = """
+                                     <tleParameters>
+                                         <NORAD_CAT_ID>not-a-number</NORAD_CAT_ID>
+                                         <BSTAR>0.0001</BSTAR>
+                                         <MEAN_MOTION_DOT>0.0</MEAN_MOTION_DOT>
+                                         <MEAN_MOTION_DDOT>0.0</MEAN_MOTION_DDOT>
+                                     </tleParameters>
+                                     """))
         nothing
     catch exception
         exception

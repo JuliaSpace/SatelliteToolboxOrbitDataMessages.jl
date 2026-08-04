@@ -45,8 +45,7 @@ Create an Orbit Mean-Elements Message (OMM) fetcher from Celestrak service.
   (**Default**: "https://celestrak.org/NORAD/elements/gp.php")
 """
 function create_omm_fetcher(
-    ::Type{CelestrakOmmFetcher};
-    url::String = "https://celestrak.org/NORAD/elements/gp.php"
+    ::Type{CelestrakOmmFetcher}; url::String = "https://celestrak.org/NORAD/elements/gp.php"
 )
     return CelestrakOmmFetcher(url)
 end
@@ -85,23 +84,18 @@ function fetch_omms(
     satellite_name::Union{Nothing, AbstractString} = nothing,
     strict::Bool = false,
 )
-
-    selector_count = count(!isnothing, (
-        satellite_number,
-        international_designator,
-        satellite_name,
-    ))
-    selector_count == 1 || throw(ArgumentError(
-        "Exactly one query selector must be provided."
-    ))
+    selector_count = count(
+        !isnothing, (satellite_number, international_designator, satellite_name)
+    )
+    selector_count == 1 ||
+        throw(ArgumentError("Exactly one query selector must be provided."))
 
     # Assemble the query string.
     if !isnothing(satellite_number)
 
         # The satellite number must be positive.
-        satellite_number <= 0 && throw(ArgumentError(
-            "The satellite number must be positive."
-        ))
+        satellite_number <= 0 &&
+            throw(ArgumentError("The satellite number must be positive."))
 
         query_type  = "satellite number"
         query_value = string(satellite_number)
@@ -117,9 +111,11 @@ function fetch_omms(
 
         m = match(r"^(\d{4})-(\d{1,3})([A-Z]*)$", international_designator)
 
-        isnothing(m) && throw(ArgumentError(
-            "The international designator must have the format `YYYY-NNN` or `YYYY-NNNP`."
-        ))
+        isnothing(m) && throw(
+            ArgumentError(
+                "The international designator must have the format `YYYY-NNN` or `YYYY-NNNP`.",
+            ),
+        )
 
         # Pad the launch number to 3 digits as expected by Celestrak's INTDES parameter.
         query_value = string(m.captures[1], "-", lpad(m.captures[2], 3, "0"), m.captures[3])
@@ -148,11 +144,13 @@ function fetch_omms(
         HTTP.request("GET", url)
     catch e
         if e isa HTTP.Exceptions.StatusError
-            throw(OdmFetchError(
-                "An error occurred during the Celestrak data request.";
-                url = url,
-                status = e.status,
-            ))
+            throw(
+                OdmFetchError(
+                    "An error occurred during the Celestrak data request.";
+                    url = url,
+                    status = e.status,
+                ),
+            )
         elseif e isa HTTP.Exceptions.HTTPError
             throw(OdmFetchError("The Celestrak request failed: $(typeof(e))."; url = url))
         end

@@ -10,8 +10,7 @@
 Build a minimal valid OMM KVN string.
 """
 function _minimal_omm_kvn(;
-    object_name::String = "AMAZONIA 1",
-    epoch::String = "2025-12-30T18:12:04.533984"
+    object_name::String = "AMAZONIA 1", epoch::String = "2025-12-30T18:12:04.533984"
 )
     return """
     CCSDS_OMM_VERS = 3.0

@@ -22,13 +22,11 @@ The registered faces are:
 function _register_faces()
     faces = [
         :satellitetoolbox_odm_title   => StyledStrings.Face(; weight = :bold),
-        :satellitetoolbox_odm_section =>
-            StyledStrings.Face(; foreground = :magenta, weight = :bold),
-        :satellitetoolbox_odm_node  =>
-            StyledStrings.Face(; foreground = :yellow, weight = :bold),
-        :satellitetoolbox_odm_tree  => StyledStrings.Face(; foreground = :gray),
-        :satellitetoolbox_odm_field => StyledStrings.Face(; weight = :bold),
-        :satellitetoolbox_odm_unit  => StyledStrings.Face(; foreground = :gray),
+        :satellitetoolbox_odm_section => StyledStrings.Face(; foreground = :magenta, weight = :bold),
+        :satellitetoolbox_odm_node    => StyledStrings.Face(; foreground = :yellow, weight = :bold),
+        :satellitetoolbox_odm_tree    => StyledStrings.Face(; foreground = :gray),
+        :satellitetoolbox_odm_field   => StyledStrings.Face(; weight = :bold),
+        :satellitetoolbox_odm_unit    => StyledStrings.Face(; foreground = :gray),
     ]
 
     for (name, face) in faces
@@ -75,8 +73,7 @@ Push to `vector` the `field` if its value is not `nothing`. The field is a tuple
 [`_format_value`](@ref).
 """
 function _push_output!(
-    vector::AbstractVector{NTuple{3, String}},
-    field::Tuple{String, Any, String}
+    vector::AbstractVector{NTuple{3, String}}, field::Tuple{String, Any, String}
 )
     isnothing(field[2]) && return nothing
     push!(vector, (field[1], escape_string(_format_value(field[2])), field[3]))
@@ -91,10 +88,7 @@ Render a single field row `<name> : <value> <unit>`, left-aligning `field_name` 
 `"°"`, which hugs the value. The returned string has no trailing whitespace.
 """
 function _render_field(
-    field_name::String,
-    field_value::String,
-    unit::String,
-    name_width::Int
+    field_name::String, field_value::String, unit::String, name_width::Int
 )
     sty_name = styled"{satellitetoolbox_odm_field:$field_name}"
 
@@ -128,11 +122,7 @@ end
 Print to `io` the `fields`, each preceded by `rail` (the tree rails drawn before the field
 name). The field names are left-aligned to the widest name in `fields`.
 """
-function _print_fields(
-    io::IO,
-    fields::AbstractVector{NTuple{3, String}},
-    rail::String
-)
+function _print_fields(io::IO, fields::AbstractVector{NTuple{3, String}}, rail::String)
     isempty(fields) && return nothing
 
     name_width = _field_name_width(fields)

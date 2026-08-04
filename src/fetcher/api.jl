@@ -48,7 +48,7 @@ end
 function OdmFetchError(
     msg::String;
     url::Union{String, Nothing} = nothing,
-    status::Union{Int, Nothing} = nothing
+    status::Union{Int, Nothing} = nothing,
 )
     return OdmFetchError(msg, url, status)
 end
@@ -65,8 +65,8 @@ end
 
 Create an Orbit Mean-Elements Message (OMM) fetcher of type `T`.
 """
-function create_omm_fetcher(::Type{T}, args...; kwargs...) where T <: AbstractOmmFetcher
-    throw(ArgumentError("The OMM fetcher $T is not registered."))
+function create_omm_fetcher(::Type{T}, args...; kwargs...) where {T <: AbstractOmmFetcher}
+    return throw(ArgumentError("The OMM fetcher $T is not registered."))
 end
 
 """
@@ -77,6 +77,6 @@ Fetch Orbit Mean-Elements Messages (OMM) using `fetcher`.
 The keywords `kwargs...` are used to customize the search. It depends on the fetcher type
 `T`.
 """
-function fetch_omms(::T; kwargs...) where T <: AbstractOmmFetcher
-    throw(ArgumentError("The OMM fetcher $T is not registered."))
+function fetch_omms(::T; kwargs...) where {T <: AbstractOmmFetcher}
+    return throw(ArgumentError("The OMM fetcher $T is not registered."))
 end

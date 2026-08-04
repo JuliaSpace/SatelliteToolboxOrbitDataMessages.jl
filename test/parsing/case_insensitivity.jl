@@ -15,9 +15,7 @@
 
     @testset "Field Tag" begin
         mixed_case = replace(
-            xml,
-            "<ORIGINATOR>" => "<Originator>",
-            "</ORIGINATOR>" => "</Originator>",
+            xml, "<ORIGINATOR>" => "<Originator>", "</ORIGINATOR>" => "</Originator>"
         )
         @test_throws ArgumentError parse_omm(mixed_case)
         @test parse_omm(mixed_case; strict = false) isa OrbitMeanElementsMessage

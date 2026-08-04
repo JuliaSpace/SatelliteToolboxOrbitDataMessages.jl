@@ -27,7 +27,7 @@ format, overwriting its contents.
 """
 write_odm(io::IO, odm::OrbitDataMessage) = write_odm(io, [odm])
 
-function write_odm(io::IO, vodm::AbstractVector{T}) where T <: OrbitDataMessage
+function write_odm(io::IO, vodm::AbstractVector{T}) where {T <: OrbitDataMessage}
     # Check if the messages contain all fields required for writing.
     foreach(_odm_check_writable, vodm)
 
@@ -39,15 +39,17 @@ end
 
 function write_odm(file::AbstractString, odm::OrbitDataMessage)
     open(file, "w") do io
-        write_odm(io, odm)
+        return write_odm(io, odm)
     end
 
     return nothing
 end
 
-function write_odm(file::AbstractString, vodm::AbstractVector{T}) where T<:OrbitDataMessage
+function write_odm(
+    file::AbstractString, vodm::AbstractVector{T}
+) where {T <: OrbitDataMessage}
     open(file, "w") do io
-        write_odm(io, vodm)
+        return write_odm(io, vodm)
     end
 
     return nothing

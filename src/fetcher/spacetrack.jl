@@ -38,10 +38,10 @@ end
 
 function Base.show(io::IO, fetcher::SpacetrackOmmFetcher)
     expires = _spacetrack__cookie_expire_date(fetcher.cookiejar)
-    Δt = isnothing(expires) ?
-        "Unknown" :
+    Δt =
+        isnothing(expires) ? "Unknown" :
         Dates.canonicalize(round(expires - Dates.now(Dates.UTC), Dates.Second))
-    print(io, "SpacetrackOmmFetcher: $(fetcher.username) (Login expires in $Δt)")
+    return print(io, "SpacetrackOmmFetcher: $(fetcher.username) (Login expires in $Δt)")
 end
 
 ############################################################################################
@@ -89,7 +89,7 @@ function create_omm_fetcher(
     ::Type{SpacetrackOmmFetcher};
     username::String = "",
     password::String = "",
-    force_login::Bool = false
+    force_login::Bool = false,
 )
     # If the username is empty, request the user to input it.
     if isempty(username)
@@ -336,13 +336,17 @@ function fetch_omms(
     strict::Bool = true,
 ) where {D1 <: Union{Date, DateTime}, D2 <: Union{Date, DateTime}, P}
     # Check if the cookie is still valid.
-    _spacetrack__is_cookie_valid(fetcher.cookiejar) || throw(OdmLoginError(
-        "The login cookie expired. Create a new fetcher instance to log in again."
-    ))
+    _spacetrack__is_cookie_valid(fetcher.cookiejar) || throw(
+        OdmLoginError(
+            "The login cookie expired. Create a new fetcher instance to log in again."
+        ),
+    )
 
-    space_data ∉ (:gp, :gp_history) && throw(ArgumentError(
-        "Invalid space data: `$space_data`. It must be either `:gp` or `:gp_history`."
-    ))
+    space_data ∉ (:gp, :gp_history) && throw(
+        ArgumentError(
+            "Invalid space data: `$space_data`. It must be either `:gp` or `:gp_history`.",
+        ),
+    )
 
     # == Query Predicates ==================================================================
 
@@ -354,9 +358,8 @@ function fetch_omms(
         start_date = DateTime(first(interval))
         end_date   = DateTime(last(interval))
 
-        start_date >= end_date && throw(ArgumentError(
-            "The start date must be earlier than the end date."
-        ))
+        start_date >= end_date &&
+            throw(ArgumentError("The start date must be earlier than the end date."))
 
         v =
             Dates.format(start_date, "YYYY-mm-dd%20HH:MM:SS") *
@@ -382,8 +385,7 @@ function fetch_omms(
             direction ∉ (:ascending, :descending) && throw(ArgumentError("""
                 Invalid order direction (`$direction`) for the field `$field`. It must be
                 either `:ascending` or `:descending`.
-                """
-            ))
+                """))
 
             dir_str = direction == :ascending ? "asc" : "desc"
             push!(order_by_components, "$field $dir_str")
@@ -399,21 +401,24 @@ function fetch_omms(
     if !isnothing(query_limits)
         if query_limits isa UnitRange
             l₀ = query_limits.start
-            l₀ < 1 && throw(ArgumentError(
-                "The start of the query limits must be greater than or equal to 1."
-            ))
+            l₀ < 1 && throw(
+                ArgumentError(
+                    "The start of the query limits must be greater than or equal to 1."
+                ),
+            )
 
             Δl = length(query_limits)
-            Δl <= 0 && throw(ArgumentError(
-                "The end of the query limits must be greater than or equal to the start."
-            ))
+            Δl <= 0 && throw(
+                ArgumentError(
+                    "The end of the query limits must be greater than or equal to the start.",
+                ),
+            )
 
             v = "$Δl,$(l₀ - 1)"
             push!(query_predicates, "limit" => HTML{String}(v))
         else
-            query_limits < 1 && throw(ArgumentError(
-                "The query limits must be greater than or equal to 1."
-            ))
+            query_limits < 1 &&
+                throw(ArgumentError("The query limits must be greater than or equal to 1."))
 
             push!(query_predicates, "limit" => HTML{String}(string(query_limits)))
         end
@@ -423,9 +428,8 @@ function fetch_omms(
 
     if !isnothing(satellite_number)
         # The satellite number must be positive.
-        satellite_number <= 0 && throw(ArgumentError(
-            "The satellite number must be positive."
-        ))
+        satellite_number <= 0 &&
+            throw(ArgumentError("The satellite number must be positive."))
 
         push!(query_predicates, "NORAD_CAT_ID" => string(satellite_number))
 
@@ -449,47 +453,45 @@ function fetch_omms(
     end
     raw_query = join(query_components)
 
-    isempty(raw_query) && throw(ArgumentError(
-        "At least one query parameter must be provided."
-    ))
+    isempty(raw_query) &&
+        throw(ArgumentError("At least one query parameter must be provided."))
 
     space_data_str = string(space_data)
 
-    query_url =
-        "$_SPACETRACK__URL/basicspacedata/query/class/$space_data_str$raw_query/format/xml"
+    query_url = "$_SPACETRACK__URL/basicspacedata/query/class/$space_data_str$raw_query/format/xml"
 
     @debug "Query URL: $query_url"
 
     # == Fetch Data ========================================================================
 
     response = try
-        HTTP.request(
-            "GET",
-            query_url,
-            cookiejar = fetcher.cookiejar,
-            cookies   = true,
-        )
+        HTTP.request("GET", query_url; cookiejar = fetcher.cookiejar, cookies   = true)
     catch e
         if e isa HTTP.Exceptions.StatusError
             if e.status == 401
                 _spacetrack__purge_cookiejar(fetcher.username)
-                throw(OdmFetchError(
-                    "Unauthorized access. Create a new fetcher instance to log in again.";
-                    url = query_url,
-                    status = 401,
-                ))
+                throw(
+                    OdmFetchError(
+                        "Unauthorized access. Create a new fetcher instance to log in again.";
+                        url = query_url,
+                        status = 401,
+                    ),
+                )
             end
 
-            throw(OdmFetchError(
-                "An error occurred during the Space-Track data request.";
-                url = query_url,
-                status = e.status,
-            ))
+            throw(
+                OdmFetchError(
+                    "An error occurred during the Space-Track data request.";
+                    url = query_url,
+                    status = e.status,
+                ),
+            )
         elseif e isa HTTP.Exceptions.HTTPError
-            throw(OdmFetchError(
-                "The Space-Track request failed: $(typeof(e)).";
-                url = query_url,
-            ))
+            throw(
+                OdmFetchError(
+                    "The Space-Track request failed: $(typeof(e))."; url = query_url
+                ),
+            )
         end
 
         rethrow(e)
@@ -600,7 +602,7 @@ function _spacetrack__login(username::String, password::Base.SecretBuffer)
 
         response = HTTP.request(
             "POST",
-            _SPACETRACK__LOGIN_URL,
+            _SPACETRACK__LOGIN_URL;
             body      = login_data,
             cookiejar = cookiejar,
             cookies   = true,
@@ -608,9 +610,9 @@ function _spacetrack__login(username::String, password::Base.SecretBuffer)
         )
 
         # If the body contains "Failed", it means the login failed.
-        occursin("Failed", String(response.body)) && throw(OdmLoginError(
-            "Could not login to Space-Track: invalid username or password."
-        ))
+        occursin("Failed", String(response.body)) && throw(
+            OdmLoginError("Could not login to Space-Track: invalid username or password."),
+        )
 
         @info "Successfully logged in to Space-Track."
 
@@ -622,9 +624,11 @@ function _spacetrack__login(username::String, password::Base.SecretBuffer)
     catch e
         if e isa HTTP.ExceptionRequest.StatusError
             msg = isnothing(e.response) ? "No server response" : String(e.response.body)
-            throw(OdmLoginError(
-                "The Space-Track login request failed with HTTP status $(e.status): $msg"
-            ))
+            throw(
+                OdmLoginError(
+                    "The Space-Track login request failed with HTTP status $(e.status): $msg",
+                ),
+            )
         end
 
         rethrow(e)
@@ -640,7 +644,7 @@ function _spacetrack__purge_cookiejar(username::String)
     cache_dir   = @get_scratch!("spacetrack")
     cookie_file = joinpath(cache_dir, "cookies-$username")
 
-    isfile(cookie_file) && rm(cookie_file; force=true)
+    isfile(cookie_file) && rm(cookie_file; force = true)
 
     return nothing
 end

@@ -69,18 +69,19 @@ Parse an OMM element at the `Cursor` `xml`, returning the container
 version and the mandatory fields are checked afterwards by [`_omm_assemble`](@ref).
 """
 function _xml_omm__parse_element(xml::XML.Cursor, strict::Bool)
-    _xml_omm__tag(xml, strict) != "omm" && throw(
-        ArgumentError("The provided XML does not contain an OMM element.")
-    )
+    _xml_omm__tag(xml, strict) != "omm" &&
+        throw(ArgumentError("The provided XML does not contain an OMM element."))
 
     # Extract the version attribute.
     id = get(xml, "id", nothing)
-    valid_id = !isnothing(id) && (
-        strict ? id == "CCSDS_OMM_VERS" : lowercase(id) == "ccsds_omm_vers"
+    valid_id =
+        !isnothing(id) &&
+        (strict ? id == "CCSDS_OMM_VERS" : lowercase(id) == "ccsds_omm_vers")
+    !valid_id && throw(
+        ArgumentError(
+            "The OMM element is missing the required `id = CCSDS_OMM_VERS` attribute."
+        ),
     )
-    !valid_id && throw(ArgumentError(
-        "The OMM element is missing the required `id = CCSDS_OMM_VERS` attribute."
-    ))
 
     version_attribute = get(xml, "version", nothing)
     version = nothing
@@ -88,9 +89,11 @@ function _xml_omm__parse_element(xml::XML.Cursor, strict::Bool)
     if !isnothing(version_attribute)
         version = tryparse(Float64, version_attribute)
 
-        isnothing(version) && throw(ArgumentError(
-            "The OMM element has an invalid `version` attribute: \"$version_attribute\"."
-        ))
+        isnothing(version) && throw(
+            ArgumentError(
+                "The OMM element has an invalid `version` attribute: \"$version_attribute\".",
+            ),
+        )
     end
 
     # The OMM element must contain exactly one `header` followed by one `body`, so we
@@ -116,9 +119,11 @@ function _xml_omm__parse_element(xml::XML.Cursor, strict::Bool)
         end
     end
 
-    (valid_children && (child_count == 2)) || throw(ArgumentError(
-        "The OMM element must contain exactly one `header` followed by one `body`."
-    ))
+    (valid_children && (child_count == 2)) || throw(
+        ArgumentError(
+            "The OMM element must contain exactly one `header` followed by one `body`."
+        ),
+    )
 
     metadata_fields, data_fields = segment
 
@@ -172,7 +177,7 @@ function _xml_omm__parse_section!(
     strict::Bool,
     mapping::Vector{Pair{String, Symbol}},
     comments_key::Symbol,
-    description::String
+    description::String,
 )
     comments = String[]
     seen     = Set{String}()
@@ -222,20 +227,15 @@ function _xml_omm__parse_header(xml::XML.Cursor, strict::Bool)
     fields = Dict{Symbol, Any}()
 
     _xml_omm__parse_section!(
-        fields,
-        xml,
-        strict,
-        _OMM_HEADER_KEYWORD_TO_FIELD,
-        :comments,
-        "header field"
+        fields, xml, strict, _OMM_HEADER_KEYWORD_TO_FIELD, :comments, "header field"
     )
 
     # `CREATION_DATE` is checked here instead of in `_omm_check_mandatory_fields` because
     # its presence requirement is relaxed when parsing leniently, allowing real-world files
     # with an omitted creation date to be processed.
-    strict && !haskey(fields, :creation_date) && throw(ArgumentError(
-        "OMM header is missing required field `CREATION_DATE`."
-    ))
+    strict &&
+        !haskey(fields, :creation_date) &&
+        throw(ArgumentError("OMM header is missing required field `CREATION_DATE`."))
 
     return fields
 end
@@ -256,9 +256,8 @@ function _xml_omm__parse_body(xml::XML.Cursor, strict::Bool)
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
 
-        _xml_omm__tag(node, strict) == "segment" || throw(ArgumentError(
-            "Unknown OMM body element."
-        ))
+        _xml_omm__tag(node, strict) == "segment" ||
+            throw(ArgumentError("Unknown OMM body element."))
 
         segment_count += 1
 
@@ -270,9 +269,9 @@ function _xml_omm__parse_body(xml::XML.Cursor, strict::Bool)
     end
 
     segment_count == 0 && throw(ArgumentError("The OMM body is missing the segment."))
-    segment_count > 1 && throw(ArgumentError(
-        "The OMM body contains multiple segments, which is not supported."
-    ))
+    segment_count > 1 && throw(
+        ArgumentError("The OMM body contains multiple segments, which is not supported."),
+    )
 
     return segment
 end
@@ -297,25 +296,21 @@ function _xml_omm__parse_segment(xml::XML.Cursor, strict::Bool)
         lt ∈ ("metadata", "data") || throw(ArgumentError("Unknown OMM segment element."))
 
         if lt == "metadata"
-            !isnothing(metadata) && throw(ArgumentError(
-                "The OMM segment contains duplicate metadata sections."
-            ))
+            !isnothing(metadata) && throw(
+                ArgumentError("The OMM segment contains duplicate metadata sections.")
+            )
             metadata = _xml_omm__parse_metadata(node, strict)
         else
-            !isnothing(data) && throw(ArgumentError(
-                "The OMM segment contains duplicate data sections."
-            ))
+            !isnothing(data) &&
+                throw(ArgumentError("The OMM segment contains duplicate data sections."))
             data = _xml_omm__parse_data(node, strict)
         end
     end
 
-    isnothing(metadata) && throw(ArgumentError(
-        "The OMM segment is missing the metadata section."
-    ))
+    isnothing(metadata) &&
+        throw(ArgumentError("The OMM segment is missing the metadata section."))
 
-    isnothing(data) && throw(ArgumentError(
-        "The OMM segment is missing the data section."
-    ))
+    isnothing(data) && throw(ArgumentError("The OMM segment is missing the data section."))
 
     return (metadata, data)
 end
@@ -332,12 +327,7 @@ function _xml_omm__parse_metadata(xml::XML.Cursor, strict::Bool)
     fields = Dict{Symbol, Any}()
 
     _xml_omm__parse_section!(
-        fields,
-        xml,
-        strict,
-        _OMM_METADATA_KEYWORD_TO_FIELD,
-        :comments,
-        "metadata field"
+        fields, xml, strict, _OMM_METADATA_KEYWORD_TO_FIELD, :comments, "metadata field"
     )
 
     return fields
@@ -383,7 +373,7 @@ function _xml_omm__parse_data(xml::XML.Cursor, strict::Bool)
                 strict,
                 _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD,
                 :mean_elements_comments,
-                "mean-elements field"
+                "mean-elements field",
             )
         elseif lt == "spacecraftParameters"
             _xml_omm__parse_section!(
@@ -392,7 +382,7 @@ function _xml_omm__parse_data(xml::XML.Cursor, strict::Bool)
                 strict,
                 _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD,
                 :spacecraft_parameters_comments,
-                "spacecraft parameter"
+                "spacecraft parameter",
             )
         elseif lt == "tleParameters"
             _xml_omm__parse_section!(
@@ -401,7 +391,7 @@ function _xml_omm__parse_data(xml::XML.Cursor, strict::Bool)
                 strict,
                 _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD,
                 :tle_parameters_comments,
-                "TLE parameter"
+                "TLE parameter",
             )
         elseif lt == "covarianceMatrix"
             covariance_fields = Dict{Symbol, Any}()
@@ -412,13 +402,14 @@ function _xml_omm__parse_data(xml::XML.Cursor, strict::Bool)
                 strict,
                 _OMM_COVARIANCE_KEYWORD_TO_FIELD,
                 :comments,
-                "covariance element"
+                "covariance element",
             )
 
             fields[:covariance_matrix] = covariance_fields
         else
-            fields[:user_defined_parameters] =
-                _xml_omm__parse_user_defined_parameters(node, strict)
+            fields[:user_defined_parameters] = _xml_omm__parse_user_defined_parameters(
+                node, strict
+            )
         end
     end
 
@@ -441,15 +432,16 @@ function _xml_omm__parse_user_defined_parameters(xml::XML.Cursor, strict::Bool)
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
         lt = _xml_omm__tag(node, strict)
-        lt == "USER_DEFINED" || throw(ArgumentError(
-            "Unknown user-defined parameter element `$lt`."
-        ))
+        lt == "USER_DEFINED" ||
+            throw(ArgumentError("Unknown user-defined parameter element `$lt`."))
 
         key = get(node, "parameter", nothing)
 
-        isnothing(key) && throw(ArgumentError(
-            "OMM `USER_DEFINED` element is missing required attribute `parameter`."
-        ))
+        isnothing(key) && throw(
+            ArgumentError(
+                "OMM `USER_DEFINED` element is missing required attribute `parameter`."
+            ),
+        )
 
         push!(parameters, String(key) => _xml_omm__scalar_value(node))
     end

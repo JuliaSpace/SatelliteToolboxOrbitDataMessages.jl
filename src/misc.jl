@@ -50,9 +50,8 @@ function _parse_ndm_date(str::AbstractString)
     day_of_yr = parse(Int, m[2])
     rest      = m[3]
 
-    1 <= day_of_yr <= daysinyear(year) || throw(ArgumentError(
-        "Invalid ordinal day $day_of_yr for year $year."
-    ))
+    1 <= day_of_yr <= daysinyear(year) ||
+        throw(ArgumentError("Invalid ordinal day $day_of_yr for year $year."))
 
     # Build the calendar date from the year and day-of-year.
     date = Date(year, 1, 1) + Day(day_of_yr - 1)

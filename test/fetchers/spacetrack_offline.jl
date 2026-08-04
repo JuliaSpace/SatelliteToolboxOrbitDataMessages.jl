@@ -27,9 +27,7 @@ end
         fetcher = SpacetrackOmmFetcher("test", _valid_spacetrack_cookiejar())
 
         @test_throws ArgumentError fetch_omms(
-            fetcher;
-            space_data = :foo,
-            satellite_name = "TEST",
+            fetcher; space_data = :foo, satellite_name = "TEST"
         )
     end
 
@@ -51,9 +49,7 @@ end
         fetcher = SpacetrackOmmFetcher("test", _valid_spacetrack_cookiejar())
 
         @test_throws ArgumentError fetch_omms(
-            fetcher;
-            order_by = ["EPOCH" => :sideways],
-            satellite_name = "TEST",
+            fetcher; order_by = ["EPOCH" => :sideways], satellite_name = "TEST"
         )
     end
 
@@ -63,9 +59,7 @@ end
         fetcher = SpacetrackOmmFetcher("test", _valid_spacetrack_cookiejar())
 
         @test_throws ArgumentError fetch_omms(
-            fetcher;
-            query_limits = 0,
-            satellite_name = "TEST",
+            fetcher; query_limits = 0, satellite_name = "TEST"
         )
     end
 
@@ -75,9 +69,7 @@ end
         fetcher = SpacetrackOmmFetcher("test", _valid_spacetrack_cookiejar())
 
         @test_throws ArgumentError fetch_omms(
-            fetcher;
-            query_limits = 5:3,
-            satellite_name = "TEST",
+            fetcher; query_limits = 5:3, satellite_name = "TEST"
         )
     end
 
@@ -148,9 +140,7 @@ end
         @test sprint(showerror, fetch_error) == "OdmFetchError: request failed"
 
         fetch_error = OdmFetchError(
-            "request failed";
-            url = "https://example.com",
-            status = 500,
+            "request failed"; url = "https://example.com", status = 500
         )
         @test sprint(showerror, fetch_error) ==
             "OdmFetchError: request failed (HTTP status: 500)\nURL: https://example.com"

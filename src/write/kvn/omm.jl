@@ -49,11 +49,13 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
 
     # Compute the width of the keyword column. The user-defined parameter names can be
     # longer than every standard keyword, so we take them into account here.
-    user_defined_keyword_width = isnothing(data.user_defined_parameters) ? 0 : maximum(
-        p -> textwidth(first(p)) + textwidth(_KVN_OMM__USER_DEFINED_PREFIX),
-        data.user_defined_parameters;
-        init = 0
-    )
+    user_defined_keyword_width =
+        isnothing(data.user_defined_parameters) ? 0 :
+        maximum(
+            p -> textwidth(first(p)) + textwidth(_KVN_OMM__USER_DEFINED_PREFIX),
+            data.user_defined_parameters;
+            init = 0,
+        )
 
     keyword_width = max(_KVN_OMM__MINIMUM_KEYWORD_WIDTH, user_defined_keyword_width)
 
@@ -65,11 +67,7 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
     # == Header ============================================================================
 
     _kvn_omm__write_section(
-        io,
-        omm.header,
-        _OMM_HEADER_KEYWORD_TO_FIELD,
-        omm.header.comments,
-        keyword_width
+        io, omm.header, _OMM_HEADER_KEYWORD_TO_FIELD, omm.header.comments, keyword_width
     ) && println(io)
 
     # == Metadata ==========================================================================
@@ -79,7 +77,7 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
         omm.metadata,
         _OMM_METADATA_KEYWORD_TO_FIELD,
         omm.metadata.comments,
-        keyword_width
+        keyword_width,
     ) && println(io)
 
     # == Data ==============================================================================
@@ -97,7 +95,7 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
         data,
         _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD,
         data.mean_elements_comments,
-        keyword_width
+        keyword_width,
     ) && println(io)
 
     # -- Spacecraft Parameters -------------------------------------------------------------
@@ -107,7 +105,7 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
         data,
         _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD,
         data.spacecraft_parameters_comments,
-        keyword_width
+        keyword_width,
     ) && println(io)
 
     # -- TLE Related Parameters ------------------------------------------------------------
@@ -117,7 +115,7 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
         data,
         _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD,
         data.tle_parameters_comments,
-        keyword_width
+        keyword_width,
     ) && println(io)
 
     # -- Covariance Matrix -----------------------------------------------------------------
@@ -130,7 +128,7 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
             covariance_matrix,
             _OMM_COVARIANCE_KEYWORD_TO_FIELD,
             covariance_matrix.comments,
-            keyword_width
+            keyword_width,
         ) && println(io)
     end
 
@@ -139,10 +137,7 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
     if !isnothing(data.user_defined_parameters)
         for (key, value) in data.user_defined_parameters
             _kvn_omm__write_element(
-                io,
-                _KVN_OMM__USER_DEFINED_PREFIX * key,
-                value,
-                keyword_width
+                io, _KVN_OMM__USER_DEFINED_PREFIX * key, value, keyword_width
             )
         end
     end
@@ -177,7 +172,7 @@ function _kvn_omm__write_section(
     section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix},
     mapping::Vector{Pair{String, Symbol}},
     comments::Vector{String},
-    keyword_width::Int
+    keyword_width::Int,
 )
     written = false
 
@@ -212,7 +207,7 @@ function _kvn_omm__write_element(
     keyword::AbstractString,
     value::Any,
     keyword_width::Int,
-    unit::Union{Nothing, String} = nothing
+    unit::Union{Nothing, String} = nothing,
 )
     rendered_value = _ndm_render_value(value)
 
@@ -226,7 +221,7 @@ function _kvn_omm__write_element(
             rpad(rendered_value, _KVN_OMM__VALUE_WIDTH),
             " [",
             unit,
-            "]"
+            "]",
         )
     end
 

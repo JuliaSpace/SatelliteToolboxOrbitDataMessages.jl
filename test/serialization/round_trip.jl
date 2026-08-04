@@ -28,18 +28,15 @@
         # Compare field-by-field (Julia does not auto-define == for structs with
         # non-bits fields like String).
         for omm in (first(omm_parse_omms), first(vodm_parse_odm), omm_file)
-            @test omm.version                == omm_parse_omm.version
-            @test omm.header.comments        ==  omm_parse_omm.header.comments
-            @test omm.header.classification  === omm_parse_omm.header.classification
-            @test omm.header.creation_date   ==  omm_parse_omm.header.creation_date
-            @test omm.header.originator      ==  omm_parse_omm.header.originator
-            @test omm.header.message_id      === omm_parse_omm.header.message_id
-            @test omm.metadata.object_name ==
-                omm_parse_omm.metadata.object_name
-            @test omm.data.epoch ==
-                omm_parse_omm.data.epoch
-            @test omm.data.mean_motion ≈
-                omm_parse_omm.data.mean_motion
+            @test omm.version == omm_parse_omm.version
+            @test omm.header.comments == omm_parse_omm.header.comments
+            @test omm.header.classification === omm_parse_omm.header.classification
+            @test omm.header.creation_date == omm_parse_omm.header.creation_date
+            @test omm.header.originator == omm_parse_omm.header.originator
+            @test omm.header.message_id === omm_parse_omm.header.message_id
+            @test omm.metadata.object_name == omm_parse_omm.metadata.object_name
+            @test omm.data.epoch == omm_parse_omm.data.epoch
+            @test omm.data.mean_motion ≈ omm_parse_omm.data.mean_motion
         end
     end
 
@@ -56,37 +53,37 @@
         @test omm_reparsed.header.comments == omm_file.header.comments
         @test omm_reparsed.header.creation_date == omm_file.header.creation_date
         @test omm_reparsed.header.originator == omm_file.header.originator
-        @test omm_reparsed.metadata.comments ==
-            omm_file.metadata.comments
-        @test omm_reparsed.metadata.object_name ==
-            omm_file.metadata.object_name
+        @test omm_reparsed.metadata.comments == omm_file.metadata.comments
+        @test omm_reparsed.metadata.object_name == omm_file.metadata.object_name
 
         # Compare the data fields (skip user_defined_parameters ordering for now).
         d1 = omm_reparsed.data
         d2 = omm_file.data
 
-        @test d1.epoch             == d2.epoch
-        @test d1.semi_major_axis   === d2.semi_major_axis
-        @test d1.mean_motion       ≈   d2.mean_motion
-        @test d1.eccentricity      ≈   d2.eccentricity
-        @test d1.inclination       ≈   d2.inclination
-        @test d1.raan              ≈   d2.raan
-        @test d1.arg_of_pericenter ≈   d2.arg_of_pericenter
-        @test d1.mean_anomaly      ≈   d2.mean_anomaly
-        @test d1.GM                === d2.GM
-        @test d1.ephemeris_type         == d2.ephemeris_type
-        @test d1.classification_type    == d2.classification_type
-        @test d1.norad_cat_id           == d2.norad_cat_id
-        @test d1.element_set_number     == d2.element_set_number
-        @test d1.rev_at_epoch           == d2.rev_at_epoch
-        @test d1.bstar                  ≈   d2.bstar
-        @test d1.mean_motion_dot        ≈   d2.mean_motion_dot
-        @test d1.mean_motion_ddot       ≈   d2.mean_motion_ddot
+        @test d1.epoch == d2.epoch
+        @test d1.semi_major_axis === d2.semi_major_axis
+        @test d1.mean_motion ≈ d2.mean_motion
+        @test d1.eccentricity ≈ d2.eccentricity
+        @test d1.inclination ≈ d2.inclination
+        @test d1.raan ≈ d2.raan
+        @test d1.arg_of_pericenter ≈ d2.arg_of_pericenter
+        @test d1.mean_anomaly ≈ d2.mean_anomaly
+        @test d1.GM === d2.GM
+        @test d1.ephemeris_type == d2.ephemeris_type
+        @test d1.classification_type == d2.classification_type
+        @test d1.norad_cat_id == d2.norad_cat_id
+        @test d1.element_set_number == d2.element_set_number
+        @test d1.rev_at_epoch == d2.rev_at_epoch
+        @test d1.bstar ≈ d2.bstar
+        @test d1.mean_motion_dot ≈ d2.mean_motion_dot
+        @test d1.mean_motion_ddot ≈ d2.mean_motion_ddot
 
         # User-defined parameters: compare as Dict (ordering may differ).
-        ud1 = isnothing(d1.user_defined_parameters) ? Dict() :
+        ud1 =
+            isnothing(d1.user_defined_parameters) ? Dict() :
             Dict(d1.user_defined_parameters)
-        ud2 = isnothing(d2.user_defined_parameters) ? Dict() :
+        ud2 =
+            isnothing(d2.user_defined_parameters) ? Dict() :
             Dict(d2.user_defined_parameters)
         @test ud1 == ud2
     end
@@ -120,8 +117,7 @@
         @test length(vodm_reparsed) == 1
         @test first(vodm_reparsed) isa OrbitMeanElementsMessage
         @test first(vodm_reparsed).header.creation_date == omm_file.header.creation_date
-        @test first(vodm_reparsed).header.originator   == omm_file.header.originator
-        @test first(vodm_reparsed).metadata.object_name ==
-            omm_file.metadata.object_name
+        @test first(vodm_reparsed).header.originator == omm_file.header.originator
+        @test first(vodm_reparsed).metadata.object_name == omm_file.metadata.object_name
     end
 end

@@ -23,8 +23,7 @@ struct UnregisteredOmmFetcher <: SatelliteToolboxOrbitDataMessages.AbstractOmmFe
         end
 
         @test exception isa ArgumentError
-        @test exception.msg ==
-            "The OMM fetcher UnregisteredOmmFetcher is not registered."
+        @test exception.msg == "The OMM fetcher UnregisteredOmmFetcher is not registered."
     end
 
     # == Undefined Fetch Method ============================================================
@@ -38,7 +37,6 @@ struct UnregisteredOmmFetcher <: SatelliteToolboxOrbitDataMessages.AbstractOmmFe
         end
 
         @test exception isa ArgumentError
-        @test exception.msg ==
-            "The OMM fetcher UnregisteredOmmFetcher is not registered."
+        @test exception.msg == "The OMM fetcher UnregisteredOmmFetcher is not registered."
     end
 end

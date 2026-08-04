@@ -20,7 +20,7 @@
         ud_xml = """
         <userDefinedParameters><USER_DEFINED>my_value</USER_DEFINED></userDefinedParameters>
         """
-        xml = _minimal_omm_xml(user_defined_xml=ud_xml)
+        xml = _minimal_omm_xml(user_defined_xml = ud_xml)
         @test_throws ArgumentError parse_omm(xml)
     end
 
@@ -33,7 +33,7 @@
           <USER_DEFINED parameter="KEY">val2</USER_DEFINED>
         </userDefinedParameters>
         """
-        xml = _minimal_omm_xml(user_defined_xml=ud_xml)
+        xml = _minimal_omm_xml(user_defined_xml = ud_xml)
         omm = parse_omm(xml)
 
         @test !isnothing(omm)
@@ -54,7 +54,6 @@
         """
         omm = parse_omm(_minimal_omm_xml(; user_defined_xml = ud_xml))
 
-        @test only(omm.data.user_defined_parameters) ==
-            ("A&B" => "left & right")
+        @test only(omm.data.user_defined_parameters) == ("A&B" => "left & right")
     end
 end

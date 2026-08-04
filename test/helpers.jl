@@ -119,55 +119,76 @@ function _minimal_omm_xml(;
         return "<$name>$value</$name>"
     end
 
-    header_inner = join(filter(!isempty, [
-        _tag("COMMENT", header_comment),
-        _tag("CLASSIFICATION", classification),
-        _tag("CREATION_DATE", creation_date),
-        _tag("ORIGINATOR", originator),
-        _tag("MESSAGE_ID", message_id),
-    ]))
+    header_inner = join(
+        filter(
+            !isempty,
+            [
+                _tag("COMMENT", header_comment),
+                _tag("CLASSIFICATION", classification),
+                _tag("CREATION_DATE", creation_date),
+                _tag("ORIGINATOR", originator),
+                _tag("MESSAGE_ID", message_id),
+            ],
+        ),
+    )
 
-    metadata_inner = join(filter(!isempty, [
-        _tag("COMMENT", metadata_comment),
-        _tag("OBJECT_NAME", object_name),
-        _tag("OBJECT_ID", object_id),
-        _tag("CENTER_NAME", center_name),
-        _tag("REF_FRAME", ref_frame),
-        _tag("REF_FRAME_EPOCH", ref_frame_epoch),
-        _tag("TIME_SYSTEM", time_system),
-        _tag("MEAN_ELEMENT_THEORY", mean_element_theory),
-    ]))
+    metadata_inner = join(
+        filter(
+            !isempty,
+            [
+                _tag("COMMENT", metadata_comment),
+                _tag("OBJECT_NAME", object_name),
+                _tag("OBJECT_ID", object_id),
+                _tag("CENTER_NAME", center_name),
+                _tag("REF_FRAME", ref_frame),
+                _tag("REF_FRAME_EPOCH", ref_frame_epoch),
+                _tag("TIME_SYSTEM", time_system),
+                _tag("MEAN_ELEMENT_THEORY", mean_element_theory),
+            ],
+        ),
+    )
 
-    mean_elements_inner = join(filter(!isempty, [
-        _tag("COMMENT", data_comment),
-        _tag("EPOCH", epoch),
-        _tag("SEMI_MAJOR_AXIS", semi_major_axis),
-        _tag("MEAN_MOTION", mean_motion),
-        _tag("ECCENTRICITY", eccentricity),
-        _tag("INCLINATION", inclination),
-        _tag("RA_OF_ASC_NODE", raan),
-        _tag("ARG_OF_PERICENTER", arg_of_pericenter),
-        _tag("MEAN_ANOMALY", mean_anomaly),
-        _tag("GM", gm),
-    ]))
+    mean_elements_inner = join(
+        filter(
+            !isempty,
+            [
+                _tag("COMMENT", data_comment),
+                _tag("EPOCH", epoch),
+                _tag("SEMI_MAJOR_AXIS", semi_major_axis),
+                _tag("MEAN_MOTION", mean_motion),
+                _tag("ECCENTRICITY", eccentricity),
+                _tag("INCLINATION", inclination),
+                _tag("RA_OF_ASC_NODE", raan),
+                _tag("ARG_OF_PERICENTER", arg_of_pericenter),
+                _tag("MEAN_ANOMALY", mean_anomaly),
+                _tag("GM", gm),
+            ],
+        ),
+    )
 
-    data_inner = join(filter(!isempty, [
-        "<meanElements>$(mean_elements_inner)</meanElements>",
-        spacecraft_params_xml,
-        tle_params_xml,
-        covariance_matrix_xml,
-        user_defined_xml,
-    ]))
+    data_inner = join(
+        filter(
+            !isempty,
+            [
+                "<meanElements>$(mean_elements_inner)</meanElements>",
+                spacecraft_params_xml,
+                tle_params_xml,
+                covariance_matrix_xml,
+                user_defined_xml,
+            ],
+        ),
+    )
 
     segment_inner = "<metadata>$(metadata_inner)</metadata><data>$(data_inner)</data>"
 
     body_inner = "<segment>$(segment_inner)</segment>"
 
-    omm_inner = join(filter(!isempty, [
-        "<header>$(header_inner)</header>",
-        "<body>$(body_inner)</body>",
-        extra_inner,
-    ]))
+    omm_inner = join(
+        filter(
+            !isempty,
+            ["<header>$(header_inner)</header>", "<body>$(body_inner)</body>", extra_inner],
+        ),
+    )
 
     xml = """
     <?xml version="1.0" encoding="UTF-8"?>
@@ -185,8 +206,7 @@ ODM element (without the XML declaration).
 """
 function _ndm_xml(odm_xmls::AbstractString...)
     inner      = join(odm_xmls)
-    schema_url = "https://sanaregistry.org/r/ndmxml_unqualified/" *
-        "ndmxml-3.0.0-master-3.0.xsd"
+    schema_url = "https://sanaregistry.org/r/ndmxml_unqualified/" * "ndmxml-3.0.0-master-3.0.xsd"
     return """
     <?xml version="1.0" encoding="UTF-8"?>
     <ndm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

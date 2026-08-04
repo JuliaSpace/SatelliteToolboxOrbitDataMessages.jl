@@ -59,9 +59,8 @@ function _kvn_omm__parse(str::AbstractString)
 
         km = _kvn__parse_keyword(sline)
 
-        isnothing(km) && throw(ArgumentError(
-            "Invalid KVN keyword format in line $l: $line."
-        ))
+        isnothing(km) &&
+            throw(ArgumentError("Invalid KVN keyword format in line $l: $line."))
 
         key, value = km
 
@@ -77,9 +76,11 @@ function _kvn_omm__parse(str::AbstractString)
 
             version = tryparse(Float64, value)
 
-            isnothing(version) && throw(ArgumentError(
-                "Invalid value for the KVN keyword `CCSDS_OMM_VERS` in line $l: $value."
-            ))
+            isnothing(version) && throw(
+                ArgumentError(
+                    "Invalid value for the KVN keyword `CCSDS_OMM_VERS` in line $l: $value.",
+                ),
+            )
 
             continue
         end
@@ -94,7 +95,7 @@ function _kvn_omm__parse(str::AbstractString)
 
             push!(
                 user_defined_parameters,
-                String(chopprefix(key, "USER_DEFINED_")) => String(value)
+                String(chopprefix(key, "USER_DEFINED_")) => String(value),
             )
             continue
         end

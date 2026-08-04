@@ -33,8 +33,7 @@
     @testset "Ordinal Day-of-Year Format (YYYY-DDDThh:mm:ss[.d→d][Z])" begin
         # 2025-365 = 2025-12-31.
         xml = _minimal_omm_xml(;
-            creation_date = "2025-365T23:36:37",
-            epoch         = "2025-365T18:12:04.533984",
+            creation_date = "2025-365T23:36:37", epoch         = "2025-365T18:12:04.533984"
         )
         omm = parse_omm(xml)
 
@@ -57,8 +56,7 @@
 
     @testset "Ordinal Day 001 = January 1" begin
         xml = _minimal_omm_xml(;
-            creation_date = "2025-001T00:00:00",
-            epoch         = "2025-001T00:00:00",
+            creation_date = "2025-001T00:00:00", epoch         = "2025-001T00:00:00"
         )
         omm = parse_omm(xml)
 
@@ -70,8 +68,7 @@
     @testset "Leap Year Day 366 = December 31" begin
         # 2024 is a leap year; 2024-366 = 2024-12-31.
         xml = _minimal_omm_xml(;
-            creation_date = "2024-366T12:00:00",
-            epoch         = "2024-366T12:00:00",
+            creation_date = "2024-366T12:00:00", epoch         = "2024-366T12:00:00"
         )
         omm = parse_omm(xml)
 
@@ -89,8 +86,7 @@
     @testset "Empty Dates" begin
         creation_xml = replace(
             _minimal_omm_xml(),
-            "<CREATION_DATE>2025-12-30T23:36:37</CREATION_DATE>" =>
-                "<CREATION_DATE></CREATION_DATE>",
+            "<CREATION_DATE>2025-12-30T23:36:37</CREATION_DATE>" => "<CREATION_DATE></CREATION_DATE>",
         )
         epoch_xml = replace(
             _minimal_omm_xml(),
@@ -107,8 +103,7 @@
 
     @testset "Ordinal Format Without Fractional Seconds" begin
         xml = _minimal_omm_xml(;
-            creation_date = "2025-060T12:30:45",
-            epoch         = "2025-060T12:30:45",
+            creation_date = "2025-060T12:30:45", epoch         = "2025-060T12:30:45"
         )
         omm = parse_omm(xml)
 
@@ -119,9 +114,7 @@
     end
 
     @testset "Ref Frame Epoch in Ordinal Format" begin
-        xml = _minimal_omm_xml(;
-            ref_frame_epoch = "2025-200T00:00:00",
-        )
+        xml = _minimal_omm_xml(; ref_frame_epoch = "2025-200T00:00:00")
         omm = parse_omm(xml)
 
         @test !isnothing(omm)

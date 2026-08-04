@@ -10,7 +10,7 @@
 Write the set of Orbit Data Messages in the vector `vodm` to the provided `io` stream as a
 Navigation Data Message (NDM) XML document.
 """
-function _xml_odm__write(io::IO, vodm::AbstractVector{T}) where T <: OrbitDataMessage
+function _xml_odm__write(io::IO, vodm::AbstractVector{T}) where {T <: OrbitDataMessage}
     doc = XML.Document()
 
     decl = XML.Declaration(; version = "1.0", encoding = "UTF-8")
@@ -19,8 +19,7 @@ function _xml_odm__write(io::IO, vodm::AbstractVector{T}) where T <: OrbitDataMe
     root = XML.Element(
         "ndm";
         var"xmlns:xsi" = "http://www.w3.org/2001/XMLSchema-instance",
-        var"xsi:noNamespaceSchemaLocation" =
-            "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd"
+        var"xsi:noNamespaceSchemaLocation" = "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd",
     )
     push!(doc, root)
 

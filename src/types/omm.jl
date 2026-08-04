@@ -181,19 +181,14 @@ end
 # together to keep the invariant `x == y` ⟹ `hash(x) == hash(y)`, which is required for
 # the types to behave correctly in `Dict`s and `Set`s. The field accesses are unrolled at
 # code-generation time, yielding type-stable and allocation-free implementations.
-for T in (
-    OmmHeader,
-    OmmMetadata,
-    OmmCovarianceMatrix,
-    OmmData,
-    OrbitMeanElementsMessage,
-)
+for T in (OmmHeader, OmmMetadata, OmmCovarianceMatrix, OmmData, OrbitMeanElementsMessage)
     name = nameof(T)
 
     eq_expr = foldr(
-        (f, acc) -> :((getfield(x, $(QuoteNode(f))) == getfield(y, $(QuoteNode(f)))) && $acc),
+        (f, acc) ->
+            :((getfield(x, $(QuoteNode(f))) == getfield(y, $(QuoteNode(f)))) && $acc),
         fieldnames(T);
-        init = true
+        init = true,
     )
 
     hash_exprs = [:(h = hash(getfield(x, $(QuoteNode(f))), h)) for f in fieldnames(T)]
@@ -318,8 +313,7 @@ The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be prov
 Create a copy of `omm`, overriding the fields specified in `kwargs...`. Any keyword accepted
 by the main constructor can be used; the remaining fields are copied from `omm`.
 """
-function OrbitMeanElementsMessage(
-    ;
+function OrbitMeanElementsMessage(;
     # == Header ============================================================================
     header_comments::Vector{String} = String[],
     classification::Union{String, Nothing} = nothing,
@@ -382,41 +376,47 @@ function OrbitMeanElementsMessage(
 
     # -- User-Defined Parameters -----------------------------------------------------------
 
-    user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}} = nothing
+    user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}} = nothing,
 )
-    (isnothing(semi_major_axis) == isnothing(mean_motion)) && throw(ArgumentError(
-        "Exactly one of `semi_major_axis` and `mean_motion` must be provided."
-    ))
+    (isnothing(semi_major_axis) == isnothing(mean_motion)) && throw(
+        ArgumentError(
+            "Exactly one of `semi_major_axis` and `mean_motion` must be provided."
+        ),
+    )
 
     has_tle_parameters =
-        !isempty(tle_parameters_comments) ||
-        any(!isnothing, (
-            ephemeris_type,
-            classification_type,
-            norad_cat_id,
-            element_set_number,
-            rev_at_epoch,
-            bstar,
-            bterm,
-            mean_motion_dot,
-            mean_motion_ddot,
-            agom,
-        ))
+        !isempty(tle_parameters_comments) || any(
+            !isnothing,
+            (
+                ephemeris_type,
+                classification_type,
+                norad_cat_id,
+                element_set_number,
+                rev_at_epoch,
+                bstar,
+                bterm,
+                mean_motion_dot,
+                mean_motion_ddot,
+                agom,
+            ),
+        )
 
     if has_tle_parameters
-        (isnothing(bstar) == isnothing(bterm)) && throw(ArgumentError(
-            "Exactly one of `bstar` and `bterm` is required in TLE parameters."
-        ))
-        isnothing(mean_motion_dot) && throw(ArgumentError(
-            "`mean_motion_dot` is required in TLE parameters."
-        ))
-        (isnothing(mean_motion_ddot) == isnothing(agom)) && throw(ArgumentError(
-            "Exactly one of `mean_motion_ddot` and `agom` is required in TLE parameters."
-        ))
+        (isnothing(bstar) == isnothing(bterm)) && throw(
+            ArgumentError(
+                "Exactly one of `bstar` and `bterm` is required in TLE parameters."
+            ),
+        )
+        isnothing(mean_motion_dot) &&
+            throw(ArgumentError("`mean_motion_dot` is required in TLE parameters."))
+        (isnothing(mean_motion_ddot) == isnothing(agom)) && throw(
+            ArgumentError(
+                "Exactly one of `mean_motion_ddot` and `agom` is required in TLE parameters.",
+            ),
+        )
     end
 
-    header = OmmHeader(
-        ;
+    header = OmmHeader(;
         comments = copy(header_comments),
         classification,
         creation_date,
@@ -424,8 +424,7 @@ function OrbitMeanElementsMessage(
         message_id,
     )
 
-    metadata = OmmMetadata(
-        ;
+    metadata = OmmMetadata(;
         comments = copy(metadata_comments),
         object_name,
         object_id,
@@ -436,8 +435,7 @@ function OrbitMeanElementsMessage(
         mean_element_theory,
     )
 
-    data = OmmData(
-        ;
+    data = OmmData(;
         comments = copy(data_comments),
         mean_elements_comments = copy(mean_elements_comments),
         epoch,
@@ -474,15 +472,14 @@ function OrbitMeanElementsMessage(
 end
 
 function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
-    return OrbitMeanElementsMessage(
-        ;
+    return OrbitMeanElementsMessage(;
         # == Header ========================================================================
 
         header_comments = omm.header.comments,
         classification = omm.header.classification,
-        creation_date  = omm.header.creation_date,
-        originator     = omm.header.originator,
-        message_id     = omm.header.message_id,
+        creation_date = omm.header.creation_date,
+        originator = omm.header.originator,
+        message_id = omm.header.message_id,
 
         # == Metadata ======================================================================
 
@@ -542,7 +539,7 @@ function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
 
         user_defined_parameters = omm.data.user_defined_parameters,
 
-        kwargs...
+        kwargs...,
     )
 end
 

@@ -40,24 +40,19 @@
 
     @testset "Missing Mean Motion Fields" begin
         @test_throws ArgumentError OrbitMeanElementsMessage(
-            omm;
-            mean_motion = nothing,
-            semi_major_axis = nothing,
-            GM = nothing,
+            omm; mean_motion = nothing, semi_major_axis = nothing, GM = nothing
         )
     end
 
     # == Computed Mean Motion From semi_major_axis and GM ==================================
 
     @testset "Computed Mean Motion" begin
-        a  = 7134.084
+        a = 7134.084
         GM = 398600.4418
         expected_n = sqrt(GM / a^3) / (2π) * 86400
 
-        omm_computed = OrbitMeanElementsMessage(omm;
-            mean_motion      = nothing,
-            semi_major_axis  = a,
-            GM               = GM,
+        omm_computed = OrbitMeanElementsMessage(
+            omm; mean_motion     = nothing, semi_major_axis = a, GM              = GM
         )
 
         tle = convert(TLE, omm_computed)

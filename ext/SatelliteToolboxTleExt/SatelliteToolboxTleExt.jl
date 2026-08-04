@@ -23,19 +23,15 @@ function convert(::Type{TLE}, omm::OrbitMeanElementsMessage)
     # Convert the epoch to TLE format.
     epoch_year = mod(year(data.epoch), 100)
     midnight   = NanoDate(Date(data.epoch))
-    epoch_day  = dayofyear(data.epoch) +
-        Dates.value(data.epoch - midnight) / (1_000_000_000 * 86400)
+    epoch_day  = dayofyear(data.epoch) + Dates.value(data.epoch - midnight) / (1_000_000_000 * 86400)
 
     # Obtain the mean motion from the parameters.
     mean_motion = data.mean_motion
 
     if isnothing(mean_motion)
-        isnothing(data.semi_major_axis) && error(
-            "Cannot compute mean motion from OMM: missing semi-major axis.",
-        )
-        isnothing(data.GM) && error(
-            "Cannot compute mean motion from OMM: missing GM.",
-        )
+        isnothing(data.semi_major_axis) &&
+            error("Cannot compute mean motion from OMM: missing semi-major axis.")
+        isnothing(data.GM) && error("Cannot compute mean motion from OMM: missing GM.")
 
         GM = data.GM
         a  = data.semi_major_axis
@@ -66,13 +62,12 @@ function convert(::Type{TLE}, omm::OrbitMeanElementsMessage)
 
     return TLE(;
         # == Name ==========================================================================
-        name                     = metadata.object_name,
+        name = metadata.object_name,
 
         # == First Line ====================================================================
         satellite_number         = data.norad_cat_id,
         classification           = data.classification_type,
-        international_designator =
-            _omm_object_id_to_tle_intl_designator(metadata.object_id),
+        international_designator = _omm_object_id_to_tle_intl_designator(metadata.object_id),
         epoch_year               = epoch_year,
         epoch_day                = epoch_day,
         dn_o2                    = data.mean_motion_dot,
@@ -81,13 +76,13 @@ function convert(::Type{TLE}, omm::OrbitMeanElementsMessage)
         element_set_number       = data.element_set_number,
 
         # == Second Line ===================================================================
-        inclination              = data.inclination,
-        raan                     = data.raan,
-        eccentricity             = data.eccentricity,
-        argument_of_perigee      = data.arg_of_pericenter,
-        mean_anomaly             = data.mean_anomaly,
-        mean_motion              = mean_motion,
-        revolution_number        = data.rev_at_epoch,
+        inclination         = data.inclination,
+        raan                = data.raan,
+        eccentricity        = data.eccentricity,
+        argument_of_perigee = data.arg_of_pericenter,
+        mean_anomaly        = data.mean_anomaly,
+        mean_motion         = mean_motion,
+        revolution_number   = data.rev_at_epoch,
     )
 end
 

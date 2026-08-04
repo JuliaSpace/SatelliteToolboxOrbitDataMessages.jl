@@ -15,27 +15,27 @@
         @test !isnothing(cov)
         @test cov.comments == ["This is a covariance matrix"]
         @test cov.cov_ref_frame == "ITRF"
-        @test cov.cx_x           == 1.0
-        @test cov.cy_x           == 2.0
-        @test cov.cy_y           == 3.0
-        @test cov.cz_x           == 4.0
-        @test cov.cz_y           == 5.0
-        @test cov.cz_z           == 6.0
-        @test cov.cx_dot_x       == 7.0
-        @test cov.cx_dot_y       == 8.0
-        @test cov.cx_dot_z       == 9.0
-        @test cov.cx_dot_x_dot   == 10.0
-        @test cov.cy_dot_x       == 11.0
-        @test cov.cy_dot_y       == 12.0
-        @test cov.cy_dot_z       == 13.0
-        @test cov.cy_dot_x_dot   == 14.0
-        @test cov.cy_dot_y_dot   == 15.0
-        @test cov.cz_dot_x       == 16.0
-        @test cov.cz_dot_y       == 17.0
-        @test cov.cz_dot_z       == 18.0
-        @test cov.cz_dot_x_dot   == 19.0
-        @test cov.cz_dot_y_dot   == 20.0
-        @test cov.cz_dot_z_dot   == 21.0
+        @test cov.cx_x == 1.0
+        @test cov.cy_x == 2.0
+        @test cov.cy_y == 3.0
+        @test cov.cz_x == 4.0
+        @test cov.cz_y == 5.0
+        @test cov.cz_z == 6.0
+        @test cov.cx_dot_x == 7.0
+        @test cov.cx_dot_y == 8.0
+        @test cov.cx_dot_z == 9.0
+        @test cov.cx_dot_x_dot == 10.0
+        @test cov.cy_dot_x == 11.0
+        @test cov.cy_dot_y == 12.0
+        @test cov.cy_dot_z == 13.0
+        @test cov.cy_dot_x_dot == 14.0
+        @test cov.cy_dot_y_dot == 15.0
+        @test cov.cz_dot_x == 16.0
+        @test cov.cz_dot_y == 17.0
+        @test cov.cz_dot_z == 18.0
+        @test cov.cz_dot_x_dot == 19.0
+        @test cov.cz_dot_y_dot == 20.0
+        @test cov.cz_dot_z_dot == 21.0
     end
 
     @testset "Parse Covariance Matrix Without Optional Fields" begin
@@ -131,29 +131,29 @@
         cov2 = omm_reparsed.data.covariance_matrix
 
         @test !isnothing(cov2)
-        @test cov1.comments      == cov2.comments
+        @test cov1.comments == cov2.comments
         @test cov1.cov_ref_frame == cov2.cov_ref_frame
-        @test cov1.cx_x           == cov2.cx_x
-        @test cov1.cy_x           == cov2.cy_x
-        @test cov1.cy_y           == cov2.cy_y
-        @test cov1.cz_x           == cov2.cz_x
-        @test cov1.cz_y           == cov2.cz_y
-        @test cov1.cz_z           == cov2.cz_z
-        @test cov1.cx_dot_x       == cov2.cx_dot_x
-        @test cov1.cx_dot_y       == cov2.cx_dot_y
-        @test cov1.cx_dot_z       == cov2.cx_dot_z
-        @test cov1.cx_dot_x_dot   == cov2.cx_dot_x_dot
-        @test cov1.cy_dot_x       == cov2.cy_dot_x
-        @test cov1.cy_dot_y       == cov2.cy_dot_y
-        @test cov1.cy_dot_z       == cov2.cy_dot_z
-        @test cov1.cy_dot_x_dot   == cov2.cy_dot_x_dot
-        @test cov1.cy_dot_y_dot   == cov2.cy_dot_y_dot
-        @test cov1.cz_dot_x       == cov2.cz_dot_x
-        @test cov1.cz_dot_y       == cov2.cz_dot_y
-        @test cov1.cz_dot_z       == cov2.cz_dot_z
-        @test cov1.cz_dot_x_dot   == cov2.cz_dot_x_dot
-        @test cov1.cz_dot_y_dot   == cov2.cz_dot_y_dot
-        @test cov1.cz_dot_z_dot   == cov2.cz_dot_z_dot
+        @test cov1.cx_x == cov2.cx_x
+        @test cov1.cy_x == cov2.cy_x
+        @test cov1.cy_y == cov2.cy_y
+        @test cov1.cz_x == cov2.cz_x
+        @test cov1.cz_y == cov2.cz_y
+        @test cov1.cz_z == cov2.cz_z
+        @test cov1.cx_dot_x == cov2.cx_dot_x
+        @test cov1.cx_dot_y == cov2.cx_dot_y
+        @test cov1.cx_dot_z == cov2.cx_dot_z
+        @test cov1.cx_dot_x_dot == cov2.cx_dot_x_dot
+        @test cov1.cy_dot_x == cov2.cy_dot_x
+        @test cov1.cy_dot_y == cov2.cy_dot_y
+        @test cov1.cy_dot_z == cov2.cy_dot_z
+        @test cov1.cy_dot_x_dot == cov2.cy_dot_x_dot
+        @test cov1.cy_dot_y_dot == cov2.cy_dot_y_dot
+        @test cov1.cz_dot_x == cov2.cz_dot_x
+        @test cov1.cz_dot_y == cov2.cz_dot_y
+        @test cov1.cz_dot_z == cov2.cz_dot_z
+        @test cov1.cz_dot_x_dot == cov2.cz_dot_x_dot
+        @test cov1.cz_dot_y_dot == cov2.cz_dot_y_dot
+        @test cov1.cz_dot_z_dot == cov2.cz_dot_z_dot
     end
 
     @testset "Write Without Covariance Matrix" begin

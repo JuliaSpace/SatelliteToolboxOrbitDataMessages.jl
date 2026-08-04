@@ -16,14 +16,14 @@
     # == Custom URL ========================================================================
 
     @testset "Custom URL" begin
-        f = create_omm_fetcher(CelestrakOmmFetcher; url="https://example.com/api")
+        f = create_omm_fetcher(CelestrakOmmFetcher; url = "https://example.com/api")
         @test f.url == "https://example.com/api"
     end
 
     # == Display ===========================================================================
 
     @testset "Display" begin
-        f = create_omm_fetcher(CelestrakOmmFetcher; url="https://example.com/api")
+        f = create_omm_fetcher(CelestrakOmmFetcher; url = "https://example.com/api")
         @test sprint(show, f) == "CelestrakOmmFetcher: https://example.com/api"
     end
 
@@ -31,21 +31,21 @@
 
     @testset "Negative Satellite Number" begin
         f = create_omm_fetcher(CelestrakOmmFetcher)
-        @test_throws ArgumentError fetch_omms(f; satellite_number=-1)
+        @test_throws ArgumentError fetch_omms(f; satellite_number = -1)
     end
 
     # == Bad International Designator ======================================================
 
     @testset "Bad International Designator" begin
         f = create_omm_fetcher(CelestrakOmmFetcher)
-        @test_throws ArgumentError fetch_omms(f; international_designator="bad-format")
+        @test_throws ArgumentError fetch_omms(f; international_designator = "bad-format")
     end
 
     # == Empty Satellite Name ==============================================================
 
     @testset "Empty Satellite Name" begin
         f = create_omm_fetcher(CelestrakOmmFetcher)
-        @test_throws ArgumentError fetch_omms(f; satellite_name="")
+        @test_throws ArgumentError fetch_omms(f; satellite_name = "")
     end
 
     # == No Query Information ==============================================================
@@ -63,7 +63,7 @@
     @testset "Fetch ISS (Network)" begin
         f = create_omm_fetcher(CelestrakOmmFetcher)
         result = try
-            fetch_omms(f; satellite_number=25544)
+            fetch_omms(f; satellite_number = 25544)
         catch e
             e
         end

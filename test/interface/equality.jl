@@ -13,28 +13,23 @@
     @test omm_1.metadata == omm_2.metadata
     @test omm_1.data == omm_2.data
 
-    covariance_1 = parse_omm(
-        _minimal_omm_xml(; covariance_matrix_xml = _COV_XML)
-    ).data.covariance_matrix
-    covariance_2 = parse_omm(
-        _minimal_omm_xml(; covariance_matrix_xml = _COV_XML)
-    ).data.covariance_matrix
+    covariance_1 =
+        parse_omm(_minimal_omm_xml(; covariance_matrix_xml = _COV_XML)).data.covariance_matrix
+    covariance_2 =
+        parse_omm(_minimal_omm_xml(; covariance_matrix_xml = _COV_XML)).data.covariance_matrix
     @test covariance_1 == covariance_2
 
     different_covariance_xml = replace(_COV_XML, "<CX_X>1.0</CX_X>" => "<CX_X>2.0</CX_X>")
-    different_covariance = parse_omm(
-        _minimal_omm_xml(; covariance_matrix_xml = different_covariance_xml)
-    ).data.covariance_matrix
+    different_covariance =
+        parse_omm(_minimal_omm_xml(; covariance_matrix_xml = different_covariance_xml)).data.covariance_matrix
     @test covariance_1 != different_covariance
 
     @test omm_1 != OrbitMeanElementsMessage(omm_2; originator = "OTHER")
     @test omm_1 != OrbitMeanElementsMessage(omm_2; object_name = "OTHER")
     @test omm_1 != OrbitMeanElementsMessage(omm_2; eccentricity = 0.5)
     @test omm_1 != OrbitMeanElementsMessage(omm_2; data_comments = ["OTHER"])
-    @test omm_1 != OrbitMeanElementsMessage(
-        omm_2;
-        user_defined_parameters = ["OTHER" => "VALUE"]
-    )
+    @test omm_1 !=
+        OrbitMeanElementsMessage(omm_2; user_defined_parameters = ["OTHER" => "VALUE"])
 
     nan_omm = OrbitMeanElementsMessage(omm_1; eccentricity = NaN)
     @test nan_omm != nan_omm

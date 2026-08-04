@@ -26,9 +26,8 @@
         reparsed = parse_omm(out)
         @test !isnothing(reparsed)
         @test reparsed.metadata.object_name == "AMAZONIA 1"
-        @test reparsed.metadata.object_id   == "2021-015A"
-        @test reparsed.data.epoch ==
-            NanoDate("2025-12-30T18:12:04.533984")
+        @test reparsed.metadata.object_id == "2021-015A"
+        @test reparsed.data.epoch == NanoDate("2025-12-30T18:12:04.533984")
         @test reparsed.data.mean_motion ≈ 14.40772474 atol = 1e-6
 
         # Structural invariants.

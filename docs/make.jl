@@ -12,9 +12,9 @@ DocMeta.setdocmeta!(
     recursive = true,
 )
 
-makedocs(
+makedocs(;
     modules = [SatelliteToolboxOrbitDataMessages],
-    format = Documenter.HTML(
+    format = Documenter.HTML(;
         prettyurls = !("local" in ARGS),
         canonical = "https://juliaspace.github.io/SatelliteToolboxOrbitDataMessages.jl/stable/",
         size_threshold = 500 * 1024,
@@ -36,7 +36,7 @@ makedocs(
     ],
 )
 
-deploydocs(
+deploydocs(;
     repo = "github.com/JuliaSpace/SatelliteToolboxOrbitDataMessages.jl.git",
     target = "build",
 )

@@ -6,37 +6,37 @@
 
 @testset "Constructors" verbose = true begin
     # Common required fields.
-    creation_date  = NanoDate("2025-12-30T23:36:37")
-    epoch          = NanoDate("2025-12-30T18:12:04.533984")
+    creation_date = NanoDate("2025-12-30T23:36:37")
+    epoch         = NanoDate("2025-12-30T18:12:04.533984")
 
     # == Full Keyword Constructor -> v3.0 ==================================================
 
     @testset "Full Keyword Constructor" begin
         omm = OrbitMeanElementsMessage(;
-            header_comments  = ["Test header", "Second header comment"],
-            classification   = "UNCLASSIFIED",
-            creation_date    = creation_date,
-            originator       = "TEST",
-            message_id       = "MSG-001",
-            object_name      = "TEST SAT",
-            object_id        = "2025-001A",
-            center_name      = "EARTH",
-            ref_frame        = "TEME",
-            time_system      = "UTC",
+            header_comments = ["Test header", "Second header comment"],
+            classification = "UNCLASSIFIED",
+            creation_date = creation_date,
+            originator = "TEST",
+            message_id = "MSG-001",
+            object_name = "TEST SAT",
+            object_id = "2025-001A",
+            center_name = "EARTH",
+            ref_frame = "TEME",
+            time_system = "UTC",
             mean_element_theory = "SGP4",
-            epoch            = epoch,
-            mean_motion      = 15.0,
-            eccentricity     = 0.001,
-            inclination      = 45.0,
-            raan             = 100.0,
+            epoch = epoch,
+            mean_motion = 15.0,
+            eccentricity = 0.001,
+            inclination = 45.0,
+            raan = 100.0,
             arg_of_pericenter = 50.0,
-            mean_anomaly     = 200.0,
-            GM               = 398600.4418,
-            mass             = 100.0,
-            bstar            = 1e-4,
-            mean_motion_dot  = 0.0,
+            mean_anomaly = 200.0,
+            GM = 398600.4418,
+            mass = 100.0,
+            bstar = 1e-4,
+            mean_motion_dot = 0.0,
             mean_motion_ddot = 0.0,
-            norad_cat_id     = 12345,
+            norad_cat_id = 12345,
         )
 
         @test omm.version == v"3.0"
@@ -52,21 +52,21 @@
 
     @testset "Minimal Keyword Constructor" begin
         omm = OrbitMeanElementsMessage(;
-            creation_date        = creation_date,
-            originator           = "TEST",
-            object_name          = "TEST SAT",
-            object_id            = "2025-001A",
-            center_name          = "EARTH",
-            ref_frame            = "TEME",
-            time_system          = "UTC",
-            mean_element_theory  = "SGP4",
-            epoch                = epoch,
-            mean_motion          = 15.0,
-            eccentricity         = 0.001,
-            inclination          = 45.0,
-            raan                 = 100.0,
-            arg_of_pericenter    = 50.0,
-            mean_anomaly         = 200.0,
+            creation_date       = creation_date,
+            originator          = "TEST",
+            object_name         = "TEST SAT",
+            object_id           = "2025-001A",
+            center_name         = "EARTH",
+            ref_frame           = "TEME",
+            time_system         = "UTC",
+            mean_element_theory = "SGP4",
+            epoch               = epoch,
+            mean_motion         = 15.0,
+            eccentricity        = 0.001,
+            inclination         = 45.0,
+            raan                = 100.0,
+            arg_of_pericenter   = 50.0,
+            mean_anomaly        = 200.0,
         )
 
         @test omm.version == v"3.0"
@@ -85,21 +85,21 @@
 
     @testset "Reconstruction Override One Field" begin
         omm = OrbitMeanElementsMessage(;
-            creation_date        = creation_date,
-            originator           = "TEST",
-            object_name          = "TEST SAT",
-            object_id            = "2025-001A",
-            center_name          = "EARTH",
-            ref_frame            = "TEME",
-            time_system          = "UTC",
-            mean_element_theory  = "SGP4",
-            epoch                = epoch,
-            mean_motion          = 15.0,
-            eccentricity         = 0.001,
-            inclination          = 45.0,
-            raan                 = 100.0,
-            arg_of_pericenter    = 50.0,
-            mean_anomaly         = 200.0,
+            creation_date       = creation_date,
+            originator          = "TEST",
+            object_name         = "TEST SAT",
+            object_id           = "2025-001A",
+            center_name         = "EARTH",
+            ref_frame           = "TEME",
+            time_system         = "UTC",
+            mean_element_theory = "SGP4",
+            epoch               = epoch,
+            mean_motion         = 15.0,
+            eccentricity        = 0.001,
+            inclination         = 45.0,
+            raan                = 100.0,
+            arg_of_pericenter   = 50.0,
+            mean_anomaly        = 200.0,
         )
 
         omm2 = OrbitMeanElementsMessage(omm; object_name = "NEW NAME")
@@ -116,27 +116,25 @@
 
     @testset "Reconstruction Override Multiple Fields" begin
         omm = OrbitMeanElementsMessage(;
-            creation_date        = creation_date,
-            originator           = "TEST",
-            object_name          = "TEST SAT",
-            object_id            = "2025-001A",
-            center_name          = "EARTH",
-            ref_frame            = "TEME",
-            time_system          = "UTC",
-            mean_element_theory  = "SGP4",
-            epoch                = epoch,
-            mean_motion          = 15.0,
-            eccentricity         = 0.001,
-            inclination          = 45.0,
-            raan                 = 100.0,
-            arg_of_pericenter    = 50.0,
-            mean_anomaly         = 200.0,
+            creation_date       = creation_date,
+            originator          = "TEST",
+            object_name         = "TEST SAT",
+            object_id           = "2025-001A",
+            center_name         = "EARTH",
+            ref_frame           = "TEME",
+            time_system         = "UTC",
+            mean_element_theory = "SGP4",
+            epoch               = epoch,
+            mean_motion         = 15.0,
+            eccentricity        = 0.001,
+            inclination         = 45.0,
+            raan                = 100.0,
+            arg_of_pericenter   = 50.0,
+            mean_anomaly        = 200.0,
         )
 
-        omm2 = OrbitMeanElementsMessage(omm;
-            object_name = "NEW NAME",
-            originator  = "NEW ORG",
-            inclination = 50.0,
+        omm2 = OrbitMeanElementsMessage(
+            omm; object_name = "NEW NAME", originator  = "NEW ORG", inclination = 50.0
         )
 
         @test omm2.metadata.object_name == "NEW NAME"
@@ -167,9 +165,7 @@
 
         @test_throws ArgumentError OrbitMeanElementsMessage(; kwargs...)
         @test_throws ArgumentError OrbitMeanElementsMessage(;
-            kwargs...,
-            semi_major_axis = 7000.0,
-            mean_motion = 15.0,
+            kwargs..., semi_major_axis = 7000.0, mean_motion = 15.0
         )
     end
 end

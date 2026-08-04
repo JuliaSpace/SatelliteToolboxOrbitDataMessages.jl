@@ -95,11 +95,11 @@ end
 # Mandatory fields of the OMM metadata section. Each entry maps the parsed field name to
 # the CCSDS keyword used in the error message.
 const _OMM_MANDATORY_METADATA_FIELDS = (
-    (:object_name,         "OBJECT_NAME"),
-    (:object_id,           "OBJECT_ID"),
-    (:center_name,         "CENTER_NAME"),
-    (:ref_frame,           "REF_FRAME"),
-    (:time_system,         "TIME_SYSTEM"),
+    (:object_name, "OBJECT_NAME"),
+    (:object_id, "OBJECT_ID"),
+    (:center_name, "CENTER_NAME"),
+    (:ref_frame, "REF_FRAME"),
+    (:time_system, "TIME_SYSTEM"),
     (:mean_element_theory, "MEAN_ELEMENT_THEORY"),
 )
 
@@ -107,12 +107,12 @@ const _OMM_MANDATORY_METADATA_FIELDS = (
 # to the CCSDS keyword used in the error message. The pair `SEMI_MAJOR_AXIS` /
 # `MEAN_MOTION` is checked separately since it is a mutually exclusive choice.
 const _OMM_MANDATORY_MEAN_ELEMENTS_FIELDS = (
-    (:epoch,             "EPOCH"),
-    (:eccentricity,      "ECCENTRICITY"),
-    (:inclination,       "INCLINATION"),
-    (:raan,              "RA_OF_ASC_NODE"),
+    (:epoch, "EPOCH"),
+    (:eccentricity, "ECCENTRICITY"),
+    (:inclination, "INCLINATION"),
+    (:raan, "RA_OF_ASC_NODE"),
     (:arg_of_pericenter, "ARG_OF_PERICENTER"),
-    (:mean_anomaly,      "MEAN_ANOMALY"),
+    (:mean_anomaly, "MEAN_ANOMALY"),
 )
 
 # Fields of the OMM TLE parameters section. They are used to detect whether the section
@@ -301,32 +301,24 @@ throwing an `ArgumentError` that names the keyword if the value is invalid.
 _omm_parse_field(::Type{String}, value::AbstractString, keyword::AbstractString) =
     String(value)
 
-function _omm_parse_field(
-    ::Type{NanoDate},
-    value::AbstractString,
-    keyword::AbstractString
-)
+function _omm_parse_field(::Type{NanoDate}, value::AbstractString, keyword::AbstractString)
     return _parse_ndm_date(value)
 end
 
 function _omm_parse_field(::Type{Char}, value::AbstractString, keyword::AbstractString)
-    length(value) == 1 || throw(ArgumentError(
-        "OMM field `$keyword` must contain exactly one character."
-    ))
+    length(value) == 1 ||
+        throw(ArgumentError("OMM field `$keyword` must contain exactly one character."))
 
     return only(value)
 end
 
 function _omm_parse_field(
-    ::Type{T},
-    value::AbstractString,
-    keyword::AbstractString
-) where T <: Number
+    ::Type{T}, value::AbstractString, keyword::AbstractString
+) where {T <: Number}
     number = tryparse(T, value)
 
-    isnothing(number) && throw(ArgumentError(
-        "OMM field `$keyword` contains an invalid value: \"$value\"."
-    ))
+    isnothing(number) &&
+        throw(ArgumentError("OMM field `$keyword` contains an invalid value: \"$value\"."))
 
     return number
 end
@@ -346,47 +338,48 @@ function _omm_check_mandatory_fields(
     version::VersionNumber,
     header_fields::Dict{Symbol, Any},
     metadata_fields::Dict{Symbol, Any},
-    data_fields::Dict{Symbol, Any}
+    data_fields::Dict{Symbol, Any},
 )
     # == Header ============================================================================
 
-    isnothing(get(header_fields, :originator, nothing)) && throw(ArgumentError(
-        "OMM header is missing required field `ORIGINATOR`."
-    ))
+    isnothing(get(header_fields, :originator, nothing)) &&
+        throw(ArgumentError("OMM header is missing required field `ORIGINATOR`."))
 
     if version == v"2.0"
         # The fields `CLASSIFICATION` and `MESSAGE_ID` were introduced in OMM version 3.0.
-        !isnothing(get(header_fields, :classification, nothing)) && throw(ArgumentError(
-            "OMM header field `CLASSIFICATION` is not valid in OMM version 2.0."
-        ))
+        !isnothing(get(header_fields, :classification, nothing)) && throw(
+            ArgumentError(
+                "OMM header field `CLASSIFICATION` is not valid in OMM version 2.0."
+            ),
+        )
 
-        !isnothing(get(header_fields, :message_id, nothing)) && throw(ArgumentError(
-            "OMM header field `MESSAGE_ID` is not valid in OMM version 2.0."
-        ))
+        !isnothing(get(header_fields, :message_id, nothing)) && throw(
+            ArgumentError("OMM header field `MESSAGE_ID` is not valid in OMM version 2.0."),
+        )
     end
 
     # == Metadata ==========================================================================
 
     for (field, keyword) in _OMM_MANDATORY_METADATA_FIELDS
-        isnothing(get(metadata_fields, field, nothing)) && throw(ArgumentError(
-            "OMM metadata is missing required field `$keyword`."
-        ))
+        isnothing(get(metadata_fields, field, nothing)) &&
+            throw(ArgumentError("OMM metadata is missing required field `$keyword`."))
     end
 
     # == Mean Elements =====================================================================
 
     for (field, keyword) in _OMM_MANDATORY_MEAN_ELEMENTS_FIELDS
-        isnothing(get(data_fields, field, nothing)) && throw(ArgumentError(
-            "OMM data is missing required field `$keyword`."
-        ))
+        isnothing(get(data_fields, field, nothing)) &&
+            throw(ArgumentError("OMM data is missing required field `$keyword`."))
     end
 
     semi_major_axis = get(data_fields, :semi_major_axis, nothing)
     mean_motion     = get(data_fields, :mean_motion, nothing)
 
-    (isnothing(semi_major_axis) == isnothing(mean_motion)) && throw(ArgumentError(
-        "OMM data must contain exactly one of `SEMI_MAJOR_AXIS` and `MEAN_MOTION`."
-    ))
+    (isnothing(semi_major_axis) == isnothing(mean_motion)) && throw(
+        ArgumentError(
+            "OMM data must contain exactly one of `SEMI_MAJOR_AXIS` and `MEAN_MOTION`."
+        ),
+    )
 
     # == TLE Parameters ====================================================================
 
@@ -399,38 +392,44 @@ function _omm_check_mandatory_fields(
     # The TLE parameters section is optional, so its rules only apply when the section
     # carries any information.
     if any(field -> !isnothing(get(data_fields, field, nothing)), _OMM_TLE_PARAMETER_FIELDS)
-        isnothing(mean_motion_dot) && throw(ArgumentError(
-            "OMM TLE parameters are missing required field `MEAN_MOTION_DOT`."
-        ))
+        isnothing(mean_motion_dot) && throw(
+            ArgumentError(
+                "OMM TLE parameters are missing required field `MEAN_MOTION_DOT`."
+            ),
+        )
 
         if version == v"2.0"
             # In OMM version 2.0, `BSTAR` and `MEAN_MOTION_DDOT` are required fields, and
             # `BTERM` and `AGOM` do not exist.
-            !isnothing(bterm) && throw(ArgumentError(
-                "OMM TLE parameter `BTERM` is not valid in OMM version 2.0."
-            ))
+            !isnothing(bterm) && throw(
+                ArgumentError("OMM TLE parameter `BTERM` is not valid in OMM version 2.0."),
+            )
 
-            !isnothing(agom) && throw(ArgumentError(
-                "OMM TLE parameter `AGOM` is not valid in OMM version 2.0."
-            ))
+            !isnothing(agom) && throw(
+                ArgumentError("OMM TLE parameter `AGOM` is not valid in OMM version 2.0."),
+            )
 
-            isnothing(bstar) && throw(ArgumentError(
-                "OMM TLE parameters are missing required field `BSTAR`."
-            ))
+            isnothing(bstar) && throw(
+                ArgumentError("OMM TLE parameters are missing required field `BSTAR`.")
+            )
 
-            isnothing(mean_motion_ddot) && throw(ArgumentError(
-                "OMM TLE parameters are missing required field `MEAN_MOTION_DDOT`."
-            ))
+            isnothing(mean_motion_ddot) && throw(
+                ArgumentError(
+                    "OMM TLE parameters are missing required field `MEAN_MOTION_DDOT`."
+                ),
+            )
         else
-            (isnothing(bstar) == isnothing(bterm)) && throw(ArgumentError(
-                "OMM TLE parameters must contain exactly one of `BSTAR` and `BTERM`."
-            ))
+            (isnothing(bstar) == isnothing(bterm)) && throw(
+                ArgumentError(
+                    "OMM TLE parameters must contain exactly one of `BSTAR` and `BTERM`.",
+                ),
+            )
 
             (isnothing(mean_motion_ddot) == isnothing(agom)) && throw(
                 ArgumentError(
                     "OMM TLE parameters must contain exactly one of `MEAN_MOTION_DDOT` " *
-                    "and `AGOM`."
-                )
+                    "and `AGOM`.",
+                ),
             )
         end
     end
@@ -441,10 +440,12 @@ function _omm_check_mandatory_fields(
 
     if !isnothing(covariance_fields)
         for field in _OMM_COVARIANCE_MATRIX_FIELDS
-            isnothing(get(covariance_fields, field, nothing)) && throw(ArgumentError(
-                "OMM covariance matrix is missing required element " *
-                "`$(uppercase(String(field)))`."
-            ))
+            isnothing(get(covariance_fields, field, nothing)) && throw(
+                ArgumentError(
+                    "OMM covariance matrix is missing required element " *
+                    "`$(uppercase(String(field)))`.",
+                ),
+            )
         end
     end
 
@@ -474,13 +475,13 @@ function _omm_assemble(
     version::Union{Nothing, Float64},
     header_fields::Dict{Symbol, Any},
     metadata_fields::Dict{Symbol, Any},
-    data_fields::Dict{Symbol, Any}
+    data_fields::Dict{Symbol, Any},
 )
     # == Version ===========================================================================
 
-    isnothing(version) && throw(ArgumentError(
-        "The OMM is missing the required format version (`CCSDS_OMM_VERS`)."
-    ))
+    isnothing(version) && throw(
+        ArgumentError("The OMM is missing the required format version (`CCSDS_OMM_VERS`)."),
+    )
 
     version ∈ (2.0, 3.0) || throw(ArgumentError("Unsupported OMM version: $version."))
 
@@ -510,6 +511,6 @@ function _omm_assemble(parsed_omm::NamedTuple)
         parsed_omm.version,
         parsed_omm.header_fields,
         parsed_omm.metadata_fields,
-        parsed_omm.data_fields
+        parsed_omm.data_fields,
     )
 end

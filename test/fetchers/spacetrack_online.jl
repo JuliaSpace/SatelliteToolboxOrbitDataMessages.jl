@@ -21,7 +21,7 @@ end
 @testset "Spacetrack Fetcher (Online)" verbose = true begin
     if !haskey(ENV, "HAS_SPACETRACK")
         @test_skip "Set HAS_SPACETRACK=1 to run online Spacetrack tests"
-        return
+        return nothing
     end
 
     # == Bad Credentials ===================================================================
@@ -81,10 +81,7 @@ end
         if !isnothing(f)
             result = fetch_omms(
                 f;
-                predicates = [
-                    "NORAD_CAT_ID" => "40000--40100",
-                    "MEAN_MOTION"  => "<14.9",
-                ],
+                predicates = ["NORAD_CAT_ID" => "40000--40100", "MEAN_MOTION"  => "<14.9"],
                 query_limits = 5,
             )
             @test result isa Vector{OrbitMeanElementsMessage}
