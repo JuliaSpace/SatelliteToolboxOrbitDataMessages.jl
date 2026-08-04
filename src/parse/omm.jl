@@ -22,11 +22,8 @@ the file does not contain an OMM message, `nothing` is returned.
     (**Default**: `true`)
 """
 function parse_omm(str::AbstractString; strict::Bool = true)
-    # Open the XML file.
-    xml = XML.Cursor(String(str))
-
     # Parse the file, obtaining the container with the raw field values.
-    parsed_omm = _xml_omm__parse(xml, strict)
+    parsed_omm = _xml_omm__parse(str, strict)
     isnothing(parsed_omm) && return nothing
 
     # Check the mandatory fields and assemble the message.
@@ -63,14 +60,17 @@ end
 ############################################################################################
 
 # The functions in this section are format-agnostic: the format-specific parsers (e.g. the
-# XML one in `./xml/omm.jl`) only convert the input to a container, i.e. a named tuple:
+# XML one in `./xml/omm.jl`) only convert the input to four pieces of information:
 #
-#     (; version, header, metadata, data)
+#   - `version::Union{Nothing, Float64}`: The OMM format version.
+#   - `header_fields::Dict{Symbol, Any}`: The raw field values of the header section.
+#   - `metadata_fields::Dict{Symbol, Any}`: The raw field values of the metadata section.
+#   - `data_fields::Dict{Symbol, Any}`: The raw field values of the data section.
 #
-# where `version` is the OMM format version and `header`, `metadata`, and `data` are named
-# tuples with the raw field values of the corresponding sections. The mandatory-field
-# validation and the message assembly are performed here from this container. Hence,
-# adding a new file type only requires writing the corresponding parser.
+# The dictionaries only contain the fields that are present in the input. The
+# mandatory-field validation and the message assembly are performed here by converting the
+# dictionaries to keyword arguments of the OMM section constructors. Hence, adding a new
+# file type only requires writing the corresponding parser.
 
 # Mandatory fields of the OMM metadata section. Each entry maps the parsed field name to
 # the CCSDS keyword used in the error message.
@@ -136,40 +136,175 @@ const _OMM_COVARIANCE_MATRIX_FIELDS = (
     :cz_dot_z_dot,
 )
 
+# == Keyword Mappings ======================================================================
+
+# The following constants map the CCSDS keywords of each OMM section to the corresponding
+# fields of the message structures. They are shared by all format-specific parsers.
+
+const _OMM_HEADER_KEYWORD_TO_FIELD = Dict{String, Symbol}(
+    "CLASSIFICATION" => :classification,
+    "CREATION_DATE"  => :creation_date,
+    "ORIGINATOR"     => :originator,
+    "MESSAGE_ID"     => :message_id,
+)
+
+const _OMM_METADATA_KEYWORD_TO_FIELD = Dict{String, Symbol}(
+    "OBJECT_NAME"         => :object_name,
+    "OBJECT_ID"           => :object_id,
+    "CENTER_NAME"         => :center_name,
+    "REF_FRAME"           => :ref_frame,
+    "REF_FRAME_EPOCH"     => :ref_frame_epoch,
+    "TIME_SYSTEM"         => :time_system,
+    "MEAN_ELEMENT_THEORY" => :mean_element_theory,
+)
+
+const _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD = Dict{String, Symbol}(
+    "EPOCH"             => :epoch,
+    "SEMI_MAJOR_AXIS"   => :semi_major_axis,
+    "MEAN_MOTION"       => :mean_motion,
+    "ECCENTRICITY"      => :eccentricity,
+    "INCLINATION"       => :inclination,
+    "RA_OF_ASC_NODE"    => :raan,
+    "ARG_OF_PERICENTER" => :arg_of_pericenter,
+    "MEAN_ANOMALY"      => :mean_anomaly,
+    "GM"                => :GM,
+)
+
+const _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD = Dict{String, Symbol}(
+    "MASS"            => :mass,
+    "SOLAR_RAD_AREA"  => :solar_rad_area,
+    "SOLAR_RAD_COEFF" => :solar_rad_coeff,
+    "DRAG_AREA"       => :drag_area,
+    "DRAG_COEFF"      => :drag_coeff,
+)
+
+const _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD = Dict{String, Symbol}(
+    "EPHEMERIS_TYPE"      => :ephemeris_type,
+    "CLASSIFICATION_TYPE" => :classification_type,
+    "NORAD_CAT_ID"        => :norad_cat_id,
+    "ELEMENT_SET_NO"      => :element_set_number,
+    "REV_AT_EPOCH"        => :rev_at_epoch,
+    "BSTAR"               => :bstar,
+    "BTERM"               => :bterm,
+    "MEAN_MOTION_DOT"     => :mean_motion_dot,
+    "MEAN_MOTION_DDOT"    => :mean_motion_ddot,
+    "AGOM"                => :agom,
+)
+
+const _OMM_COVARIANCE_KEYWORD_TO_FIELD = Dict{String, Symbol}(
+    "COV_REF_FRAME" => :cov_ref_frame,
+    (uppercase(String(field)) => field for field in _OMM_COVARIANCE_MATRIX_FIELDS)...,
+)
+
+# All the keywords of the data section, excluding the covariance matrix, whose fields are
+# stored in a nested dictionary. The per-section mappings above are required by formats
+# with a nested structure (e.g. XML), whereas flat formats (e.g. KVN) can use this merged
+# mapping directly.
+const _OMM_DATA_KEYWORD_TO_FIELD = merge(
+    _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD,
+    _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD,
+    _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD,
+)
+
+# Types of the OMM fields. Fields that are not listed here are `Float64`.
+const _OMM_FIELD_TYPE = Dict{Symbol, DataType}(
+    :classification      => String,
+    :creation_date       => NanoDate,
+    :originator          => String,
+    :message_id          => String,
+    :object_name         => String,
+    :object_id           => String,
+    :center_name         => String,
+    :ref_frame           => String,
+    :ref_frame_epoch     => NanoDate,
+    :time_system         => String,
+    :mean_element_theory => String,
+    :epoch               => NanoDate,
+    :ephemeris_type      => Int,
+    :classification_type => Char,
+    :norad_cat_id        => Int,
+    :element_set_number  => Int,
+    :rev_at_epoch        => Int,
+    :cov_ref_frame       => String,
+)
+
 """
-    _omm_check_mandatory_fields(parsed_omm::NamedTuple) -> Nothing
+    _omm_field_type(field::Symbol) -> DataType
 
-Check if all mandatory fields of an Orbit Mean-Elements Message (OMM) are present in the
-container `parsed_omm` returned by a format-specific parser, throwing an `ArgumentError`
-otherwise. The container is a named tuple:
+Return the type of the OMM `field` as defined in `_OMM_FIELD_TYPE`, defaulting to
+`Float64`.
+"""
+_omm_field_type(field::Symbol) = get(_OMM_FIELD_TYPE, field, Float64)
 
-    (; version, header, metadata, data)
+"""
+    _omm_parse_field(::Type{T}, value::AbstractString, keyword::AbstractString) -> T
 
-where `version` is the OMM format version (2.0 or 3.0) and `header`, `metadata`, and
-`data` are named tuples with the raw field values of the corresponding sections.
+Parse the raw `value` of the OMM field identified by the CCSDS `keyword` as type `T`,
+throwing an `ArgumentError` that names the keyword if the value is invalid.
+"""
+_omm_parse_field(::Type{String}, value::AbstractString, keyword::AbstractString) =
+    String(value)
+
+function _omm_parse_field(
+    ::Type{NanoDate},
+    value::AbstractString,
+    keyword::AbstractString
+)
+    return _parse_ndm_date(value)
+end
+
+function _omm_parse_field(::Type{Char}, value::AbstractString, keyword::AbstractString)
+    length(value) == 1 || throw(ArgumentError(
+        "OMM field `$keyword` must contain exactly one character."
+    ))
+
+    return only(value)
+end
+
+function _omm_parse_field(
+    ::Type{T},
+    value::AbstractString,
+    keyword::AbstractString
+) where T <: Number
+    number = tryparse(T, value)
+
+    isnothing(number) && throw(ArgumentError(
+        "OMM field `$keyword` contains an invalid value: \"$value\"."
+    ))
+
+    return number
+end
+
+"""
+    _omm_check_mandatory_fields(version::VersionNumber, header_fields::Dict{Symbol, Any}, metadata_fields::Dict{Symbol, Any}, data_fields::Dict{Symbol, Any}) -> Nothing
+
+Check if all mandatory fields of an Orbit Mean-Elements Message (OMM) with `version` (2.0
+or 3.0) are present in the dictionaries `header_fields`, `metadata_fields`, and
+`data_fields` returned by a format-specific parser, throwing an `ArgumentError` otherwise.
+A field whose value is `nothing` is treated as absent.
 
 This function is format-agnostic so that every supported file type is validated by the same
 rules.
 """
-function _omm_check_mandatory_fields(parsed_omm::NamedTuple)
-    version  = parsed_omm.version
-    header   = parsed_omm.header
-    metadata = parsed_omm.metadata
-    data     = parsed_omm.data
-
+function _omm_check_mandatory_fields(
+    version::VersionNumber,
+    header_fields::Dict{Symbol, Any},
+    metadata_fields::Dict{Symbol, Any},
+    data_fields::Dict{Symbol, Any}
+)
     # == Header ============================================================================
 
-    isnothing(header.originator) && throw(ArgumentError(
+    isnothing(get(header_fields, :originator, nothing)) && throw(ArgumentError(
         "OMM header is missing required field `ORIGINATOR`."
     ))
 
     if version == v"2.0"
         # The fields `CLASSIFICATION` and `MESSAGE_ID` were introduced in OMM version 3.0.
-        !isnothing(header.classification) && throw(ArgumentError(
+        !isnothing(get(header_fields, :classification, nothing)) && throw(ArgumentError(
             "OMM header field `CLASSIFICATION` is not valid in OMM version 2.0."
         ))
 
-        !isnothing(header.message_id) && throw(ArgumentError(
+        !isnothing(get(header_fields, :message_id, nothing)) && throw(ArgumentError(
             "OMM header field `MESSAGE_ID` is not valid in OMM version 2.0."
         ))
     end
@@ -177,7 +312,7 @@ function _omm_check_mandatory_fields(parsed_omm::NamedTuple)
     # == Metadata ==========================================================================
 
     for (field, keyword) in _OMM_MANDATORY_METADATA_FIELDS
-        isnothing(getproperty(metadata, field)) && throw(ArgumentError(
+        isnothing(get(metadata_fields, field, nothing)) && throw(ArgumentError(
             "OMM metadata is missing required field `$keyword`."
         ))
     end
@@ -185,48 +320,57 @@ function _omm_check_mandatory_fields(parsed_omm::NamedTuple)
     # == Mean Elements =====================================================================
 
     for (field, keyword) in _OMM_MANDATORY_MEAN_ELEMENTS_FIELDS
-        isnothing(getproperty(data, field)) && throw(ArgumentError(
+        isnothing(get(data_fields, field, nothing)) && throw(ArgumentError(
             "OMM data is missing required field `$keyword`."
         ))
     end
 
-    (isnothing(data.semi_major_axis) == isnothing(data.mean_motion)) && throw(ArgumentError(
+    semi_major_axis = get(data_fields, :semi_major_axis, nothing)
+    mean_motion     = get(data_fields, :mean_motion, nothing)
+
+    (isnothing(semi_major_axis) == isnothing(mean_motion)) && throw(ArgumentError(
         "OMM data must contain exactly one of `SEMI_MAJOR_AXIS` and `MEAN_MOTION`."
     ))
 
     # == TLE Parameters ====================================================================
 
+    bstar            = get(data_fields, :bstar, nothing)
+    bterm            = get(data_fields, :bterm, nothing)
+    mean_motion_dot  = get(data_fields, :mean_motion_dot, nothing)
+    mean_motion_ddot = get(data_fields, :mean_motion_ddot, nothing)
+    agom             = get(data_fields, :agom, nothing)
+
     # The TLE parameters section is optional, so its rules only apply when the section
     # carries any information.
-    if any(field -> !isnothing(getproperty(data, field)), _OMM_TLE_PARAMETER_FIELDS)
-        isnothing(data.mean_motion_dot) && throw(ArgumentError(
+    if any(field -> !isnothing(get(data_fields, field, nothing)), _OMM_TLE_PARAMETER_FIELDS)
+        isnothing(mean_motion_dot) && throw(ArgumentError(
             "OMM TLE parameters are missing required field `MEAN_MOTION_DOT`."
         ))
 
         if version == v"2.0"
             # In OMM version 2.0, `BSTAR` and `MEAN_MOTION_DDOT` are required fields, and
             # `BTERM` and `AGOM` do not exist.
-            !isnothing(data.bterm) && throw(ArgumentError(
+            !isnothing(bterm) && throw(ArgumentError(
                 "OMM TLE parameter `BTERM` is not valid in OMM version 2.0."
             ))
 
-            !isnothing(data.agom) && throw(ArgumentError(
+            !isnothing(agom) && throw(ArgumentError(
                 "OMM TLE parameter `AGOM` is not valid in OMM version 2.0."
             ))
 
-            isnothing(data.bstar) && throw(ArgumentError(
+            isnothing(bstar) && throw(ArgumentError(
                 "OMM TLE parameters are missing required field `BSTAR`."
             ))
 
-            isnothing(data.mean_motion_ddot) && throw(ArgumentError(
+            isnothing(mean_motion_ddot) && throw(ArgumentError(
                 "OMM TLE parameters are missing required field `MEAN_MOTION_DDOT`."
             ))
         else
-            (isnothing(data.bstar) == isnothing(data.bterm)) && throw(ArgumentError(
+            (isnothing(bstar) == isnothing(bterm)) && throw(ArgumentError(
                 "OMM TLE parameters must contain exactly one of `BSTAR` and `BTERM`."
             ))
 
-            (isnothing(data.mean_motion_ddot) == isnothing(data.agom)) && throw(
+            (isnothing(mean_motion_ddot) == isnothing(agom)) && throw(
                 ArgumentError(
                     "OMM TLE parameters must contain exactly one of `MEAN_MOTION_DDOT` " *
                     "and `AGOM`."
@@ -237,9 +381,11 @@ function _omm_check_mandatory_fields(parsed_omm::NamedTuple)
 
     # == Covariance Matrix =================================================================
 
-    if !isnothing(data.covariance_matrix)
+    covariance_fields = get(data_fields, :covariance_matrix, nothing)
+
+    if !isnothing(covariance_fields)
         for field in _OMM_COVARIANCE_MATRIX_FIELDS
-            isnothing(getproperty(data.covariance_matrix, field)) && throw(ArgumentError(
+            isnothing(get(covariance_fields, field, nothing)) && throw(ArgumentError(
                 "OMM covariance matrix is missing required element " *
                 "`$(uppercase(String(field)))`."
             ))
@@ -250,32 +396,64 @@ function _omm_check_mandatory_fields(parsed_omm::NamedTuple)
 end
 
 """
+    _omm_assemble(version::Union{Nothing, Float64}, header_fields::Dict{Symbol, Any}, metadata_fields::Dict{Symbol, Any}, data_fields::Dict{Symbol, Any}) -> OrbitMeanElementsMessage
+
+Assemble an Orbit Mean-Elements Message (OMM) from the information returned by a
+format-specific parser: the format `version` (`nothing` if it is absent in the input) and
+the dictionaries `header_fields`, `metadata_fields`, and `data_fields` with the raw field
+values of the corresponding sections. The dictionaries only contain the fields that are
+present in the input.
+
+The version and the mandatory fields are validated before the message is created. Then,
+each dictionary is converted to keyword arguments of the corresponding OMM section
+constructor. The covariance matrix, if present, must be stored in
+`data_fields[:covariance_matrix]` as a `Dict{Symbol, Any}` with its raw element values.
+
     _omm_assemble(parsed_omm::NamedTuple) -> OrbitMeanElementsMessage
 
-Assemble an Orbit Mean-Elements Message (OMM) from the container `parsed_omm` returned by
-a format-specific parser. The container is a named tuple:
-
-    (; version, header, metadata, data)
-
-where `version` is the OMM format version (2.0 or 3.0) and `header`, `metadata`, and
-`data` are named tuples with the raw field values of the corresponding sections.
-
-The mandatory fields are validated with [`_omm_check_mandatory_fields`](@ref) before the
-message is created.
+Assemble an OMM from the container `(; version, header_fields, metadata_fields,
+data_fields)` holding the same information.
 """
-function _omm_assemble(parsed_omm::NamedTuple)
-    _omm_check_mandatory_fields(parsed_omm)
+function _omm_assemble(
+    version::Union{Nothing, Float64},
+    header_fields::Dict{Symbol, Any},
+    metadata_fields::Dict{Symbol, Any},
+    data_fields::Dict{Symbol, Any}
+)
+    # == Version ===========================================================================
 
-    data = parsed_omm.data
+    isnothing(version) && throw(ArgumentError(
+        "The OMM is missing the required format version (`CCSDS_OMM_VERS`)."
+    ))
 
-    covariance_matrix = isnothing(data.covariance_matrix) ?
-        nothing :
-        OmmCovarianceMatrix(; data.covariance_matrix...)
+    version ∈ (2.0, 3.0) || throw(ArgumentError("Unsupported OMM version: $version."))
+
+    omm_version = VersionNumber(string(version))
+
+    # == Mandatory Fields ==================================================================
+
+    _omm_check_mandatory_fields(omm_version, header_fields, metadata_fields, data_fields)
+
+    # == Assembling ========================================================================
+
+    covariance_fields = get(data_fields, :covariance_matrix, nothing)
+
+    !isnothing(covariance_fields) &&
+        (data_fields[:covariance_matrix] = OmmCovarianceMatrix(; covariance_fields...))
 
     return OrbitMeanElementsMessage(
+        omm_version,
+        OmmHeader(; header_fields...),
+        OmmMetadata(; metadata_fields...),
+        OmmData(; data_fields...),
+    )
+end
+
+function _omm_assemble(parsed_omm::NamedTuple)
+    return _omm_assemble(
         parsed_omm.version,
-        OmmHeader(; parsed_omm.header...),
-        OmmMetadata(; parsed_omm.metadata...),
-        OmmData(; data..., covariance_matrix),
+        parsed_omm.header_fields,
+        parsed_omm.metadata_fields,
+        parsed_omm.data_fields
     )
 end

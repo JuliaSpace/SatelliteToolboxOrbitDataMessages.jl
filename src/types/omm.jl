@@ -18,7 +18,7 @@ export OrbitMeanElementsMessage, OmmCovarianceMatrix
 @kwdef struct OmmHeader
     comments::Vector{String} = String[]
     classification::Union{String, Nothing} = nothing
-    creation_date::Union{NanoDate, Nothing}
+    creation_date::Union{NanoDate, Nothing} = nothing
     originator::String
     message_id::Union{String, Nothing} = nothing
 end
