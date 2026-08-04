@@ -48,11 +48,7 @@ an OMM message, an empty vector is returned. If the root tag is not recognized, 
     (**Default**: `true`)
 """
 function parse_omms(str::AbstractString; strict::Bool = true)
-    messages = parse_odm(str; strict)
-
-    return OrbitMeanElementsMessage[
-        message for message in messages if message isa OrbitMeanElementsMessage
-    ]
+    return _xml_omms__parse(str, strict)
 end
 
 ############################################################################################
