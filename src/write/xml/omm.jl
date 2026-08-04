@@ -75,19 +75,25 @@ end
     _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage) -> Nothing
 
 Add the OMM tags from the given `omm` message to the `parent` XML node.
+
+The tags of each section are obtained automatically from the corresponding keyword
+mapping (see `_xml_omm__add_section_tags!`), so the output follows the keyword order
+defined by the CCSDS 502.0-B-3 standard.
 """
 function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
+    data = omm.data
+
     # == Header ============================================================================
 
-    header = omm.header
     header_node = XML.Element("header")
     push!(parent, header_node)
 
-    foreach(comment -> _xml_add_tag!(header_node, "COMMENT", comment), header.comments)
-    _xml_add_tag!(header_node, "CLASSIFICATION", header.classification)
-    _xml_add_tag!(header_node, "CREATION_DATE",  header.creation_date)
-    _xml_add_tag!(header_node, "ORIGINATOR",     header.originator)
-    _xml_add_tag!(header_node, "MESSAGE_ID",     header.message_id)
+    _xml_omm__add_section_tags!(
+        header_node,
+        omm.header,
+        _OMM_HEADER_KEYWORD_TO_FIELD,
+        omm.header.comments
+    )
 
     # == Body ==============================================================================
 
@@ -99,22 +105,18 @@ function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
 
     # -- Metadata --------------------------------------------------------------------------
 
-    metadata = omm.metadata
     metadata_node = XML.Element("metadata")
     push!(segment_node, metadata_node)
 
-    foreach(comment -> _xml_add_tag!(metadata_node, "COMMENT", comment), metadata.comments)
-    _xml_add_tag!(metadata_node, "OBJECT_NAME",         metadata.object_name)
-    _xml_add_tag!(metadata_node, "OBJECT_ID",           metadata.object_id)
-    _xml_add_tag!(metadata_node, "CENTER_NAME",         metadata.center_name)
-    _xml_add_tag!(metadata_node, "REF_FRAME",           metadata.ref_frame)
-    _xml_add_tag!(metadata_node, "REF_FRAME_EPOCH",     metadata.ref_frame_epoch)
-    _xml_add_tag!(metadata_node, "TIME_SYSTEM",         metadata.time_system)
-    _xml_add_tag!(metadata_node, "MEAN_ELEMENT_THEORY", metadata.mean_element_theory)
+    _xml_omm__add_section_tags!(
+        metadata_node,
+        omm.metadata,
+        _OMM_METADATA_KEYWORD_TO_FIELD,
+        omm.metadata.comments
+    )
 
     # -- Data ------------------------------------------------------------------------------
 
-    data = omm.data
     data_node = XML.Element("data")
     push!(segment_node, data_node)
 
@@ -122,105 +124,96 @@ function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
 
     # .. Mean Keplerian Elements ...........................................................
 
-    mean_kep_node = XML.Element("meanElements")
-    push!(data_node, mean_kep_node)
+    mean_elements_node = XML.Element("meanElements")
+    push!(data_node, mean_elements_node)
 
-    foreach(
-        comment -> _xml_add_tag!(mean_kep_node, "COMMENT", comment),
-        data.mean_elements_comments,
+    _xml_omm__add_section_tags!(
+        mean_elements_node,
+        data,
+        _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD,
+        data.mean_elements_comments
     )
-    _xml_add_tag!(mean_kep_node, "EPOCH",             data.epoch)
-    _xml_add_tag!(mean_kep_node, "SEMI_MAJOR_AXIS",   data.semi_major_axis)
-    _xml_add_tag!(mean_kep_node, "MEAN_MOTION",       data.mean_motion)
-    _xml_add_tag!(mean_kep_node, "ECCENTRICITY",      data.eccentricity)
-    _xml_add_tag!(mean_kep_node, "INCLINATION",       data.inclination)
-    _xml_add_tag!(mean_kep_node, "RA_OF_ASC_NODE",    data.raan)
-    _xml_add_tag!(mean_kep_node, "ARG_OF_PERICENTER", data.arg_of_pericenter)
-    _xml_add_tag!(mean_kep_node, "MEAN_ANOMALY",      data.mean_anomaly)
-    _xml_add_tag!(mean_kep_node, "GM",                data.GM)
 
     # .. Spacecraft Parameters .............................................................
 
-    sc_params_node = XML.Element("spacecraftParameters")
+    # The optional sections are only added to the document if they contain any tag.
+    spacecraft_parameters_node = XML.Element("spacecraftParameters")
 
-    foreach(
-        comment -> _xml_add_tag!(sc_params_node, "COMMENT", comment),
-        data.spacecraft_parameters_comments,
+    _xml_omm__add_section_tags!(
+        spacecraft_parameters_node,
+        data,
+        _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD,
+        data.spacecraft_parameters_comments
     )
-    _xml_add_tag!(sc_params_node, "MASS",            data.mass)
-    _xml_add_tag!(sc_params_node, "SOLAR_RAD_AREA",  data.solar_rad_area)
-    _xml_add_tag!(sc_params_node, "SOLAR_RAD_COEFF", data.solar_rad_coeff)
-    _xml_add_tag!(sc_params_node, "DRAG_AREA",       data.drag_area)
-    _xml_add_tag!(sc_params_node, "DRAG_COEFF",      data.drag_coeff)
 
-    isempty(children(sc_params_node)) || push!(data_node, sc_params_node)
+    isempty(children(spacecraft_parameters_node)) ||
+        push!(data_node, spacecraft_parameters_node)
 
     # .. TLE Related Parameters ............................................................
 
-    tle_params_node = XML.Element("tleParameters")
+    tle_parameters_node = XML.Element("tleParameters")
 
-    foreach(
-        comment -> _xml_add_tag!(tle_params_node, "COMMENT", comment),
-        data.tle_parameters_comments,
+    _xml_omm__add_section_tags!(
+        tle_parameters_node,
+        data,
+        _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD,
+        data.tle_parameters_comments
     )
-    _xml_add_tag!(tle_params_node, "EPHEMERIS_TYPE",      data.ephemeris_type)
-    _xml_add_tag!(tle_params_node, "CLASSIFICATION_TYPE", data.classification_type)
-    _xml_add_tag!(tle_params_node, "NORAD_CAT_ID",        data.norad_cat_id)
-    _xml_add_tag!(tle_params_node, "ELEMENT_SET_NO",      data.element_set_number)
-    _xml_add_tag!(tle_params_node, "REV_AT_EPOCH",        data.rev_at_epoch)
-    _xml_add_tag!(tle_params_node, "BSTAR",               data.bstar)
-    _xml_add_tag!(tle_params_node, "BTERM",               data.bterm)
-    _xml_add_tag!(tle_params_node, "MEAN_MOTION_DOT",     data.mean_motion_dot)
-    _xml_add_tag!(tle_params_node, "MEAN_MOTION_DDOT",    data.mean_motion_ddot)
-    _xml_add_tag!(tle_params_node, "AGOM",                data.agom)
 
-    isempty(children(tle_params_node)) || push!(data_node, tle_params_node)
+    isempty(children(tle_parameters_node)) || push!(data_node, tle_parameters_node)
 
     # .. Covariance Matrix .................................................................
 
     if !isnothing(data.covariance_matrix)
-        cov = data.covariance_matrix
-        cov_node = XML.Element("covarianceMatrix")
+        covariance_matrix = data.covariance_matrix
+        covariance_matrix_node = XML.Element("covarianceMatrix")
 
-        foreach(comment -> _xml_add_tag!(cov_node, "COMMENT", comment), cov.comments)
-        _xml_add_tag!(cov_node, "COV_REF_FRAME",  cov.cov_ref_frame)
-        _xml_add_tag!(cov_node, "CX_X",           cov.cx_x)
-        _xml_add_tag!(cov_node, "CY_X",           cov.cy_x)
-        _xml_add_tag!(cov_node, "CY_Y",           cov.cy_y)
-        _xml_add_tag!(cov_node, "CZ_X",           cov.cz_x)
-        _xml_add_tag!(cov_node, "CZ_Y",           cov.cz_y)
-        _xml_add_tag!(cov_node, "CZ_Z",           cov.cz_z)
-        _xml_add_tag!(cov_node, "CX_DOT_X",       cov.cx_dot_x)
-        _xml_add_tag!(cov_node, "CX_DOT_Y",       cov.cx_dot_y)
-        _xml_add_tag!(cov_node, "CX_DOT_Z",       cov.cx_dot_z)
-        _xml_add_tag!(cov_node, "CX_DOT_X_DOT",   cov.cx_dot_x_dot)
-        _xml_add_tag!(cov_node, "CY_DOT_X",       cov.cy_dot_x)
-        _xml_add_tag!(cov_node, "CY_DOT_Y",       cov.cy_dot_y)
-        _xml_add_tag!(cov_node, "CY_DOT_Z",       cov.cy_dot_z)
-        _xml_add_tag!(cov_node, "CY_DOT_X_DOT",   cov.cy_dot_x_dot)
-        _xml_add_tag!(cov_node, "CY_DOT_Y_DOT",   cov.cy_dot_y_dot)
-        _xml_add_tag!(cov_node, "CZ_DOT_X",       cov.cz_dot_x)
-        _xml_add_tag!(cov_node, "CZ_DOT_Y",       cov.cz_dot_y)
-        _xml_add_tag!(cov_node, "CZ_DOT_Z",       cov.cz_dot_z)
-        _xml_add_tag!(cov_node, "CZ_DOT_X_DOT",   cov.cz_dot_x_dot)
-        _xml_add_tag!(cov_node, "CZ_DOT_Y_DOT",   cov.cz_dot_y_dot)
-        _xml_add_tag!(cov_node, "CZ_DOT_Z_DOT",   cov.cz_dot_z_dot)
+        _xml_omm__add_section_tags!(
+            covariance_matrix_node,
+            covariance_matrix,
+            _OMM_COVARIANCE_KEYWORD_TO_FIELD,
+            covariance_matrix.comments
+        )
 
-        push!(data_node, cov_node)
+        push!(data_node, covariance_matrix_node)
     end
 
     # .. User-Defined Parameters ...........................................................
 
     if !isnothing(data.user_defined_parameters)
-        user_defined_parameter_nodes = XML.Element("userDefinedParameters")
+        user_defined_parameters_node = XML.Element("userDefinedParameters")
 
         for (key, value) in data.user_defined_parameters
             child = XML.Element("USER_DEFINED"; parameter = key)
             push!(child, XML.Text(_ndm_render_value(value)))
-            push!(user_defined_parameter_nodes, child)
+            push!(user_defined_parameters_node, child)
         end
 
-        push!(data_node, user_defined_parameter_nodes)
+        push!(data_node, user_defined_parameters_node)
+    end
+
+    return nothing
+end
+
+"""
+    _xml_omm__add_section_tags!(node::XML.Node, section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix}, mapping::Vector{Pair{String, Symbol}}, comments::Vector{String}) -> Nothing
+
+Add the tags of the OMM `section` to the XML `node`. The added tags and their fields are
+given by `mapping`, whose order is preserved in the output, and the section `comments` are
+added before the fields.
+
+Fields whose value is `nothing` are omitted from the output.
+"""
+function _xml_omm__add_section_tags!(
+    node::XML.Node,
+    section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix},
+    mapping::Vector{Pair{String, Symbol}},
+    comments::Vector{String}
+)
+    foreach(comment -> _xml_add_tag!(node, "COMMENT", comment), comments)
+
+    for (keyword, field) in mapping
+        _xml_add_tag!(node, keyword, getfield(section, field))
     end
 
     return nothing
