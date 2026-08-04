@@ -25,6 +25,7 @@ include("./api.jl")
 #                                         Includes                                         #
 ############################################################################################
 
+include("./misc.jl")
 include("./printing.jl")
 include("./show.jl")
 include("./xml.jl")
