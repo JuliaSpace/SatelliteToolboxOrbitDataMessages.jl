@@ -4,7 +4,7 @@
 #
 ############################################################################################
 
-export read_omm
+export read_omm, read_omms
 
 """
     read_omm(file::AbstractString; kwargs...) -> Union{Nothing, OrbitMeanElementsMessage}
@@ -15,17 +15,44 @@ Read an Orbit Mean-Elements Message (OMM) from the provided `file`.
 
 Read an Orbit Mean-Elements Message (OMM) from the provided `io` stream.
 
+If the input contains multiple messages, only the first OMM is returned. If it does not
+contain an OMM, `nothing` is returned. For more information, see [`parse_omm`](@ref).
+
 # Keywords
 
-- `strict::Bool`: Require schema-defined XML tag casing.
+- `file_type::Symbol`: The input file type. If `:auto`, the file type is inferred from the
+    content. It can be `:auto`, `:kvn`, or `:xml`.
+    (**Default**: `:auto`)
+- `strict::Bool`: Require schema-defined XML tag casing. If `false`, match tags and the OMM
+    `id` attribute value case-insensitively.
     (**Default**: `true`)
 """
-function read_omm(file::AbstractString; strict::Bool = true)
-    # Read the file and parse the OMM.
-    return parse_omm(read(file, String); strict)
-end
+read_omm(file::AbstractString; kwargs...) = parse_omm(read(file, String); kwargs...)
 
-function read_omm(io::IO; strict::Bool = true)
-    str = read(io, String)
-    return parse_omm(str; strict)
-end
+read_omm(io::IO; kwargs...) = parse_omm(read(io, String); kwargs...)
+
+"""
+    read_omms(file::AbstractString; kwargs...) -> Vector{OrbitMeanElementsMessage}
+
+Read a set of Orbit Mean-Elements Messages (OMM) from the provided `file`.
+
+    read_omms(io::IO; kwargs...) -> Vector{OrbitMeanElementsMessage}
+
+Read a set of Orbit Mean-Elements Messages (OMM) from the provided `io` stream.
+
+If the input contains messages of other types, only the OMMs are returned. If it does not
+contain an OMM, an empty vector is returned. For more information, see
+[`parse_omms`](@ref).
+
+# Keywords
+
+- `file_type::Symbol`: The input file type. If `:auto`, the file type is inferred from the
+    content. It can be `:auto`, `:kvn`, or `:xml`.
+    (**Default**: `:auto`)
+- `strict::Bool`: Require schema-defined XML tag casing. If `false`, match tags and the OMM
+    `id` attribute value case-insensitively.
+    (**Default**: `true`)
+"""
+read_omms(file::AbstractString; kwargs...) = parse_omms(read(file, String); kwargs...)
+
+read_omms(io::IO; kwargs...) = parse_omms(read(io, String); kwargs...)

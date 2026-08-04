@@ -91,6 +91,22 @@
         @test ud1 == ud2
     end
 
+    # == read_omms =========================================================================
+
+    @testset "read_omms" begin
+        # Reading a single-OMM file returns a single-element vector.
+        omms = read_omms(_FIXTURE_FILE)
+        @test omms == [omm_file]
+
+        # Reading an NDM file returns every wrapped OMM.
+        omms = read_omms(_NDM_FIXTURE_FILE)
+        @test omms == read_odm(_NDM_FIXTURE_FILE)
+
+        # Reading from an IO stream agrees with reading from a file.
+        omms_io = open(read_omms, _FIXTURE_FILE, "r")
+        @test omms_io == [omm_file]
+    end
+
     # == write_odm (Vector Form) + Re-Parse ================================================
 
     @testset "write_odm Vector Round-Trip" begin
