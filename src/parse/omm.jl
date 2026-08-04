@@ -256,6 +256,26 @@ const _OMM_FIELD_TYPE = Dict{Symbol, DataType}(
     :cov_ref_frame       => String,
 )
 
+# Physical units of the OMM fields as defined by the CCSDS 502.0-B-3 standard. Fields
+# that are not listed here are dimensionless.
+const _OMM_FIELD_UNIT = Dict{Symbol, String}(
+    :semi_major_axis   => "km",
+    :mean_motion       => "rev/day",
+    :inclination       => "deg",
+    :raan              => "deg",
+    :arg_of_pericenter => "deg",
+    :mean_anomaly      => "deg",
+    :GM                => "km**3/s**2",
+    :mass              => "kg",
+    :solar_rad_area    => "m**2",
+    :drag_area         => "m**2",
+    :bstar             => "1/ER",
+    :bterm             => "m**2/kg",
+    :mean_motion_dot   => "rev/day**2",
+    :mean_motion_ddot  => "rev/day**3",
+    :agom              => "m**2/kg",
+)
+
 """
     _omm_field_type(field::Symbol) -> DataType
 
@@ -263,6 +283,14 @@ Return the type of the OMM `field` as defined in `_OMM_FIELD_TYPE`, defaulting t
 `Float64`.
 """
 _omm_field_type(field::Symbol) = get(_OMM_FIELD_TYPE, field, Float64)
+
+"""
+    _omm_field_unit(field::Symbol) -> Union{Nothing, String}
+
+Return the physical unit of the OMM `field` as defined in `_OMM_FIELD_UNIT`, or `nothing`
+if the field is dimensionless.
+"""
+_omm_field_unit(field::Symbol) = get(_OMM_FIELD_UNIT, field, nothing)
 
 """
     _omm_parse_field(::Type{T}, value::AbstractString, keyword::AbstractString) -> T

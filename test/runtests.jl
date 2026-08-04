@@ -43,6 +43,7 @@ include("helpers.jl")
     @testset "Serialization" verbose = true begin
         include("serialization/write.jl")
         include("serialization/round_trip.jl")
+        include("serialization/kvn.jl")
     end
 
     @testset "Fetchers" verbose = true begin

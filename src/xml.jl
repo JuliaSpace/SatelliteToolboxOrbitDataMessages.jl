@@ -11,25 +11,13 @@
 """
     _xml_add_tag!(parent::XML.Node, tag::String, value::Any) -> Nothing
 
-Add a child XML tag to `parent` with the given `tag` name and `value`.
+Add a child XML tag to `parent` with the given `tag` name and `value`, rendered with
+[`_ndm_render_value`](@ref). If `value` is `nothing`, no tag is added.
 """
 function _xml_add_tag!(parent::XML.Node, tag::String, value::Any)
     isnothing(value) && return nothing
     child = XML.Element(tag)
-    push!(child, XML.Text(_xml_render(value)))
+    push!(child, XML.Text(_ndm_render_value(value)))
     push!(parent, child)
     return nothing
-end
-
-"""
-    _xml_render(value::T) -> String
-
-Render the given `value` of type `T` as a string suitable for XML.
-
-`NanoDate` values are rendered with nanosecond precision (`yyyy-mm-ddTHH:MM:SS.sssssssss`).
-"""
-_xml_render(value::String) = value
-_xml_render(value::Any) = string(value)
-function _xml_render(value::NanoDate)
-    return Dates.format(value, dateformat"yyyy-mm-ddTHH:MM:SS.sssssssss")
 end

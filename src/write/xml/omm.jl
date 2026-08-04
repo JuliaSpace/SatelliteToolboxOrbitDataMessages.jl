@@ -12,6 +12,11 @@ the XML declaration is included.
 
 The written version is always `3.0`, regardless of the version stored in the `omm`. This
 matches the schema against which the output is validated.
+
+    _xml_omm__write(io::IO, vomm::AbstractVector{OrbitMeanElementsMessage}) -> Nothing
+
+Write the set of Orbit Mean-Elements Messages in the vector `vomm` to the provided `io`
+stream as a Navigation Data Message (NDM) XML document.
 """
 function _xml_omm__write(io::IO, omm::OrbitMeanElementsMessage)
     doc = XML.Document()
@@ -37,6 +42,12 @@ function _xml_omm__write(io::IO, omm::OrbitMeanElementsMessage)
     XML.write(io, doc)
 
     return nothing
+end
+
+function _xml_omm__write(io::IO, vomm::AbstractVector{OrbitMeanElementsMessage})
+    # A set of messages is written as an NDM document, which is already implemented by the
+    # ODM writer.
+    return _xml_odm__write(io, vomm)
 end
 
 """
@@ -205,7 +216,7 @@ function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
 
         for (key, value) in data.user_defined_parameters
             child = XML.Element("USER_DEFINED"; parameter = key)
-            push!(child, XML.Text(_xml_render(value)))
+            push!(child, XML.Text(_ndm_render_value(value)))
             push!(user_defined_parameter_nodes, child)
         end
 

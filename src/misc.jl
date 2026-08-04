@@ -5,6 +5,23 @@
 ############################################################################################
 
 """
+    _ndm_render_value(value::Any) -> String
+
+Render the given `value` as a string suitable for NDM outputs (e.g. XML or KVN).
+
+`NanoDate` values are rendered with nanosecond precision
+(`yyyy-mm-ddTHH:MM:SS.sssssssss`), whereas the other types use their default string
+representation. Notice that, for `AbstractFloat`, this representation is the shortest one
+that round-trips exactly, avoiding any loss of precision.
+"""
+_ndm_render_value(value::String) = value
+_ndm_render_value(value::Any) = string(value)
+
+function _ndm_render_value(value::NanoDate)
+    return Dates.format(value, dateformat"yyyy-mm-ddTHH:MM:SS.sssssssss")
+end
+
+"""
     _parse_ndm_date(str::AbstractString) -> Union{Nothing, NanoDate}
 
 Parse an NDM date/time string into a `NanoDate`, returning `nothing` if `str` is empty or
