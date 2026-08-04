@@ -226,5 +226,5 @@ cov = OmmCovarianceMatrix(;
 
 omm = OrbitMeanElementsMessage(omm; covariance_matrix = cov)
 
-omm.body.segment.data.covariance_matrix.cov_ref_frame
+omm.data.covariance_matrix.cov_ref_frame
 ```

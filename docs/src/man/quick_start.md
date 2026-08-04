@@ -56,17 +56,17 @@ Assuming the string above is stored in the variable `omm_xml`, we can parse it i
 omm = parse_omm(omm_xml)
 ```
 
-The message fields are organized following the CCSDS standard hierarchy (header, metadata,
-and data). We can access them directly:
+The message fields are organized into the three sections defined by the CCSDS standard
+(header, metadata, and data). We can access them directly:
 
 ```@repl quick_start
 omm.header.originator
 
-omm.body.segment.metadata.object_name
+omm.metadata.object_name
 
-omm.body.segment.data.epoch
+omm.data.epoch
 
-omm.body.segment.data.inclination
+omm.data.inclination
 ```
 
 The package also provides accessor functions that flatten this hierarchy. They live in the

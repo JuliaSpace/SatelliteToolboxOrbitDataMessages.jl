@@ -7,21 +7,22 @@ ecosystem.
 
 The Orbit Data Messages standard defines a set of message types to exchange orbit
 information between space agencies, operators, and applications. This package currently
-supports the following message types in the **XML** format:
+supports the following message types:
 
-| **Message**                          | **Abbreviation** | **Status**              |
-|:-------------------------------------|:-----------------|:------------------------|
-| Orbit Mean-Elements Message          | `OMM`            | Read / Write / Fetch    |
-| Navigation Data Message              | `NDM`            | Read / Write (OMM only) |
-| Orbit Parameter Message              | `OPM`            | Not supported yet       |
-| Orbit Ephemeris Message              | `OEM`            | Not supported yet       |
-| Orbit Comprehensive Message          | `OCM`            | Not supported yet       |
+| **Message**                          | **Abbreviation** | **Formats**  | **Status**              |
+|:-------------------------------------|:-----------------|:-------------|:------------------------|
+| Orbit Mean-Elements Message          | `OMM`            | XML and KVN  | Read / Write / Fetch    |
+| Navigation Data Message              | `NDM`            | XML          | Read / Write (OMM only) |
+| Orbit Parameter Message              | `OPM`            | —            | Not supported yet       |
+| Orbit Ephemeris Message              | `OEM`            | —            | Not supported yet       |
+| Orbit Comprehensive Message          | `OCM`            | —            | Not supported yet       |
 
 With this package you can:
 
 - Build an [`OrbitMeanElementsMessage`](@ref) from scratch using a keyword constructor;
-- Parse OMMs and NDMs from XML strings or files;
-- Write OMMs and NDMs to XML files;
+- Parse OMMs and NDMs from strings or files in the XML and KVN formats, with automatic
+  format detection;
+- Write OMMs and NDMs to XML and KVN files;
 - Fetch the latest orbit data directly from the [Celestrak](https://celestrak.org) and
   [Space-Track](https://www.space-track.org) services; and
 - Convert an OMM into a

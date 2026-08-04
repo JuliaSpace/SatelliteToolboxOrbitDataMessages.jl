@@ -18,17 +18,24 @@ sample_file = tempname() * ".xml"
 write(sample_file, sample_xml)
 ```
 
-Besides working with XML strings directly (see [Parsing Messages](@ref Parsing-Messages)),
-this package can read messages from files on disk and serialize them back to the XML format
-defined by CCSDS 502.0-B-3.
+Besides working with strings directly (see [Parsing Messages](@ref Parsing-Messages)),
+this package can read messages from files on disk and serialize them back to the XML and
+KVN formats defined by CCSDS 502.0-B-3.
 
 ## Reading From a File
 
-Assume the variable `sample_file` holds the path to an XML file containing a
-CCSDS-compliant OMM. We can load it with [`read_omm`](@ref):
+Assume the variable `sample_file` holds the path to a file containing a CCSDS-compliant
+OMM, in either the XML or the KVN format. We can load it with [`read_omm`](@ref):
 
 ```@repl rw
 omm = read_omm(sample_file)
+```
+
+If the file may contain several messages, use [`read_omms`](@ref) to retrieve all OMMs as
+a vector:
+
+```@repl rw
+omms = read_omms(sample_file)
 ```
 
 To read a generic Orbit Data Message — which may be a single message or a Navigation Data
@@ -38,15 +45,26 @@ Message (NDM) bundling several messages — use [`read_odm`](@ref):
 odm = read_odm(sample_file)
 ```
 
-Both functions simply read the file contents and forward them to the corresponding parsing
-function, so the return values follow the same rules described in
-[Parsing Messages](@ref Parsing-Messages).
+All functions simply read the file contents and forward them to the corresponding parsing
+function, so the input format is detected automatically and the return values follow the
+same rules described in [Parsing Messages](@ref Parsing-Messages).
 
 ## Writing to a File
 
-Given an [`OrbitMeanElementsMessage`](@ref) object, we can serialize it to XML using
-[`write_omm`](@ref). The function receives an `IO` stream, which makes it easy to write to a
-file or inspect the output in memory:
+Given an [`OrbitMeanElementsMessage`](@ref) object, we can serialize it with
+[`write_omm`](@ref). The function accepts a file path, inferring the output format from
+the extension (case-insensitive): `.kvn` selects the KVN format, whereas any other
+extension selects the XML format. The `file_type` keyword (`:auto`, `:xml`, or `:kvn`)
+overrides the inference:
+
+```julia
+write_omm("amazonia_1.xml", omm)                    # XML output.
+write_omm("amazonia_1.kvn", omm)                    # KVN output.
+write_omm("amazonia_1.omm", omm; file_type = :kvn)  # KVN output with another extension.
+```
+
+The function also receives an `IO` stream, which makes it easy to inspect the output in
+memory. In this case, the default output format is XML:
 
 ```@repl rw
 io = IOBuffer();
@@ -56,26 +74,33 @@ write_omm(io, omm)
 print(String(take!(io)))
 ```
 
-To write directly to a file, open the file in write mode and pass the stream:
+The same message in the KVN format:
 
-```julia
-open("amazonia_1.xml", "w") do io
-    write_omm(io, omm)
-end
+```@repl rw
+write_omm(io, omm; file_type = :kvn)
+
+print(String(take!(io)))
 ```
 
-## Writing Several Messages as an NDM
+## Writing Several Messages
 
-The [`write_odm`](@ref) function can serialize either a single message or a **vector** of
-messages. When a vector is provided, all messages are wrapped inside a single Navigation
-Data Message (`<ndm>`) root element:
+[`write_omm`](@ref) also accepts a **vector** of messages. In the XML format, all messages
+are wrapped inside a single Navigation Data Message (`<ndm>`) root element, whereas in the
+KVN format they are written sequentially, each one starting at its `CCSDS_OMM_VERS`
+keyword:
 
 ```julia
 omms = [omm1, omm2, omm3]
 
-open("catalog.xml", "w") do io
-    write_odm(io, omms)
-end
+write_omm("catalog.xml", omms)
+write_omm("catalog.kvn", omms)
+```
+
+The [`write_odm`](@ref) function provides the same functionality for generic Orbit Data
+Messages, always using the NDM/XML output:
+
+```julia
+write_odm("catalog.xml", omms)
 ```
 
 This is convenient, for example, to persist the full set of messages returned by one of the
@@ -83,8 +108,8 @@ This is convenient, for example, to persist the full set of messages returned by
 
 !!! note
 
-    OMM elements are always written with version `3.0`, regardless of the version stored in
-    the parsed message, and target the NDM/XML schema. `NanoDate` values are written with
-    nine fractional digits, preserving nanosecond precision. Optional sections (spacecraft
-    parameters, TLE-related parameters, and user-defined parameters) are only written when
+    OMM messages are always written with version `3.0`, regardless of the version stored in
+    the parsed message. `NanoDate` values are written with nine fractional digits,
+    preserving nanosecond precision. Optional sections (spacecraft parameters, TLE-related
+    parameters, the covariance matrix, and user-defined parameters) are only written when
     the corresponding fields are present in the message.
