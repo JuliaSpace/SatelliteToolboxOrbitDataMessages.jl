@@ -21,11 +21,8 @@ Read an Orbit Mean-Elements Message (OMM) from the provided `io` stream.
     (**Default**: `true`)
 """
 function read_omm(file::AbstractString; strict::Bool = true)
-    # Open the file and parse the OMM.
-    open(file, "r") do io
-        str = read(io, String)
-        return parse_omm(str; strict)
-    end
+    # Read the file and parse the OMM.
+    return parse_omm(read(file, String); strict)
 end
 
 function read_omm(io::IO; strict::Bool = true)

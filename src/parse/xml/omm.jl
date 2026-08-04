@@ -93,22 +93,30 @@ function _xml_omm__parse_element(xml::XML.Cursor, strict::Bool)
         ))
     end
 
-    header_fields = nothing
-    segment = nothing
-    element_tags = String[]
+    # The OMM element must contain exactly one `header` followed by one `body`, so we
+    # only need to count the element children and check that the expected tag appears at
+    # each position.
+    header_fields  = nothing
+    segment        = nothing
+    valid_children = true
+    child_count    = 0
+
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
         lt = _xml_omm__tag(node, strict)
-        push!(element_tags, lt)
-        if lt == "header" && isnothing(header_fields)
+        child_count += 1
+
+        if (child_count == 1) && (lt == "header")
             header_fields = _xml_omm__parse_header(node, strict)
-        elseif lt == "body" && isnothing(segment)
+        elseif (child_count == 2) && (lt == "body")
             segment = _xml_omm__parse_body(node, strict)
         else
+            valid_children = false
             skip_element!(node)
         end
     end
-    element_tags == ["header", "body"] || throw(ArgumentError(
+
+    (valid_children && (child_count == 2)) || throw(ArgumentError(
         "The OMM element must contain exactly one `header` followed by one `body`."
     ))
 
