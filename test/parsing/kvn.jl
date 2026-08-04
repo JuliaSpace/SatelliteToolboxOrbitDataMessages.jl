@@ -84,6 +84,46 @@ end
         @test isempty(parse_omms(""; file_type = :kvn))
     end
 
+    @testset "Comments" begin
+        kvn_with_comments = """
+        CCSDS_OMM_VERS = 3.0
+        COMMENT Header comment 1
+        COMMENT Header comment 2
+        CREATION_DATE = 2025-12-30T23:36:37
+        ORIGINATOR = 18 SPCS
+        COMMENT Metadata comment
+        OBJECT_NAME = AMAZONIA 1
+        OBJECT_ID = 2021-015A
+        CENTER_NAME = EARTH
+        REF_FRAME = TEME
+        TIME_SYSTEM = UTC
+        MEAN_ELEMENT_THEORY = SGP4
+        COMMENT Mean elements comment
+        EPOCH = 2025-12-30T18:12:04.533984
+        MEAN_MOTION = 14.40772474
+        ECCENTRICITY = 0.00011240
+        INCLINATION = 98.3721
+        RA_OF_ASC_NODE = 75.0877
+        ARG_OF_PERICENTER = 97.3772
+        MEAN_ANOMALY = 262.7545
+        COMMENT Spacecraft comment
+        MASS = 640.0
+        COMMENT TLE comment
+        BSTAR = 0.0001
+        MEAN_MOTION_DOT = 0.0
+        MEAN_MOTION_DDOT = 0.0
+        COMMENT Trailing comment
+        """
+
+        omm = parse_omm(kvn_with_comments; file_type = :kvn)
+
+        @test omm.header.comments == ["Header comment 1", "Header comment 2"]
+        @test omm.metadata.comments == ["Metadata comment"]
+        @test omm.data.mean_elements_comments == ["Mean elements comment"]
+        @test omm.data.spacecraft_parameters_comments == ["Spacecraft comment"]
+        @test omm.data.tle_parameters_comments == ["TLE comment", "Trailing comment"]
+    end
+
     @testset "Automatic File Type Detection" begin
         @test parse_omm(kvn) isa OrbitMeanElementsMessage
         @test length(parse_omms(kvn)) == 1
