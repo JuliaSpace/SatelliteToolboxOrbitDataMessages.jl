@@ -128,14 +128,22 @@ matching the whitespace-collapse behavior of the XML schema types used by the CC
 502.0-B-3 standard.
 """
 function _xml_omm__scalar_value(xml::XML.Cursor)
-    result = ""
+    # The value is composed of a single text chunk in the vast majority of cases, so the
+    # chunks are only concatenated when a second one appears, avoiding intermediate string
+    # allocations.
+    result = nothing
+
     XML.@for_each_child xml node begin
         if nodetype(node) === XML.Text || nodetype(node) === XML.CData
-            result *= String(value(node))
+            chunk  = value(node)
+            result = isnothing(result) ? chunk : string(result, chunk)
         elseif nodetype(node) === Element
             skip_element!(node)
         end
     end
+
+    isnothing(result) && return ""
+
     return String(strip(result))
 end
 
