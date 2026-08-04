@@ -12,7 +12,7 @@
 const _KVN_KEYWORD_REGEX = r"^\s*(?<keyword>[0-9A-Z_]+)\s*=\s*(?<value>.*?)\s*(?:\[(?<unit>[^\]]*)\])?\s*$"
 
 # Regular expression for parsing a KVN comment line.
-const _KVN_COMMENT_REGEX = r"^(?:\s*)?COMMENT(?:\s*)(?<comment>.*)$"
+const _KVN_COMMENT_REGEX = r"^\s*COMMENT\s*(?<comment>.*)$"
 
 ############################################################################################
 #                                    Private Functions                                     #

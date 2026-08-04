@@ -5,10 +5,12 @@
 ############################################################################################
 
 """
-    _kvn_omm__parse(str::AbstractString) -> OrbitMeanElementsMessage
+    _kvn_omm__parse(str::AbstractString) -> NamedTuple
 
-Parse the Orbit Mean-Elements Message (OMM) in the KVN input `str` and return the parsed
-message.
+Parse the first Orbit Mean-Elements Message (OMM) in the KVN input `str`, returning the
+container `(; version, header_fields, metadata_fields, data_fields)` with the raw field
+values. The version and the mandatory fields are checked afterwards by
+[`_omm_assemble`](@ref).
 """
 function _kvn_omm__parse(str::AbstractString)
     version                 = nothing

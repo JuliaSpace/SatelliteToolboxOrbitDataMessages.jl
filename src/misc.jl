@@ -5,9 +5,10 @@
 ############################################################################################
 
 """
-    _parse_ndm_date(str::AbstractString) -> NanoDate
+    _parse_ndm_date(str::AbstractString) -> Union{Nothing, NanoDate}
 
-Parse an NDM date/time string into a `NanoDate`.
+Parse an NDM date/time string into a `NanoDate`, returning `nothing` if `str` is empty or
+contains only whitespace.
 
 The CCSDS 502.0-B-3 standard allows two formats for absolute time tags and epochs:
 
