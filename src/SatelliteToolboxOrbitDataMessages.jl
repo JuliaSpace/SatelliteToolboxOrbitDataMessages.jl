@@ -14,7 +14,7 @@ using HTTP
 using PrecompileTools
 using Scratch
 using Serialization
-using StyledStrings
+using StyledStrings: annotatedstring
 using URIs
 using XML
 
