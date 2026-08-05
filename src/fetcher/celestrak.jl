@@ -133,9 +133,12 @@ function fetch_omms(
 
     @info "Fetch OMMs from Celestrak using $query_type: \"$query_value\" ..."
 
-    # Assemble the URL.
-    query = "?" * query_param * "&FORMAT=xml"
-    url = fetcher.url * query
+    # Assemble the URL, preserving any query parameters already present in the endpoint.
+    base_uri  = URIs.URI(fetcher.url)
+    query_str =
+        isempty(base_uri.query) ? query_param * "&FORMAT=xml" :
+        base_uri.query * "&" * query_param * "&FORMAT=xml"
+    url = string(URIs.URI(base_uri; query = query_str))
 
     # Fetch the data.
     @debug "Fetch URL: $url"
@@ -166,7 +169,7 @@ function fetch_omms(
         return OrbitMeanElementsMessage[]
 
     elseif occursin("Invalid query", str)
-        throw(OdmFetchError("Invalid query: $query"; url = url))
+        throw(OdmFetchError("Invalid query: $query_str"; url = url))
     end
 
     return parse_omms(str; strict)
