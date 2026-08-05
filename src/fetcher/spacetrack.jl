@@ -662,5 +662,9 @@ function _spacetrack__save_cookiejar(cookiejar::HTTP.CookieJar, username::String
     cookie_file = joinpath(cache_dir, "cookies-$username")
     serialize(cookie_file, cookiejar.entries)
 
+    # The serialized cookie is a bearer credential for the Space-Track API, so it must not
+    # be readable by other users.
+    chmod(cookie_file, 0o600)
+
     return nothing
 end
