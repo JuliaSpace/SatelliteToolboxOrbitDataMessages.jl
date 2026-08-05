@@ -74,6 +74,31 @@
         end
     end
 
+    # == Invalid User-Defined Keys in KVN ==================================================
+
+    @testset "Invalid User-Defined Keys in KVN" begin
+        omm_bad = OrbitMeanElementsMessage(
+            omm; user_defined_parameters = ["bad key" => "1"]
+        )
+
+        # A name outside the KVN keyword grammar cannot be written back, so it must be
+        # rejected instead of producing an unparseable file.
+        @test_throws ArgumentError write_omm(IOBuffer(), omm_bad; file_type = :kvn)
+
+        # The XML format accepts arbitrary parameter names.
+        buf = IOBuffer()
+        write_omm(buf, omm_bad)
+        @test occursin("bad key", String(take!(buf)))
+
+        # The file method must reject the message before truncating the target.
+        mktempdir() do dir
+            file = joinpath(dir, "omm.kvn")
+            write(file, "precious content")
+            @test_throws ArgumentError write_omm(file, omm_bad)
+            @test read(file, String) == "precious content"
+        end
+    end
+
     # == Minimal XML (no optional sections) ================================================
 
     @testset "Minimal XML" begin

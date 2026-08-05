@@ -80,6 +80,6 @@ types are accepted here and skipped with a warning by the format-specific writer
 This function is format-agnostic so that every supported file type is validated by the
 same rules.
 """
-_odm_check_writable(omm::OrbitMeanElementsMessage) = _omm_check_writable(omm)
+_odm_check_writable(omm::OrbitMeanElementsMessage) = _omm_check_writable(omm, :xml)
 
 _odm_check_writable(::OrbitDataMessage) = nothing

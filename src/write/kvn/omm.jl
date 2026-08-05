@@ -20,6 +20,9 @@ const _KVN_OMM__VALUE_WIDTH = 15
 # the KVN parser.
 const _KVN_OMM__USER_DEFINED_PREFIX = "USER_DEFINED_"
 
+# Regular expression with the keyword grammar accepted by the KVN parser.
+const _KVN_OMM__KEYWORD_GRAMMAR_REGEX = r"^[0-9A-Z_]+$"
+
 ############################################################################################
 #                                    Private Functions                                     #
 ############################################################################################
@@ -149,6 +152,30 @@ end
 function _kvn_omm__write(io::IO, vomm::AbstractVector{OrbitMeanElementsMessage})
     for omm in vomm
         _kvn_omm__write(io, omm)
+    end
+
+    return nothing
+end
+
+"""
+    _kvn_omm__check_user_defined_keys(omm::OrbitMeanElementsMessage) -> Nothing
+
+Check if every user-defined parameter name in `omm` matches the KVN keyword grammar
+(uppercase letters, digits, and underscores), throwing an `ArgumentError` otherwise. Any
+other name would produce a KVN output that cannot be parsed back.
+"""
+function _kvn_omm__check_user_defined_keys(omm::OrbitMeanElementsMessage)
+    user_defined_parameters = omm.data.user_defined_parameters
+    isnothing(user_defined_parameters) && return nothing
+
+    for (key, _) in user_defined_parameters
+        occursin(_KVN_OMM__KEYWORD_GRAMMAR_REGEX, key) || throw(
+            ArgumentError(
+                "The user-defined parameter name \"$key\" cannot be written in the KVN " *
+                "format, whose keywords only accept uppercase letters, digits, and " *
+                "underscores.",
+            ),
+        )
     end
 
     return nothing

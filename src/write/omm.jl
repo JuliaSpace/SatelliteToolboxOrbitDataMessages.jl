@@ -40,7 +40,7 @@ The written version is always `3.0`, regardless of the version stored in the mes
 """
 function write_omm(io::IO, omm::OrbitMeanElementsMessage; file_type::Symbol = :xml)
     # Check if the message contains all fields required for writing.
-    _omm_check_writable(omm)
+    _omm_check_writable(omm, file_type)
 
     # Write the message using the desired file type.
     file_type == :xml && return _xml_omm__write(io, omm)
@@ -53,7 +53,7 @@ function write_omm(
     io::IO, vomm::AbstractVector{OrbitMeanElementsMessage}; file_type::Symbol = :xml
 )
     # Check if the messages contain all fields required for writing.
-    foreach(_omm_check_writable, vomm)
+    foreach(omm -> _omm_check_writable(omm, file_type), vomm)
 
     # Write the messages using the desired file type.
     file_type == :xml && return _xml_omm__write(io, vomm)
@@ -75,7 +75,11 @@ function write_omm(
     # existing output file.
     file_type ∈ (:xml, :kvn) || throw(ArgumentError("Unsupported file type: $file_type."))
 
-    omm isa AbstractVector ? foreach(_omm_check_writable, omm) : _omm_check_writable(omm)
+    if omm isa AbstractVector
+        foreach(o -> _omm_check_writable(o, file_type), omm)
+    else
+        _omm_check_writable(omm, file_type)
+    end
 
     open(file, "w") do io
         return write_omm(io, omm; file_type)
@@ -89,20 +93,23 @@ end
 ############################################################################################
 
 """
-    _omm_check_writable(omm::OrbitMeanElementsMessage) -> Nothing
+    _omm_check_writable(omm::OrbitMeanElementsMessage, file_type::Symbol) -> Nothing
 
-Check if `omm` contains all fields required to write an OMM 3.0 output, throwing an
-`ArgumentError` otherwise.
+Check if `omm` contains all fields required to write an OMM 3.0 output as `file_type`,
+throwing an `ArgumentError` otherwise.
 
-This function is format-agnostic so that every supported file type is validated by the same
-rules.
+The format-independent rules are shared by every file type, whereas `file_type` selects
+the additional format-specific rules (currently, the KVN keyword grammar for the
+user-defined parameter names).
 """
-function _omm_check_writable(omm::OrbitMeanElementsMessage)
+function _omm_check_writable(omm::OrbitMeanElementsMessage, file_type::Symbol)
     isnothing(omm.header.creation_date) &&
         throw(ArgumentError("Cannot write OMM 3.0 without a creation date."))
 
     isempty(omm.header.originator) &&
         throw(ArgumentError("Cannot write OMM 3.0 without an originator."))
+
+    file_type == :kvn && _kvn_omm__check_user_defined_keys(omm)
 
     return nothing
 end
