@@ -101,7 +101,8 @@ function convert(::Type{TLE}, omm::OrbitMeanElementsMessage)
         # == First Line ====================================================================
         satellite_number         = data.norad_cat_id,
         classification           = data.classification_type,
-        international_designator = _omm_object_id_to_tle_intl_designator(metadata.object_id),
+        international_designator =
+            _omm_object_id_to_tle_intl_designator(metadata.object_id),
         epoch_year               = epoch_year,
         epoch_day                = epoch_day,
         dn_o2                    = data.mean_motion_dot,

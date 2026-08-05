@@ -416,7 +416,8 @@ function fetch_omms(
             Δl = length(query_limits)
             Δl <= 0 && throw(
                 ArgumentError(
-                    "The end of the query limits must be greater than or equal to the start.",
+                    "The end of the query limits must be greater than or equal to the " *
+                    "start.",
                 ),
             )
 
@@ -464,21 +465,25 @@ function fetch_omms(
 
     space_data_str = string(space_data)
 
-    query_url = "$_SPACETRACK__URL/basicspacedata/query/class/$space_data_str$raw_query/format/xml"
+    query_url = string(
+        _SPACETRACK__URL, "/basicspacedata/query/class/", space_data_str, raw_query,
+        "/format/xml",
+    )
 
     @debug "Query URL: $query_url"
 
     # == Fetch Data ========================================================================
 
     response = try
-        HTTP.request("GET", query_url; cookiejar = fetcher.cookiejar, cookies   = true)
+        HTTP.request("GET", query_url; cookiejar = fetcher.cookiejar, cookies = true)
     catch e
         if e isa HTTP.Exceptions.StatusError
             if e.status == 401
                 _spacetrack__purge_cookiejar(fetcher.username)
                 throw(
                     OdmFetchError(
-                        "Unauthorized access. Create a new fetcher instance to log in again.";
+                        "Unauthorized access. Create a new fetcher instance to log in " *
+                        "again.";
                         url = query_url,
                         status = 401,
                     ),
@@ -635,7 +640,8 @@ function _spacetrack__login(username::String, password::Base.SecretBuffer)
             isempty(msg) && (msg = "No server response")
             throw(
                 OdmLoginError(
-                    "The Space-Track login request failed with HTTP status $(e.status): $msg",
+                    "The Space-Track login request failed with HTTP status " *
+                    "$(e.status): $msg",
                 ),
             )
         elseif e isa HTTP.Exceptions.HTTPError

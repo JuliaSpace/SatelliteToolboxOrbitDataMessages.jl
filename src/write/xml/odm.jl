@@ -19,7 +19,8 @@ function _xml_odm__write(io::IO, vodm::AbstractVector{T}) where {T <: OrbitDataM
     root = XML.Element(
         "ndm";
         var"xmlns:xsi" = "http://www.w3.org/2001/XMLSchema-instance",
-        var"xsi:noNamespaceSchemaLocation" = "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd",
+        var"xsi:noNamespaceSchemaLocation" =
+            "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd",
     )
     push!(doc, root)
 

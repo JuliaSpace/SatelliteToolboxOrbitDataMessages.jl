@@ -557,7 +557,8 @@ function OrbitMeanElementsMessage(;
             throw(ArgumentError("`mean_motion_dot` is required in TLE parameters."))
         (isnothing(mean_motion_ddot) == isnothing(agom)) && throw(
             ArgumentError(
-                "Exactly one of `mean_motion_ddot` and `agom` is required in TLE parameters.",
+                "Exactly one of `mean_motion_ddot` and `agom` is required in TLE " *
+                "parameters.",
             ),
         )
     end

@@ -116,7 +116,13 @@ function _render_field(
 end
 
 """
-    _print_node(io::IO, name::String, rail::String, connector::String, face::Symbol) -> Nothing
+    _print_node(
+        io::IO,
+        name::String,
+        rail::String,
+        connector::String,
+        face::Symbol
+    ) -> Nothing
 
 Print to `io` a tree node opening with the given `name` styled with `face`, preceded by
 `rail` (the ancestor tree rails) and `connector` (e.g., `"├─ "`, `"└─ "`, or `""` for a
@@ -130,7 +136,11 @@ function _print_node(io::IO, name::String, rail::String, connector::String, face
 end
 
 """
-    _print_fields(io::IO, fields::AbstractVector{NTuple{3, String}}, rail::String) -> Nothing
+    _print_fields(
+        io::IO,
+        fields::AbstractVector{NTuple{3, String}},
+        rail::String
+    ) -> Nothing
 
 Print to `io` the `fields`, each preceded by `rail` (the tree rails drawn before the field
 name). The field names are left-aligned to the widest name in `fields`.
