@@ -7,12 +7,17 @@
 # == OrbitMeanElementsMessage ==============================================================
 
 function Base.show(io::IO, omm::OrbitMeanElementsMessage)
-    obj_name = omm.metadata.object_name
-    obj_id   = omm.metadata.object_id
-    epoch    = omm.data.epoch
-    output   = "OMM: $obj_name [$obj_id] (Epoch = $epoch)"
-
-    print(io, output)
+    metadata = omm.metadata
+    print(
+        io,
+        "OMM: ",
+        metadata.object_name,
+        " [",
+        metadata.object_id,
+        "] (Epoch = ",
+        omm.data.epoch,
+        ")",
+    )
     return nothing
 end
 
@@ -104,9 +109,10 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     # -- Covariance Matrix -----------------------------------------------------------------
 
+    # Binding the `Union` field to a local lets the `isnothing` check narrow its type.
     cov_fields = NTuple{3, String}[]
-    if !isnothing(data.covariance_matrix)
-        cov = data.covariance_matrix
+    cov        = data.covariance_matrix
+    if !isnothing(cov)
         for comment in cov.comments
             _po!(cov_fields, "Comment", comment, "")
         end
@@ -136,9 +142,10 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     # -- User-Defined Parameters -----------------------------------------------------------
 
-    user_fields = NTuple{3, String}[]
-    if !isnothing(data.user_defined_parameters)
-        for (k, v) in data.user_defined_parameters
+    user_fields             = NTuple{3, String}[]
+    user_defined_parameters = data.user_defined_parameters
+    if !isnothing(user_defined_parameters)
+        for (k, v) in user_defined_parameters
             _po!(user_fields, k, v, "")
         end
     end
@@ -166,15 +173,16 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
     _print_fields(io, data_fields, "    ")
 
     # Build the list of present data subsections so the last one is closed with `└─`.
+    # Filtering a tuple returns a tuple, avoiding two vector allocations.
     data_sections = filter(
         s -> !isempty(s[2]),
-        [
+        (
             ("Mean Keplerian Elements", mean_elements_fields),
             ("Spacecraft Parameters", spacecraft_fields),
             ("TLE Related Parameters", tle_fields),
             ("Covariance Matrix", cov_fields),
             ("User-Defined Parameters", user_fields),
-        ],
+        ),
     )
 
     for (i, (title, fields)) in enumerate(data_sections)

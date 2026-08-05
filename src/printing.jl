@@ -55,15 +55,8 @@ _format_value(value) = string(value)
 
 Compute the maximum width of the field names in `fields`.
 """
-function _field_name_width(fields::AbstractVector{NTuple{3, String}})
-    max_width = 0
-
-    for field in fields
-        max_width = max(max_width, textwidth(field[1]))
-    end
-
-    return max_width
-end
+_field_name_width(fields::AbstractVector{NTuple{3, String}}) =
+    maximum(f -> textwidth(f[1]), fields; init = 0)
 
 """
     _push_output!(
