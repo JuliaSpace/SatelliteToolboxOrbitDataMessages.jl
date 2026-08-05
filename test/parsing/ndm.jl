@@ -36,7 +36,10 @@
     end
 
     @testset "Non-Element Nodes" begin
-        xml = replace(ndm_xml, "<ndm>" => "<ndm>\n<!-- container comment -->")
+        # The `<ndm>` opening tag carries attributes, so the comment node is inserted by
+        # anchoring on the first tag end, which belongs to it.
+        xml = replace(ndm_xml, "\">" => "\">\n<!-- container comment -->"; count = 1)
+        @test occursin("container comment", xml)
         @test length(parse_omms(xml)) == 2
         @test length(parse_odm(xml)) == 2
     end
