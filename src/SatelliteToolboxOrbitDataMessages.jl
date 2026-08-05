@@ -1,3 +1,12 @@
+"""
+    module SatelliteToolboxOrbitDataMessages
+
+Create, fetch, parse, and write CCSDS Orbit Data Messages (ODM).
+
+The package currently supports Orbit Mean-Elements Messages (OMM) in the XML and KVN
+formats, including Navigation Data Messages (NDM) that wrap multiple messages in XML, and
+fetching OMMs from the Celestrak and Space-Track services.
+"""
 module SatelliteToolboxOrbitDataMessages
 
 using Dates
@@ -9,7 +18,7 @@ using StyledStrings
 using URIs
 using XML
 
-import Base: ==, show
+import Base: ==
 import NanoDates: NanoDate
 
 ############################################################################################

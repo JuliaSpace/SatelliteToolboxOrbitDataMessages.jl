@@ -12,14 +12,13 @@
 [![License](https://img.shields.io/github/license/JuliaSpace/SatelliteToolboxOrbitDataMessages.jl?style=flat-square&logo=readme&logoColor=white&labelColor=475569&color=0284C7)](https://github.com/JuliaSpace/SatelliteToolboxOrbitDataMessages.jl/blob/main/LICENSE)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21380011-DB2777?style=flat-square&logo=doi&logoColor=white&labelColor=475569)](https://zenodo.org/doi/10.5281/zenodo.21380011)
 
-This package allows creating, fetching, and parsing Orbit Data Messages (ODM) as described
-in the [CCSDS 502.0-B-3 standard](https://ccsds.org/Pubs/502x0b3e1.pdf).
+This package allows creating, fetching, parsing, and writing Orbit Data Messages (ODM) as
+described in the [CCSDS 502.0-B-3 standard](https://ccsds.org/Pubs/502x0b3e1.pdf).
 
-We currently support only parsing and fetching ODM files in the XML format with the
-following message types:
+We currently support the following message types:
 
-- `OMM`: Orbit Mean-Elements Message.
-- `NDM`: Navigation Data Message.
+- `OMM`: Orbit Mean-Elements Message (XML and KVN formats).
+- `NDM`: Navigation Data Message (XML format).
 
 ## Installation
 

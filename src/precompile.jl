@@ -1,3 +1,9 @@
+## Description #############################################################################
+#
+# Precompilation workload covering the public parse, write, and show API.
+#
+############################################################################################
+
 @setup_workload begin
     omm_xml = """
     <omm id="CCSDS_OMM_VERS" version="3.0">
@@ -33,7 +39,11 @@
 
     @compile_workload begin
         omm = parse_omm(omm_xml)
-        write_omm(IOBuffer(), omm)
+        parse_omms(omm_xml)
+
+        xml_buffer = IOBuffer()
+        write_omm(xml_buffer, omm)
+        parse_omm(String(take!(xml_buffer)))
 
         kvn_buffer = IOBuffer()
         write_omm(kvn_buffer, omm; file_type = :kvn)

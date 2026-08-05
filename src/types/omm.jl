@@ -423,7 +423,7 @@ The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be prov
     (**Default**: `nothing`)
 - `rev_at_epoch::Union{Int, Nothing}`: Revolution number at epoch.
     (**Default**: `nothing`)
-- `bstar::Union{Float64, Nothing}`: SGP4 drag term (B*) [1/earth radii].
+- `bstar::Union{Float64, Nothing}`: SGP4 drag term (B*) [1/ER].
     (**Default**: `nothing`)
 - `bterm::Union{Float64, Nothing}`: Ballistic coefficient [m²/kg].
     (**Default**: `nothing`)

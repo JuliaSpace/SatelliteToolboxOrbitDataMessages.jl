@@ -22,8 +22,8 @@ module ODM
 using ..SatelliteToolboxOrbitDataMessages: OrbitMeanElementsMessage
 
 # Each table entry is `(accessor, field, return type, description)`. The accessors are
-# generated mechanically to guarantee that every field has one and that the docstrings
-# stay consistent.
+# generated mechanically to guarantee that every field of the header, metadata, and data
+# sections has one and that the docstrings stay consistent.
 
 # == Header Accessors ======================================================================
 
@@ -168,7 +168,7 @@ const _OMM_DATA_ACCESSORS = (
         "the element set number",
     ),
     (:rev_at_epoch, :rev_at_epoch, "Union{Int, Nothing}", "the revolution number at epoch"),
-    (:bstar, :bstar, "Union{Float64, Nothing}", "the SGP4 drag term B* [1/earth radii]"),
+    (:bstar, :bstar, "Union{Float64, Nothing}", "the SGP4 drag term B* [1/ER]"),
     (:bterm, :bterm, "Union{Float64, Nothing}", "the ballistic coefficient [m²/kg]"),
     (
         :mean_motion_dot,

@@ -22,7 +22,7 @@ With this package you can:
 - Build an [`OrbitMeanElementsMessage`](@ref) from scratch using a keyword constructor;
 - Parse OMMs and NDMs from strings or files in the XML and KVN formats, with automatic
   format detection;
-- Write OMMs and NDMs to XML and KVN files;
+- Write OMMs to XML and KVN files, and NDMs to XML files;
 - Fetch the latest orbit data directly from the [Celestrak](https://celestrak.org) and
   [Space-Track](https://www.space-track.org) services; and
 - Convert an OMM into a
