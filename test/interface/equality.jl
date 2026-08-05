@@ -35,6 +35,28 @@
     @test nan_omm != nan_omm
 end
 
+@testset "isequal Semantics" begin
+    omm_1 = parse_omm(_fixture_omm_xml())
+
+    # `isequal` distinguishes `-0.0` from `0.0`, unlike `==`.
+    zero_omm     = OrbitMeanElementsMessage(omm_1; mean_anomaly = 0.0)
+    neg_zero_omm = OrbitMeanElementsMessage(omm_1; mean_anomaly = -0.0)
+    @test zero_omm == neg_zero_omm
+    @test !isequal(zero_omm, neg_zero_omm)
+    @test zero_omm ∉ Set([neg_zero_omm])
+
+    # `isequal` treats identical `NaN`s as equal, unlike `==`, so messages with `NaN`
+    # fields behave correctly in `Set`s and `Dict`s.
+    nan_omm_1 = OrbitMeanElementsMessage(omm_1; eccentricity = NaN)
+    nan_omm_2 = OrbitMeanElementsMessage(omm_1; eccentricity = NaN)
+    @test nan_omm_1 != nan_omm_2
+    @test isequal(nan_omm_1, nan_omm_2)
+    @test hash(nan_omm_1) == hash(nan_omm_2)
+    @test nan_omm_1 in Set([nan_omm_2])
+    @test length(unique([nan_omm_1, nan_omm_2])) == 1
+    @test haskey(Dict(nan_omm_1 => 1), nan_omm_2)
+end
+
 @testset "Hash Consistency" begin
     omm_1 = parse_omm(_fixture_omm_xml())
     omm_2 = parse_omm(_fixture_omm_xml())

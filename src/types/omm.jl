@@ -177,10 +177,13 @@ end
 
 # == Equality and Hashing ==================================================================
 
-# Define `==` and `hash` by comparing and hashing all fields. Both functions are generated
-# together to keep the invariant `x == y` ⟹ `hash(x) == hash(y)`, which is required for
-# the types to behave correctly in `Dict`s and `Set`s. The field accesses are unrolled at
-# code-generation time, yielding type-stable and allocation-free implementations.
+# Define `==`, `isequal`, and `hash` by comparing and hashing all fields. The three
+# functions are generated together to keep the invariant `isequal(x, y)` ⟹
+# `hash(x) == hash(y)`, which is required for the types to behave correctly in `Dict`s and
+# `Set`s. `isequal` cannot be derived from the generated `==` because the two differ for
+# floating-point fields (`-0.0` vs. `0.0` and `NaN`), whereas `hash` follows the `isequal`
+# semantics. The field accesses are unrolled at code-generation time, yielding type-stable
+# and allocation-free implementations.
 for T in (OmmHeader, OmmMetadata, OmmCovarianceMatrix, OmmData, OrbitMeanElementsMessage)
     name = nameof(T)
 
@@ -191,10 +194,19 @@ for T in (OmmHeader, OmmMetadata, OmmCovarianceMatrix, OmmData, OrbitMeanElement
         init = true,
     )
 
+    isequal_expr = foldr(
+        (f, acc) ->
+            :(isequal(getfield(x, $(QuoteNode(f))), getfield(y, $(QuoteNode(f)))) && $acc),
+        fieldnames(T);
+        init = true,
+    )
+
     hash_exprs = [:(h = hash(getfield(x, $(QuoteNode(f))), h)) for f in fieldnames(T)]
 
     @eval begin
         ==(x::$name, y::$name) = $eq_expr
+
+        Base.isequal(x::$name, y::$name) = $isequal_expr
 
         function Base.hash(x::$name, h::UInt)
             h = hash($(QuoteNode(name)), h)

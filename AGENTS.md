@@ -31,7 +31,7 @@
 ## Behavioral Constraints
 
 - Writers always emit OMM version 3.0 regardless of the version stored in the message; the parsers accept 2.0 and 3.0 and validate the version-specific field rules in `_omm_check_mandatory_fields`.
-- `==` and `hash` for the OMM types are generated together in `src/types/omm.jl` to keep `x == y` ⟹ `hash(x) == hash(y)`; never define one without the other.
+- `==`, `isequal`, and `hash` for the OMM types are generated together in `src/types/omm.jl` to keep `isequal(x, y)` ⟹ `hash(x) == hash(y)`; never define one without the others.
 - Round-trip fidelity (parse → write → parse yields an equal message) is a core invariant covered by `test/serialization/`; preserve it when touching parsers or writers.
 - New tests follow the `@testset "Name" verbose = true begin ... end` pattern used in `test/runtests.jl`.
 - `CHANGELOG.md` uses badge-style entries per version; add an entry when changing user-facing behavior.
