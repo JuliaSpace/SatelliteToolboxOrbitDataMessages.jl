@@ -323,6 +323,15 @@ function _omm_parse_field(
 end
 
 """
+    _omm_is_absent(value::Any) -> Bool
+
+Check if the raw field `value` returned by a format-specific parser must be treated as
+absent, i.e. it is `nothing` or an empty string.
+"""
+_omm_is_absent(value::Any) = isnothing(value)
+_omm_is_absent(value::AbstractString) = isempty(value)
+
+"""
     _omm_check_mandatory_fields(
         version::VersionNumber,
         header_fields::Dict{Symbol, Any},
@@ -333,7 +342,7 @@ end
 Check if all mandatory fields of an Orbit Mean-Elements Message (OMM) with `version` (2.0 or
 3.0) are present in the dictionaries `header_fields`, `metadata_fields`, and `data_fields`
 returned by a format-specific parser, throwing an `ArgumentError` otherwise. A field whose
-value is `nothing` is treated as absent.
+value is `nothing` or an empty string is treated as absent.
 
 This function is format-agnostic so that every supported file type is validated by the same
 rules.
@@ -348,18 +357,18 @@ function _omm_check_mandatory_fields(
 
     # In OMM version 2.0, we allow a blank `ORIGINATOR` to accommodate real-world files
     # (e.g. from Celestrak) that omit its value.
-    (version != v"2.0") && isnothing(get(header_fields, :originator, nothing)) &&
+    (version != v"2.0") && _omm_is_absent(get(header_fields, :originator, nothing)) &&
         throw(ArgumentError("OMM header is missing required field `ORIGINATOR`."))
 
     if version == v"2.0"
         # The fields `CLASSIFICATION` and `MESSAGE_ID` were introduced in OMM version 3.0.
-        !isnothing(get(header_fields, :classification, nothing)) && throw(
+        !_omm_is_absent(get(header_fields, :classification, nothing)) && throw(
             ArgumentError(
                 "OMM header field `CLASSIFICATION` is not valid in OMM version 2.0."
             ),
         )
 
-        !isnothing(get(header_fields, :message_id, nothing)) && throw(
+        !_omm_is_absent(get(header_fields, :message_id, nothing)) && throw(
             ArgumentError("OMM header field `MESSAGE_ID` is not valid in OMM version 2.0."),
         )
     end
@@ -367,14 +376,14 @@ function _omm_check_mandatory_fields(
     # == Metadata ==========================================================================
 
     for (field, keyword) in _OMM_MANDATORY_METADATA_FIELDS
-        isnothing(get(metadata_fields, field, nothing)) &&
+        _omm_is_absent(get(metadata_fields, field, nothing)) &&
             throw(ArgumentError("OMM metadata is missing required field `$keyword`."))
     end
 
     # == Mean Elements =====================================================================
 
     for (field, keyword) in _OMM_MANDATORY_MEAN_ELEMENTS_FIELDS
-        isnothing(get(data_fields, field, nothing)) &&
+        _omm_is_absent(get(data_fields, field, nothing)) &&
             throw(ArgumentError("OMM data is missing required field `$keyword`."))
     end
 
