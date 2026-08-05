@@ -128,6 +128,13 @@ end
         @test length(parse_omms(kvn)) == 1
     end
 
+    @testset "Chunk Detection Requires Exact Keyword" begin
+        # A keyword merely starting with `CCSDS_OMM_VERS` must not start a new message.
+        omms = parse_omms("CCSDS_OMM_VERSION = 9.9\n" * kvn; file_type = :kvn)
+        @test length(omms) == 1
+        @test omms[1].metadata.object_name == "AMAZONIA 1"
+    end
+
     @testset "Bracketed Tokens in String Values" begin
         # A trailing bracketed token in a string value is part of the value, not a unit.
         kvn_brackets = replace(

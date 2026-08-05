@@ -27,7 +27,9 @@ function _kvn_omms__parse(str::AbstractString, strict::Bool)
         line_end = isnothing(nl) ? i_last : prevind(str, nl)
         line     = SubString(str, pos, line_end)
 
-        if startswith(lstrip(line), "CCSDS_OMM_VERS")
+        km = _kvn__parse_keyword(line)
+
+        if !isnothing(km) && (km[1] == "CCSDS_OMM_VERS")
             # If we have already started an OMM, we need to parse it before starting the new
             # one.
             if !isnothing(chunk_start)
