@@ -127,4 +127,45 @@ end
         @test parse_omm(kvn) isa OrbitMeanElementsMessage
         @test length(parse_omms(kvn)) == 1
     end
+
+    @testset "Bracketed Tokens in String Values" begin
+        # A trailing bracketed token in a string value is part of the value, not a unit.
+        kvn_brackets = replace(
+            kvn, "OBJECT_NAME = AMAZONIA 1" => "OBJECT_NAME = ISS (ZARYA) [A]"
+        )
+        omm = parse_omm(kvn_brackets; file_type = :kvn)
+        @test omm.metadata.object_name == "ISS (ZARYA) [A]"
+    end
+
+    @testset "Units in Numeric Values" begin
+        kvn_units = replace(
+            kvn,
+            "MEAN_MOTION = 14.40772474" => "MEAN_MOTION = 14.40772474 [rev/day]",
+            "INCLINATION = 98.3721"     => "INCLINATION = 98.3721 [deg]",
+        )
+        omm = parse_omm(kvn_units; file_type = :kvn)
+        @test omm.data.mean_motion == 14.40772474
+        @test omm.data.inclination == 98.3721
+    end
+
+    @testset "User-Defined Values With Brackets" begin
+        kvn_udp = kvn * "USER_DEFINED_RANGES = [1, 2]\n"
+        omm     = parse_omm(kvn_udp; file_type = :kvn)
+        @test omm.data.user_defined_parameters == ["RANGES" => "[1, 2]"]
+    end
+
+    @testset "Comment Keyword Boundary" begin
+        # A keyword merely starting with `COMMENT` must not be absorbed as a comment.
+        @test_throws ArgumentError parse_omm(
+            "CCSDS_OMM_VERS = 3.0\nCOMMENTARY IS FUN\n"; file_type = :kvn
+        )
+
+        # A bare `COMMENT` line is a valid empty comment, and any indentation beyond the
+        # single separating space is preserved.
+        kvn_comments = "CCSDS_OMM_VERS = 3.0\nCOMMENT\nCOMMENT   indented\n" * join(
+            split(kvn, '\n')[2:end], '\n'
+        )
+        omm = parse_omm(kvn_comments; file_type = :kvn)
+        @test omm.header.comments == ["", "  indented"]
+    end
 end
