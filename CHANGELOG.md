@@ -26,6 +26,18 @@ Version 0.2.0
 - ![Enhancement][badge-enhancement] Improve the performance of parsing and comparing
   messages: `==` and `hash` are now type-stable and allocation-free, and the parsers
   perform fewer allocations and keyword lookups.
+- ![Enhancement][badge-enhancement] Reduce the allocations and dynamic dispatches in the
+  parsers, the writers, and the display code.
+- ![Bugfix][badge-bugfix] Define `isequal` for the message types, fixing the behavior of
+  messages containing `-0.0` or `NaN` values in `Set`s and `Dict`s.
+- ![Bugfix][badge-bugfix] `write_omm` and `write_odm` now validate the message before
+  opening the output file, so a failure no longer truncates an existing file.
+- ![Bugfix][badge-bugfix] The parsing functions now handle inputs with a leading
+  byte-order mark.
+- ![Bugfix][badge-bugfix] The Celestrak fetcher now builds the query URL correctly when a
+  custom endpoint already carries query parameters.
+- ![Bugfix][badge-bugfix] The Space-Track login now throws an `OdmLoginError` for network
+  failures, and the cached session cookie is saved with owner-only permissions.
 
 Version 0.1.0
 -------------
