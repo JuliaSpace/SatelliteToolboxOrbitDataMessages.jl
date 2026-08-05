@@ -179,6 +179,18 @@
         @test_throws ArgumentError OrbitMeanElementsMessage(; kwargs..., version = v"2.1")
     end
 
+    @testset "Copy Leniently Parsed Message" begin
+        # Lenient parsing can produce a message without a creation date, which the copy
+        # constructor must accept.
+        omm = parse_omm(_minimal_omm_xml(; creation_date = ""); strict = false)
+        @test omm.header.creation_date === nothing
+
+        copied = OrbitMeanElementsMessage(omm; object_name = "NEW NAME")
+        @test copied.metadata.object_name == "NEW NAME"
+        @test copied.header.creation_date === nothing
+        @test OrbitMeanElementsMessage(omm) == omm
+    end
+
     @testset "Exactly One Mean-Motion Representation" begin
         kwargs = (;
             creation_date,
