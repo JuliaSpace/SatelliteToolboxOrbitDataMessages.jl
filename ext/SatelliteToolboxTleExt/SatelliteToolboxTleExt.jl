@@ -49,17 +49,21 @@ function convert(::Type{TLE}, omm::OrbitMeanElementsMessage)
     # according to the SGP4 algorithm. Observations of Celestrak and Spacetrack OMMs show
     # that the provided values are already divided by the necessary factors. So, for now,
     # we assume they are already adjusted. This may need to be revisited later.
-    isnothing(data.bterm) || error("Cannot convert OMM `BTERM` to a TLE `BSTAR` field.")
-    isnothing(data.agom) || error("Cannot convert OMM `AGOM` to a TLE mean-motion field.")
+    isnothing(data.bterm) || error("Cannot convert OMM `BTERM` to the TLE `BSTAR` field.")
+    isnothing(data.agom) || error(
+        "Cannot convert OMM `AGOM` to the TLE mean-motion second derivative field."
+    )
 
+    # The fields are named by their CCSDS keywords so that the error messages match the
+    # source message contents.
     required_fields = (
-        ("classification_type", data.classification_type),
-        ("norad_cat_id", data.norad_cat_id),
-        ("element_set_number", data.element_set_number),
-        ("rev_at_epoch", data.rev_at_epoch),
-        ("bstar", data.bstar),
-        ("mean_motion_dot", data.mean_motion_dot),
-        ("mean_motion_ddot", data.mean_motion_ddot),
+        ("CLASSIFICATION_TYPE", data.classification_type),
+        ("NORAD_CAT_ID", data.norad_cat_id),
+        ("ELEMENT_SET_NO", data.element_set_number),
+        ("REV_AT_EPOCH", data.rev_at_epoch),
+        ("BSTAR", data.bstar),
+        ("MEAN_MOTION_DOT", data.mean_motion_dot),
+        ("MEAN_MOTION_DDOT", data.mean_motion_ddot),
     )
 
     for (name, value) in required_fields
