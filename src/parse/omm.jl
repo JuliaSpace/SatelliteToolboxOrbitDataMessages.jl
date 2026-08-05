@@ -568,7 +568,7 @@ function _omm_assemble(
 
     version ∈ (2.0, 3.0) || throw(ArgumentError("Unsupported OMM version: $version."))
 
-    omm_version = VersionNumber(string(version))
+    omm_version = version == 2.0 ? v"2.0" : v"3.0"
 
     # == Mandatory Fields ==================================================================
 
@@ -597,7 +597,10 @@ function _omm_assemble(
     )
 end
 
-function _omm_assemble(parsed_omm::NamedTuple, strict::Bool)
+function _omm_assemble(
+    parsed_omm::NamedTuple{(:version, :header_fields, :metadata_fields, :data_fields)},
+    strict::Bool,
+)
     return _omm_assemble(
         parsed_omm.version,
         parsed_omm.header_fields,
