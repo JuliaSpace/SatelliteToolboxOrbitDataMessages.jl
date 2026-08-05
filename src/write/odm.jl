@@ -41,6 +41,10 @@ function write_odm(io::IO, vodm::AbstractVector{T}) where {T <: OrbitDataMessage
 end
 
 function write_odm(file::AbstractString, odm::OrbitDataMessage)
+    # Validate the message before opening the file so that a failure does not truncate an
+    # existing output file.
+    _odm_check_writable(odm)
+
     open(file, "w") do io
         return write_odm(io, odm)
     end
@@ -51,6 +55,10 @@ end
 function write_odm(
     file::AbstractString, vodm::AbstractVector{T}
 ) where {T <: OrbitDataMessage}
+    # Validate the messages before opening the file so that a failure does not truncate an
+    # existing output file.
+    foreach(_odm_check_writable, vodm)
+
     open(file, "w") do io
         return write_odm(io, vodm)
     end

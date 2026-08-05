@@ -49,6 +49,31 @@
         @test count_omms == 2
     end
 
+    # == Failed Writes Preserve the Output File ============================================
+
+    @testset "Failed Writes Preserve the Output File" begin
+        mktempdir() do dir
+            file = joinpath(dir, "omm.xml")
+            write(file, "precious content")
+
+            # An unsupported file type must not truncate the file.
+            @test_throws ArgumentError write_omm(file, omm; file_type = :json)
+            @test read(file, String) == "precious content"
+
+            # A message that cannot be written must not truncate the file.
+            omm_lenient = parse_omm(_minimal_omm_xml(; creation_date = ""); strict = false)
+
+            @test_throws ArgumentError write_omm(file, omm_lenient)
+            @test read(file, String) == "precious content"
+
+            @test_throws ArgumentError write_odm(file, omm_lenient)
+            @test read(file, String) == "precious content"
+
+            @test_throws ArgumentError write_odm(file, [omm_lenient])
+            @test read(file, String) == "precious content"
+        end
+    end
+
     # == Minimal XML (no optional sections) ================================================
 
     @testset "Minimal XML" begin

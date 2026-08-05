@@ -71,6 +71,12 @@ function write_omm(
         file_type = endswith(lowercase(file), ".kvn") ? :kvn : :xml
     end
 
+    # Validate everything before opening the file so that a failure does not truncate an
+    # existing output file.
+    file_type ∈ (:xml, :kvn) || throw(ArgumentError("Unsupported file type: $file_type."))
+
+    omm isa AbstractVector ? foreach(_omm_check_writable, omm) : _omm_check_writable(omm)
+
     open(file, "w") do io
         return write_omm(io, omm; file_type)
     end
