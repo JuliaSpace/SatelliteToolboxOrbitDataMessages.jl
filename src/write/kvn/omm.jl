@@ -30,23 +30,22 @@ const _KVN_OMM__KEYWORD_GRAMMAR_REGEX = r"^[0-9A-Z_]+$"
 
 """
     _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage) -> Nothing
+    _kvn_omm__write(io::IO, vomm::AbstractVector{OrbitMeanElementsMessage}) -> Nothing
 
-Write the given `omm` to the provided `io` stream in KVN format.
+Write the given `omm` (or the set of messages in `vomm`) to the provided `io` stream in
+KVN format. A set of messages is written sequentially, delimited by their
+`CCSDS_OMM_VERS` keywords as expected by [`parse_omms`](@ref).
 
-The written version is always `3.0`, regardless of the version stored in the `omm`,
+The written version is always `3.0`, regardless of the version stored in the messages,
 matching the behavior of the XML writer.
 
 !!! note
 
     The KVN format is flat, so the comments of the data section (`omm.data.comments`) are
     written immediately before the mean-elements fields. Hence, they are attributed to the
-    mean-elements section if the output is parsed back.
-
-    _kvn_omm__write(io::IO, vomm::AbstractVector{OrbitMeanElementsMessage}) -> Nothing
-
-Write the set of Orbit Mean-Elements Messages in the vector `vomm` to the provided `io`
-stream in KVN format. The messages are written sequentially, delimited by their
-`CCSDS_OMM_VERS` keyword as expected by [`parse_omms`](@ref).
+    mean-elements section if the output is parsed back. Additionally, the comments of a
+    section whose fields are all `nothing` are dropped with a warning (see
+    [`_kvn_omm__write_section`](@ref)).
 """
 function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
     data = omm.data
@@ -193,7 +192,14 @@ function _kvn_omm__check_user_defined_keys(omm::OrbitMeanElementsMessage)
 end
 
 """
-    _kvn_omm__write_section(io::IO, section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix}, mapping::Vector{Pair{String, Symbol}}, comments::Vector{String}, keyword_width::Int, section_name::String) -> Bool
+    _kvn_omm__write_section(
+        io::IO,
+        section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix},
+        mapping::Vector{Pair{String, Symbol}},
+        comments::Vector{String},
+        keyword_width::Int,
+        section_name::String
+    ) -> Bool
 
 Write the fields of the OMM `section` to the provided `io` stream in KVN format. The
 written keywords and their fields are given by `mapping`, whose order is preserved in the
@@ -248,7 +254,13 @@ function _kvn_omm__write_section(
 end
 
 """
-    _kvn_omm__write_element(io::IO, keyword::AbstractString, value::Any, keyword_width::Int, unit::Union{Nothing, String} = nothing) -> Nothing
+    _kvn_omm__write_element(
+        io::IO,
+        keyword::AbstractString,
+        value::Any,
+        keyword_width::Int,
+        unit::Union{Nothing, String} = nothing
+    ) -> Nothing
 
 Write the line `keyword = value` to the provided `io` stream in KVN format. The `keyword`
 is padded to `keyword_width` characters to align the values, and the `value` is rendered

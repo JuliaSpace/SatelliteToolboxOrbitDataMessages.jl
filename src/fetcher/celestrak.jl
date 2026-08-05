@@ -37,12 +37,12 @@ end
 """
     create_omm_fetcher(::Type{CelestrakOmmFetcher}; kwargs...) -> CelestrakOmmFetcher
 
-Create an Orbit Mean-Elements Message (OMM) fetcher from Celestrak service.
+Create an Orbit Mean-Elements Message (OMM) fetcher from the Celestrak service.
 
 # Keywords
 
-- `url::String`: Default URL of the Celestrak PHP query endpoint.
-  (**Default**: "https://celestrak.org/NORAD/elements/gp.php")
+- `url::String`: URL of the Celestrak query endpoint.
+    (**Default**: `"https://celestrak.org/NORAD/elements/gp.php"`)
 """
 function create_omm_fetcher(
     ::Type{CelestrakOmmFetcher}; url::String = "https://celestrak.org/NORAD/elements/gp.php"
@@ -60,6 +60,9 @@ This function returns a `Vector{OrbitMeanElementsMessage}` with the fetched OMMs
 matching OMM is found, an empty vector is returned. If an error prevents the request from
 succeeding, an [`OdmFetchError`](@ref) is thrown.
 
+Exactly one of `international_designator`, `satellite_number`, and `satellite_name` must
+be provided.
+
 # Keywords
 
 - `international_designator::Union{Nothing, AbstractString}`: International designator of
@@ -73,9 +76,6 @@ succeeding, an [`OdmFetchError`](@ref) is thrown.
     [`parse_omms`](@ref) for the exact rules. Celestrak currently emits OMM 2.0 messages
     with empty header values, hence the relaxed default.
     (**Default**: `false`)
-
-Exactly one of `international_designator`, `satellite_number`, and `satellite_name` must
-be provided.
 """
 function fetch_omms(
     fetcher::CelestrakOmmFetcher;
@@ -128,7 +128,7 @@ function fetch_omms(
         query_type  = "satellite name"
     end
 
-    @info "Fetch OMMs from Celestrak using $query_type: \"$query_value\" ..."
+    @info "Fetching OMMs from Celestrak using $query_type \"$query_value\"..."
 
     # Assemble the URL, preserving any query parameters already present in the endpoint.
     base_uri  = URIs.URI(fetcher.url)

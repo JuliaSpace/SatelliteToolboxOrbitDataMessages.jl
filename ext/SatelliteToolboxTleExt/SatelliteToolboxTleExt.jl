@@ -1,3 +1,9 @@
+## Description #############################################################################
+#
+# Extension with the conversion from Orbit Mean-Elements Messages (OMM) to TLEs.
+#
+############################################################################################
+
 module SatelliteToolboxTleExt
 
 using Dates
@@ -16,6 +22,24 @@ const _NANOSECONDS_PER_DAY = 86_400 * 1_000_000_000
 #                                        Julia API                                         #
 ############################################################################################
 
+"""
+    convert(::Type{TLE}, omm::OrbitMeanElementsMessage) -> TLE
+
+Convert the Orbit Mean-Elements Message `omm` to a `TLE`.
+
+The mean element theory of `omm` must be `"SGP4"`, and the message must provide the
+TLE-related parameters `CLASSIFICATION_TYPE`, `NORAD_CAT_ID`, `ELEMENT_SET_NO`,
+`REV_AT_EPOCH`, `BSTAR`, `MEAN_MOTION_DOT`, and `MEAN_MOTION_DDOT`. The mean motion
+[rev/day] is taken from the message or computed from the semi-major axis and `GM` when
+absent. An `ErrorException` is thrown if any required information is missing or the
+message uses `BTERM` or `AGOM` instead of `BSTAR` and `MEAN_MOTION_DDOT`.
+
+The epoch is converted to the two-digit year and day-of-year form used by the TLE format,
+keeping the time system of the message. `MEAN_MOTION_DOT` [rev/day²] and
+`MEAN_MOTION_DDOT` [rev/day³] are copied directly into the TLE fields `dn_o2` and
+`ddn_o6`, assuming that the message values are already divided by 2 and 6, respectively,
+as observed in Celestrak and Space-Track products.
+"""
 function convert(::Type{TLE}, omm::OrbitMeanElementsMessage)
     # We should only convert to TLE if the mean element theory is SGP4.
     omm.metadata.mean_element_theory != "SGP4" &&

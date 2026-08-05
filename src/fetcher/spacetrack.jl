@@ -82,8 +82,14 @@ Create an Orbit Mean-Elements Message (OMM) fetcher from the Space-Track service
 
 # Returns
 
-- `SpacetrackOmmFetcher`: The created fetcher. If the login fails, an
-    [`OdmLoginError`](@ref) is thrown.
+- `SpacetrackOmmFetcher`: The created fetcher.
+
+# Extended help
+
+## Throws
+
+- [`OdmLoginError`](@ref): If the login fails, e.g. due to invalid credentials or a
+    network error.
 """
 function create_omm_fetcher(
     ::Type{SpacetrackOmmFetcher};
@@ -171,7 +177,7 @@ fails, an [`OdmFetchError`](@ref) is thrown.
     `nothing`, no satellite name is used. If both `satellite_name` and `satellite_number`
     are provided, `satellite_number` takes precedence.
     (**Default**: `nothing`)
-- `satellite_number::Union{Nothing, Number}`: The NORAD catalog number of the satellite to
+- `satellite_number::Union{Nothing, Integer}`: The NORAD catalog number of the satellite to
     fetch the OMMs. This field is appended to the predicates using the `NORAD_CAT_ID` field.
     If `nothing`, no satellite number is used. If both `satellite_name` and
     `satellite_number` are provided, `satellite_number` takes precedence.
@@ -187,7 +193,7 @@ fails, an [`OdmFetchError`](@ref) is thrown.
     [`parse_omms`](@ref) for the exact rules.
     (**Default**: `true`)
 
-# Extended Help
+# Extended help
 
 ## Query Predicates
 
@@ -288,9 +294,9 @@ predicates = [
 
 ```julia
 predicates = [
-    "OBJECT_NAME" => "^STARLINK"
-    "EPOCH"       => "now-10--now"
-    "DECAY_DATE"  => "<>null-val"
+    "OBJECT_NAME" => "^STARLINK",
+    "EPOCH"       => "now-10--now",
+    "DECAY_DATE"  => "<>null-val",
 ]
 ```
 
@@ -513,7 +519,7 @@ end
 """
     _spacetrack__cookie_expire_date(cookiejar::HTTP.CookieJar) -> Union{DateTime, Nothing}
 
-Get the expiration date of the spacetrack cookie in the `cookiejar`. If the cookie is not
+Get the expiration date of the Space-Track cookie in the `cookiejar`. If the cookie is not
 found, it returns `nothing`.
 """
 function _spacetrack__cookie_expire_date(cookiejar::HTTP.CookieJar)
@@ -530,7 +536,7 @@ end
 """
     _spacetrack__is_cookie_valid(cookiejar::Union{HTTP.CookieJar, Nothing}) -> Bool
 
-Check if the spacetrack cookie in the `cookiejar` is valid. To load the `cookiejar`, use
+Check if the Space-Track cookie in the `cookiejar` is valid. To load the `cookiejar`, use
 the function `_spacetrack__load_cookiejar`.
 """
 _spacetrack__is_cookie_valid(::Nothing) = false

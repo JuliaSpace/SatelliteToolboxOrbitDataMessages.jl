@@ -11,7 +11,7 @@ Write the given `omm` to the provided `io` stream as a stand-alone XML document.
 XML declaration is included.
 
 The written version is always `3.0`, regardless of the version stored in the `omm`. This
-matches the schema against which the output is validated.
+matches the schema declared in the `xsi:noNamespaceSchemaLocation` attribute.
 
     _xml_omm__write(io::IO, vomm::AbstractVector{OrbitMeanElementsMessage}) -> Nothing
 
@@ -56,7 +56,7 @@ Convert the given `omm` to an XML element suitable for embedding within another 
 (e.g. an NDM). Hence, the XML declaration is omitted.
 
 The written version is always `3.0`, regardless of the version stored in the `omm`. This
-matches the schema against which the output is validated.
+matches the schema declared by the enclosing document.
 """
 function _xml_omm__write_element(omm::OrbitMeanElementsMessage)
     element = XML.Element("omm"; id = "CCSDS_OMM_VERS", version = "3.0")

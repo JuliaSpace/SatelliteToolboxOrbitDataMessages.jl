@@ -35,9 +35,7 @@ Exception thrown when a request to an Orbit Data Message service fails.
 
 - `msg::String`: Description of the request failure.
 - `url::Union{String, Nothing}`: URL of the failed request, if available.
-    (**Default**: `nothing`)
 - `status::Union{Int, Nothing}`: HTTP status code of the failed request, if available.
-    (**Default**: `nothing`)
 """
 struct OdmFetchError <: Exception
     msg::String
@@ -45,6 +43,18 @@ struct OdmFetchError <: Exception
     status::Union{Int, Nothing}
 end
 
+"""
+    OdmFetchError(msg::String; kwargs...) -> OdmFetchError
+
+Create an [`OdmFetchError`](@ref) with the description `msg`.
+
+# Keywords
+
+- `url::Union{String, Nothing}`: URL of the failed request, if available.
+    (**Default**: `nothing`)
+- `status::Union{Int, Nothing}`: HTTP status code of the failed request, if available.
+    (**Default**: `nothing`)
+"""
 function OdmFetchError(
     msg::String;
     url::Union{String, Nothing} = nothing,
@@ -64,6 +74,10 @@ end
     create_omm_fetcher(::Type{T}, args...; kwargs...) where T <: AbstractOmmFetcher -> T
 
 Create an Orbit Mean-Elements Message (OMM) fetcher of type `T`.
+
+The positional and keyword arguments are specific to each fetcher type; see the
+documentation of the corresponding method. An `ArgumentError` is thrown if `T` has no
+registered fetcher method.
 """
 function create_omm_fetcher(::Type{T}, args...; kwargs...) where {T <: AbstractOmmFetcher}
     return throw(ArgumentError("The OMM fetcher $T is not registered."))
@@ -74,8 +88,9 @@ end
 
 Fetch Orbit Mean-Elements Messages (OMM) using `fetcher`.
 
-The keywords `kwargs...` are used to customize the search. It depends on the fetcher type
-`T`.
+The keywords `kwargs...` customize the search and are specific to each fetcher type; see
+the documentation of the corresponding method. An `ArgumentError` is thrown if the fetcher
+type `T` is not registered.
 """
 function fetch_omms(::T; kwargs...) where {T <: AbstractOmmFetcher}
     return throw(ArgumentError("The OMM fetcher $T is not registered."))
