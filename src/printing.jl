@@ -66,17 +66,25 @@ function _field_name_width(fields::AbstractVector{NTuple{3, String}})
 end
 
 """
-    _push_output!(vector::AbstractVector{NTuple{3, String}}, field::Tuple{String, Any, String}) -> Nothing
+    _push_output!(
+        vector::AbstractVector{NTuple{3, String}},
+        name::String,
+        value::Any,
+        unit::String
+    ) -> Nothing
 
-Push to `vector` the `field` if its value is not `nothing`. The field is a tuple of
-`(name::String, value::Any, unit::String)`, where `value` is converted to a string using
-[`_format_value`](@ref).
+Push to `vector` the field row `(name, value, unit)` if `value` is not `nothing`. The
+`value` is converted to a string using [`_format_value`](@ref).
+
+Passing the row components as positional arguments lets the compiler specialize on the
+value type, avoiding the tuple conversion and boxing of a `Tuple{String, Any, String}`
+argument.
 """
 function _push_output!(
-    vector::AbstractVector{NTuple{3, String}}, field::Tuple{String, Any, String}
+    vector::AbstractVector{NTuple{3, String}}, name::String, value::Any, unit::String
 )
-    isnothing(field[2]) && return nothing
-    push!(vector, (field[1], escape_string(_format_value(field[2])), field[3]))
+    isnothing(value) && return nothing
+    push!(vector, (name, escape_string(_format_value(value)), unit))
     return nothing
 end
 
