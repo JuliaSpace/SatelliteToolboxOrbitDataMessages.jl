@@ -70,7 +70,12 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
     # == Header ============================================================================
 
     _kvn_omm__write_section(
-        io, omm.header, _OMM_HEADER_KEYWORD_TO_FIELD, omm.header.comments, keyword_width
+        io,
+        omm.header,
+        _OMM_HEADER_KEYWORD_TO_FIELD,
+        omm.header.comments,
+        keyword_width,
+        "header",
     ) && println(io)
 
     # == Metadata ==========================================================================
@@ -81,6 +86,7 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
         _OMM_METADATA_KEYWORD_TO_FIELD,
         omm.metadata.comments,
         keyword_width,
+        "metadata",
     ) && println(io)
 
     # == Data ==============================================================================
@@ -99,6 +105,7 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
         _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD,
         data.mean_elements_comments,
         keyword_width,
+        "mean elements",
     ) && println(io)
 
     # -- Spacecraft Parameters -------------------------------------------------------------
@@ -109,6 +116,7 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
         _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD,
         data.spacecraft_parameters_comments,
         keyword_width,
+        "spacecraft parameters",
     ) && println(io)
 
     # -- TLE Related Parameters ------------------------------------------------------------
@@ -119,6 +127,7 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
         _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD,
         data.tle_parameters_comments,
         keyword_width,
+        "TLE parameters",
     ) && println(io)
 
     # -- Covariance Matrix -----------------------------------------------------------------
@@ -132,6 +141,7 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
             _OMM_COVARIANCE_KEYWORD_TO_FIELD,
             covariance_matrix.comments,
             keyword_width,
+            "covariance matrix",
         ) && println(io)
     end
 
@@ -182,14 +192,17 @@ function _kvn_omm__check_user_defined_keys(omm::OrbitMeanElementsMessage)
 end
 
 """
-    _kvn_omm__write_section(io::IO, section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix}, mapping::Vector{Pair{String, Symbol}}, comments::Vector{String}, keyword_width::Int) -> Bool
+    _kvn_omm__write_section(io::IO, section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix}, mapping::Vector{Pair{String, Symbol}}, comments::Vector{String}, keyword_width::Int, section_name::String) -> Bool
 
 Write the fields of the OMM `section` to the provided `io` stream in KVN format. The
 written keywords and their fields are given by `mapping`, whose order is preserved in the
 output, and the section `comments` are written before the fields. The keywords are padded
-to `keyword_width` characters to align the values.
+to `keyword_width` characters to align the values, and `section_name` names the section in
+warnings.
 
-Fields whose value is `nothing` are omitted from the output.
+Fields whose value is `nothing` are omitted from the output. If every field is `nothing`,
+the section comments are dropped with a warning: the flat KVN format has no section
+delimiters, so the parser would attribute such comments to the next section.
 
 # Returns
 
@@ -201,7 +214,18 @@ function _kvn_omm__write_section(
     mapping::Vector{Pair{String, Symbol}},
     comments::Vector{String},
     keyword_width::Int,
+    section_name::String,
 )
+    # A comments-only section cannot be represented in the flat KVN format: the parser
+    # would attribute its comments to the next section. Hence, the comments are dropped
+    # with a warning.
+    if all(p -> isnothing(getfield(section, last(p))), mapping)
+        isempty(comments) ||
+            @warn "Dropping the comments of the $section_name section, which has no " *
+                "fields and cannot be represented in the KVN output."
+        return false
+    end
+
     written = false
 
     # Write the section comments first, matching the layout expected by the KVN parser.

@@ -44,6 +44,25 @@
         @test omm_reparsed.data.covariance_matrix.cz_dot_z_dot == 21.0
     end
 
+    # == Comments-Only Optional Section ====================================================
+
+    @testset "Comments-Only Optional Section" begin
+        # The flat KVN format cannot represent the comments of a section without fields,
+        # so they are dropped with a warning instead of being silently attributed to the
+        # next section on reparse.
+        omm_sc = OrbitMeanElementsMessage(omm; spacecraft_parameters_comments = ["SC"])
+
+        buf = IOBuffer()
+        @test_logs (:warn, r"spacecraft parameters") write_omm(
+            buf, omm_sc; file_type = :kvn
+        )
+        out = String(take!(buf))
+
+        @test !occursin("COMMENT SC", out)
+        @test parse_omm(out; file_type = :kvn) ==
+            OrbitMeanElementsMessage(omm_sc; spacecraft_parameters_comments = String[])
+    end
+
     # == Vector Form =======================================================================
 
     @testset "Vector Form" begin
