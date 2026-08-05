@@ -238,6 +238,16 @@
         )
     end
 
+    # == Comments-Only TLE Parameters ======================================================
+
+    @testset "Comments-Only TLE Parameters" begin
+        # A comments-only section is present, so its mandatory-field rules apply. This
+        # matches the `OrbitMeanElementsMessage` constructor, which would otherwise reject
+        # copying the parsed message.
+        tle_xml = "<tleParameters><COMMENT>TLE section</COMMENT></tleParameters>"
+        @test_throws ArgumentError parse_omm(_minimal_omm_xml(; tle_params_xml = tle_xml))
+    end
+
     # == Empty CLASSIFICATION_TYPE =========================================================
 
     @testset "Empty CLASSIFICATION_TYPE" begin

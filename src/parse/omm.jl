@@ -431,8 +431,16 @@ function _omm_check_mandatory_fields(
     agom             = get(data_fields, :agom, nothing)
 
     # The TLE parameters section is optional, so its rules only apply when the section
-    # carries any information.
-    if any(field -> !isnothing(get(data_fields, field, nothing)), _OMM_TLE_PARAMETER_FIELDS)
+    # carries any information. The predicate must match the one used by the
+    # `OrbitMeanElementsMessage` constructor, which also treats a comments-only section as
+    # present.
+    has_tle_parameters =
+        haskey(data_fields, :tle_parameters_comments) || any(
+            field -> !isnothing(get(data_fields, field, nothing)),
+            _OMM_TLE_PARAMETER_FIELDS,
+        )
+
+    if has_tle_parameters
         isnothing(mean_motion_dot) && throw(
             ArgumentError(
                 "OMM TLE parameters are missing required field `MEAN_MOTION_DOT`."
