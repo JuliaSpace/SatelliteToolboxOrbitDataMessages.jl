@@ -265,7 +265,7 @@ const _OMM_FIELD_TYPE = Dict{Symbol, DataType}(
 )
 
 # Physical units of the OMM fields as defined by the CCSDS 502.0-B-3 standard. Fields that
-# are not listed here are dimensionless.
+# are not listed here (e.g. dates and dimensionless quantities) have no unit annotation.
 const _OMM_FIELD_UNIT = Dict{Symbol, String}(
     :semi_major_axis   => "km",
     :mean_motion       => "rev/day",
@@ -282,6 +282,27 @@ const _OMM_FIELD_UNIT = Dict{Symbol, String}(
     :mean_motion_dot   => "rev/day**2",
     :mean_motion_ddot  => "rev/day**3",
     :agom              => "m**2/kg",
+    :cx_x              => "km**2",
+    :cy_x              => "km**2",
+    :cy_y              => "km**2",
+    :cz_x              => "km**2",
+    :cz_y              => "km**2",
+    :cz_z              => "km**2",
+    :cx_dot_x          => "km**2/s",
+    :cx_dot_y          => "km**2/s",
+    :cx_dot_z          => "km**2/s",
+    :cx_dot_x_dot      => "km**2/s**2",
+    :cy_dot_x          => "km**2/s",
+    :cy_dot_y          => "km**2/s",
+    :cy_dot_z          => "km**2/s",
+    :cy_dot_x_dot      => "km**2/s**2",
+    :cy_dot_y_dot      => "km**2/s**2",
+    :cz_dot_x          => "km**2/s",
+    :cz_dot_y          => "km**2/s",
+    :cz_dot_z          => "km**2/s",
+    :cz_dot_x_dot      => "km**2/s**2",
+    :cz_dot_y_dot      => "km**2/s**2",
+    :cz_dot_z_dot      => "km**2/s**2",
 )
 
 """

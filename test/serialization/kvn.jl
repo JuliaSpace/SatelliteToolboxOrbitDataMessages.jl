@@ -36,7 +36,14 @@
 
         buf = IOBuffer()
         write_omm(buf, omm_cov; file_type = :kvn)
-        omm_reparsed = parse_omm(String(take!(buf)); file_type = :kvn)
+        out = String(take!(buf))
+
+        # The covariance elements carry their CCSDS units in the KVN output.
+        @test occursin(r"CX_X +?= 1\.0 +\[km\*\*2\]", out)
+        @test occursin(r"CX_DOT_X +?= 7\.0 +\[km\*\*2/s\]", out)
+        @test occursin(r"CX_DOT_X_DOT +?= 10\.0 +\[km\*\*2/s\*\*2\]", out)
+
+        omm_reparsed = parse_omm(out; file_type = :kvn)
 
         @test omm_reparsed == omm_cov
         @test omm_reparsed.data.covariance_matrix.comments ==
