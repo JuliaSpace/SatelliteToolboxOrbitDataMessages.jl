@@ -414,9 +414,12 @@ function _xml_omm__parse_data(xml::XML.Cursor, strict::Bool)
 
             fields[:covariance_matrix] = covariance_fields
         else
-            fields[:user_defined_parameters] = _xml_omm__parse_user_defined_parameters(
-                node, strict
-            )
+            user_defined_parameters = _xml_omm__parse_user_defined_parameters(node, strict)
+
+            # An empty section is normalized to an absent field so that every format
+            # yields the same message.
+            isempty(user_defined_parameters) ||
+                (fields[:user_defined_parameters] = user_defined_parameters)
         end
     end
 

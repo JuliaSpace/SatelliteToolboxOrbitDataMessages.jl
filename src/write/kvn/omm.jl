@@ -134,7 +134,8 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
 
     # -- User-Defined Parameters -----------------------------------------------------------
 
-    if !isnothing(data.user_defined_parameters)
+    # An empty vector is treated as an absent section, matching the parsers.
+    if !isnothing(data.user_defined_parameters) && !isempty(data.user_defined_parameters)
         for (key, value) in data.user_defined_parameters
             _kvn_omm__write_element(
                 io, _KVN_OMM__USER_DEFINED_PREFIX * key, value, keyword_width

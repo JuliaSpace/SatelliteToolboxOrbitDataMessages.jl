@@ -46,6 +46,27 @@
         @test udp[2].second == "val2"
     end
 
+    # == Empty Section -> nothing ==========================================================
+
+    @testset "Empty Section" begin
+        ud_xml = "<userDefinedParameters></userDefinedParameters>"
+        omm    = parse_omm(_minimal_omm_xml(; user_defined_xml = ud_xml))
+        @test isnothing(omm.data.user_defined_parameters)
+
+        # A message holding an empty vector is written without the section, so the
+        # XML and KVN round trips yield equal messages.
+        omm_empty = OrbitMeanElementsMessage(
+            omm; user_defined_parameters = Pair{String, String}[]
+        )
+
+        for file_type in (:xml, :kvn)
+            buf = IOBuffer()
+            write_omm(buf, omm_empty; file_type)
+            reparsed = parse_omm(String(take!(buf)); file_type)
+            @test isnothing(reparsed.data.user_defined_parameters)
+        end
+    end
+
     @testset "Decoded Entities" begin
         ud_xml = """
         <userDefinedParameters>
