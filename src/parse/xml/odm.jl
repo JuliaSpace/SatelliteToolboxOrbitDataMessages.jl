@@ -64,8 +64,14 @@ for (tag, name) in (
     :oem => "Orbit Ephemeris Messages (OEM)",
     :ocm => "Orbit Comprehensive Messages (OCM)",
 )
-    @eval function _xml_odm__parse_message(::Val{$(QuoteNode(tag))}, ::XML.Cursor, ::Bool)
+    @eval function _xml_odm__parse_message(
+        ::Val{$(QuoteNode(tag))}, xml::XML.Cursor, ::Bool
+    )
         @warn $("We do not support $name yet.")
+
+        # Skip the whole subtree so that the caller does not walk its tokens.
+        skip_element!(xml)
+
         return nothing
     end
 end
