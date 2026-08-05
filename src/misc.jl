@@ -22,6 +22,27 @@ function _ndm_render_value(value::NanoDate)
 end
 
 """
+    _parse_omm_object_id(object_id::AbstractString) -> Union{Nothing, NamedTuple}
+
+Parse an OMM `OBJECT_ID` in the international designator format `YYYY-NNN` or `YYYY-NNNP`,
+returning the container `(; year, launch_number, piece)` with the matched components, or
+`nothing` if `object_id` does not follow the format. Surrounding whitespace is ignored,
+and the piece may be empty.
+"""
+function _parse_omm_object_id(object_id::AbstractString)
+    m = match(r"^(\d{4})-(\d{1,3})([A-Z]*)$", strip(object_id))
+    isnothing(m) && return nothing
+
+    # All three groups always participate in a successful match (the piece may be an empty
+    # string), so the captures can be asserted to concrete `SubString`s.
+    return (;
+        year          = m.captures[1]::SubString{String},
+        launch_number = m.captures[2]::SubString{String},
+        piece         = m.captures[3]::SubString{String},
+    )
+end
+
+"""
     _parse_ndm_date(str::AbstractString) -> Union{Nothing, NanoDate}
 
 Parse an NDM date/time string into a `NanoDate`, returning `nothing` if `str` is empty or

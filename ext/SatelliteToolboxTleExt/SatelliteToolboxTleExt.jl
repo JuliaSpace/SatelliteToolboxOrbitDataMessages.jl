@@ -6,6 +6,7 @@ using SatelliteToolboxOrbitDataMessages
 using SatelliteToolboxTle
 
 import Base: convert
+import SatelliteToolboxOrbitDataMessages: _parse_omm_object_id
 
 ############################################################################################
 #                                        Julia API                                         #
@@ -99,28 +100,18 @@ a TLE international designator (format: `YYNNNXXX`).
 The OMM format is typically `1998-067A` while TLE format is `98067A`.
 """
 function _omm_object_id_to_tle_intl_designator(object_id::String)
-    # Remove any whitespace.
-    obj_id = strip(object_id)
-
     # Try to match the pattern YYYY-NNN[piece].
-    m = match(r"^(\d{4})-(\d{1,3})([A-Z]*)$", obj_id)
+    parsed = _parse_omm_object_id(object_id)
 
-    # If the pattern does not match, return as-is (fallback).
-    isnothing(m) && return obj_id
+    # If the pattern does not match, return the identifier without the surrounding
+    # whitespace (fallback).
+    isnothing(parsed) && return String(strip(object_id))
 
-    # Obtain the captures. The piece group `([A-Z]*)` always matches, possibly as an empty
-    # string.
-    year       = m.captures[1]
-    launch_num = m.captures[2]
-    piece      = m.captures[3]
+    # Take the last 2 digits of the year and pad the launch number to 3 digits.
+    year_2digit       = @views parsed.year[3:4]
+    launch_num_padded = lpad(parsed.launch_number, 3, "0")
 
-    # Take last 2 digits of year.
-    year_2digit = @views year[3:4]
-
-    # Pad launch number to 3 digits
-    launch_num_padded = lpad(launch_num, 3, "0")
-
-    return year_2digit * launch_num_padded * piece
+    return string(year_2digit, launch_num_padded, parsed.piece)
 end
 
 end # module SatelliteToolboxTleExt

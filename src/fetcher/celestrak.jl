@@ -102,23 +102,18 @@ function fetch_omms(
         query_param = "CATNR=" * URIs.escapeuri(query_value)
 
     elseif !isnothing(international_designator)
-        # The international designator must be a string with the form:
-        #
-        #   YYYY-NNN[P]
-        #
-        # where `YYYY` is the launch year, `NNN` is the launch number (1 to 3 digits),
-        # and `P` is an optional piece letter.
+        object_id = _parse_omm_object_id(international_designator)
 
-        m = match(r"^(\d{4})-(\d{1,3})([A-Z]*)$", international_designator)
-
-        isnothing(m) && throw(
+        isnothing(object_id) && throw(
             ArgumentError(
                 "The international designator must have the format `YYYY-NNN` or `YYYY-NNNP`.",
             ),
         )
 
         # Pad the launch number to 3 digits as expected by Celestrak's INTDES parameter.
-        query_value = string(m.captures[1], "-", lpad(m.captures[2], 3, "0"), m.captures[3])
+        query_value = string(
+            object_id.year, "-", lpad(object_id.launch_number, 3, "0"), object_id.piece
+        )
 
         query_type  = "international designator"
         query_param = "INTDES=" * URIs.escapeuri(query_value)
