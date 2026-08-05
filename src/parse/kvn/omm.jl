@@ -111,6 +111,9 @@ function _kvn_omm__parse(str::AbstractString)
         section, field       = section_and_field
         fields, comments_key = sections[section]
 
+        haskey(fields, field) &&
+            throw(ArgumentError("Duplicate OMM keyword `$key` in line $l."))
+
         last_comments = flush_comments!(fields, comments_key)
 
         T = _omm_field_type(field)
