@@ -6,10 +6,11 @@
 
 export SpacetrackOmmFetcher
 
-const _SPACETRACK__HOST        = "www.space-track.org"
-const _SPACETRACK__URL         = "https://" * _SPACETRACK__HOST
-const _SPACETRACK__LOGIN_URL   = _SPACETRACK__URL * "/ajaxauth/login"
-const _SPACETRACK__COOKIE_NAME = "chocolatechip"
+const _SPACETRACK__COOKIE_ENTRY = "space-track.org"
+const _SPACETRACK__HOST         = "www.space-track.org"
+const _SPACETRACK__URL          = "https://" * _SPACETRACK__HOST
+const _SPACETRACK__LOGIN_URL    = _SPACETRACK__URL * "/ajaxauth/login"
+const _SPACETRACK__COOKIE_NAME  = "chocolatechip"
 
 """
     struct SpacetrackOmmFetcher <: AbstractOmmFetcher
@@ -528,14 +529,19 @@ Get the expiration date of the Space-Track cookie in the `cookiejar`. If the coo
 found, it returns `nothing`.
 """
 function _spacetrack__cookie_expire_date(cookiejar::HTTP.CookieJar)
-    !haskey(cookiejar.entries, _SPACETRACK__HOST) && return nothing
     cookie_path = _SPACETRACK__HOST * ";/;" * _SPACETRACK__COOKIE_NAME
-    entries     = cookiejar.entries[_SPACETRACK__HOST]
 
-    !haskey(entries, cookie_path) && return nothing
-    expires = entries[cookie_path].expires
+    # HTTP.jl v2 keys the cookie jar entries by the registrable domain, whereas v1 uses the
+    # full host.
+    for key in (_SPACETRACK__COOKIE_ENTRY, _SPACETRACK__HOST)
+        !haskey(cookiejar.entries, key) && continue
+        entries = cookiejar.entries[key]
 
-    return expires
+        !haskey(entries, cookie_path) && continue
+        return entries[cookie_path].expires
+    end
+
+    return nothing
 end
 
 """
