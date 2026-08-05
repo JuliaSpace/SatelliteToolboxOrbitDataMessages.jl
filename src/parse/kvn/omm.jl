@@ -38,9 +38,9 @@ function _kvn_omm__parse(str::AbstractString)
     # Comments precede the content of the section they refer to in KVN files. Hence, we
     # buffer consecutive comment lines and assign them to the section of the next recognized
     # keyword. Comments at the end of the message are assigned to the section of the last
-    # recognized keyword.
+    # recognized keyword, defaulting to the header if no keyword was recognized.
     pending_comments = String[]
-    last_comments    = nothing
+    last_comments    = (header_fields, :comments)
 
     # Flush the pending comments to the `fields` dictionary under the `comments_key`.
     flush_comments!(fields::Dict{Symbol, Any}, comments_key::Symbol) = begin
@@ -123,10 +123,9 @@ function _kvn_omm__parse(str::AbstractString)
         fields[field] = _omm_parse_field_value(field, value, key)
     end
 
-    # Assign the trailing comments to the section of the last recognized keyword,
-    # defaulting to the header if no keyword was recognized.
+    # Assign the trailing comments to the section of the last recognized keyword.
     if !isempty(pending_comments)
-        fields, comments_key = something(last_comments, (header_fields, :comments))
+        fields, comments_key = last_comments
         flush_comments!(fields, comments_key)
     end
 

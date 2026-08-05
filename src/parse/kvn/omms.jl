@@ -19,7 +19,7 @@ function _kvn_omms__parse(str::AbstractString, strict::Bool)
     omms = OrbitMeanElementsMessage[]
 
     i_last      = lastindex(str)
-    chunk_start = nothing
+    chunk_start = 0
     pos         = firstindex(str)
 
     while pos <= i_last
@@ -32,9 +32,9 @@ function _kvn_omms__parse(str::AbstractString, strict::Bool)
         if !isnothing(km) && (km[1] == "CCSDS_OMM_VERS")
             # If we have already started an OMM, we need to parse it before starting the new
             # one.
-            if !isnothing(chunk_start)
+            if chunk_start > 0
                 chunk = SubString(str, chunk_start, prevind(str, pos))
-                push!(omms, parse_omm(chunk; file_type = :kvn, strict))
+                push!(omms, _omm_assemble(_kvn_omm__parse(chunk), strict))
             end
 
             chunk_start = pos
@@ -44,9 +44,9 @@ function _kvn_omms__parse(str::AbstractString, strict::Bool)
     end
 
     # Parse the last OMM in the input, if any.
-    if !isnothing(chunk_start)
+    if chunk_start > 0
         chunk = SubString(str, chunk_start, i_last)
-        push!(omms, parse_omm(chunk; file_type = :kvn, strict))
+        push!(omms, _omm_assemble(_kvn_omm__parse(chunk), strict))
     end
 
     return omms
