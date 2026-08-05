@@ -564,7 +564,9 @@ function _spacetrack__load_cookiejar(username::String)
 
         return cookiejar
     catch e
-        @error """
+        # This failure is routine (e.g. after a Julia or HTTP.jl upgrade) and recovers
+        # cleanly by prompting the user to log in again, so it is not an error.
+        @warn """
             Could not load cookies from file.
               $e
             """
@@ -647,7 +649,7 @@ function _spacetrack__purge_cookiejar(username::String)
     cache_dir   = @get_scratch!("spacetrack")
     cookie_file = joinpath(cache_dir, "cookies-$username")
 
-    isfile(cookie_file) && rm(cookie_file; force = true)
+    rm(cookie_file; force = true)
 
     return nothing
 end
