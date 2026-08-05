@@ -303,5 +303,8 @@ OrbitMeanElementsMessage:
 
         # ANSI escape codes should be present when color is enabled.
         @test occursin("\e[", result)
+
+        # The field names must keep their bold styling all the way to the output.
+        @test occursin("\e[1mObject Name", result)
     end
 end

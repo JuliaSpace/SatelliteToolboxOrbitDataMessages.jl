@@ -81,7 +81,12 @@ function _push_output!(
 end
 
 """
-    _render_field(field_name::String, field_value::String, unit::String, name_width::Int) -> String
+    _render_field(
+        field_name::String,
+        field_value::String,
+        unit::String,
+        name_width::Int
+    ) -> AbstractString
 
 Render a single field row `<name> : <value> <unit>`, left-aligning `field_name` to
 `name_width`. The `unit` is appended inline separated by a space, except for the degree unit
@@ -92,14 +97,21 @@ function _render_field(
 )
     sty_name = styled"{satellitetoolbox_odm_field:$field_name}"
 
-    str = rpad(sty_name, name_width) * " : " * field_value
+    # The row is built with a manual padding and a single `annotatedstring` call instead
+    # of `rpad` and string concatenation, avoiding intermediate strings and preserving the
+    # styling annotations on every supported Julia version.
+    padding = " "^max(0, name_width - textwidth(field_name))
 
-    if !isempty(unit)
-        sty_unit = styled"{satellitetoolbox_odm_unit:$unit}"
-        str *= unit == "°" ? sty_unit : " " * sty_unit
+    if isempty(unit)
+        return rstrip(annotatedstring(sty_name, padding, " : ", field_value))
     end
 
-    return string(rstrip(str))
+    sty_unit  = styled"{satellitetoolbox_odm_unit:$unit}"
+    separator = unit == "°" ? "" : " "
+
+    return rstrip(
+        annotatedstring(sty_name, padding, " : ", field_value, separator, sty_unit)
+    )
 end
 
 """
