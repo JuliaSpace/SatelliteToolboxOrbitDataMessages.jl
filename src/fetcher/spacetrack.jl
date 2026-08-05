@@ -40,7 +40,7 @@ function Base.show(io::IO, fetcher::SpacetrackOmmFetcher)
     expires = _spacetrack__cookie_expire_date(fetcher.cookiejar)
     Δt =
         isnothing(expires) ? "Unknown" :
-        Dates.canonicalize(round(expires - Dates.now(Dates.UTC), Dates.Second))
+        string(Dates.canonicalize(round(expires - Dates.now(Dates.UTC), Dates.Second)))
     return print(io, "SpacetrackOmmFetcher: $(fetcher.username) (Login expires in $Δt)")
 end
 

@@ -126,7 +126,8 @@ function fetch_omms(
     else
         isempty(satellite_name) && throw(ArgumentError("The satellite name is empty."))
 
-        query_value = satellite_name
+        # The conversion keeps `query_value` a concrete `String` in every branch.
+        query_value = String(satellite_name)
         query_param = "NAME=" * URIs.escapeuri(query_value)
         query_type  = "satellite name"
     end
