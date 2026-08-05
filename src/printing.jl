@@ -20,20 +20,20 @@ The registered faces are:
 - `:satellitetoolbox_odm_unit`: Field units.
 """
 function _register_faces()
-    faces = [
-        :satellitetoolbox_odm_title   => StyledStrings.Face(; weight = :bold),
-        :satellitetoolbox_odm_section => StyledStrings.Face(; foreground = :magenta, weight = :bold),
-        :satellitetoolbox_odm_node    => StyledStrings.Face(; foreground = :yellow, weight = :bold),
-        :satellitetoolbox_odm_tree    => StyledStrings.Face(; foreground = :gray),
-        :satellitetoolbox_odm_field   => StyledStrings.Face(; weight = :bold),
-        :satellitetoolbox_odm_unit    => StyledStrings.Face(; foreground = :gray),
-    ]
+    faces = (
+        :satellitetoolbox_odm_title => StyledStrings.Face(; weight = :bold),
+        :satellitetoolbox_odm_section =>
+            StyledStrings.Face(; foreground = :magenta, weight = :bold),
+        :satellitetoolbox_odm_node =>
+            StyledStrings.Face(; foreground = :yellow, weight = :bold),
+        :satellitetoolbox_odm_tree  => StyledStrings.Face(; foreground = :gray),
+        :satellitetoolbox_odm_field => StyledStrings.Face(; weight = :bold),
+        :satellitetoolbox_odm_unit  => StyledStrings.Face(; foreground = :gray),
+    )
 
-    for (name, face) in faces
-        # Do not overwrite a face that the user (or a previous call) already defined.
-        haskey(StyledStrings.FACES.default, name) && continue
-        StyledStrings.addface!(name => face)
-    end
+    # `addface!` does not overwrite a face that is already registered, so this call is
+    # idempotent and preserves user customizations.
+    foreach(StyledStrings.addface!, faces)
 
     return nothing
 end
