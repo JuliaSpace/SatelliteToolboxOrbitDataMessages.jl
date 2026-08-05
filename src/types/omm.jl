@@ -15,6 +15,26 @@ export OrbitMeanElementsMessage, OmmCovarianceMatrix
 
 # -- Header --------------------------------------------------------------------------------
 
+"""
+    struct OmmHeader
+
+Header section of an Orbit Mean-Elements Message (OMM) as defined by the CCSDS 502.0-B-3
+standard.
+
+# Fields
+
+- `comments::Vector{String}`: Comments for the header section.
+    (**Default**: `String[]`)
+- `classification::Union{String, Nothing}`: Message classification.
+    (**Default**: `nothing`)
+- `creation_date::Union{NanoDate, Nothing}`: Message creation date. It can only be
+    `nothing` for messages parsed leniently, which cannot be written until a creation date
+    is set.
+    (**Default**: `nothing`)
+- `originator::String`: Message originator.
+- `message_id::Union{String, Nothing}`: Unique message identifier.
+    (**Default**: `nothing`)
+"""
 @kwdef struct OmmHeader
     comments::Vector{String} = String[]
     classification::Union{String, Nothing} = nothing
@@ -25,6 +45,26 @@ end
 
 # -- Metadata ------------------------------------------------------------------------------
 
+"""
+    struct OmmMetadata
+
+Metadata section of an Orbit Mean-Elements Message (OMM) as defined by the CCSDS 502.0-B-3
+standard.
+
+# Fields
+
+- `comments::Vector{String}`: Comments for the metadata section.
+    (**Default**: `String[]`)
+- `object_name::String`: Spacecraft name.
+- `object_id::String`: International designator, usually in the format `YYYY-NNNP`.
+- `center_name::String`: Origin of the reference frame.
+- `ref_frame::String`: Reference frame of the mean elements.
+- `ref_frame_epoch::Union{NanoDate, Nothing}`: Epoch of the reference frame, if it is not
+    intrinsic to its definition.
+    (**Default**: `nothing`)
+- `time_system::String`: Time system used for the message.
+- `mean_element_theory::String`: Theory describing the mean elements, e.g. `"SGP4"`.
+"""
 @kwdef struct OmmMetadata
     comments::Vector{String} = String[]
     object_name::String
@@ -44,14 +84,16 @@ end
 Covariance matrix of an Orbit Mean-Elements Message (OMM) as defined by the CCSDS 502.0-B-3
 standard.
 
-The matrix is symmetric, so only the upper-triangular 21 elements are stored. The elements
+The matrix is symmetric, so only the lower-triangular 21 elements are stored. The elements
 follow the CCSDS naming convention where `CX_X` is the (1,1) entry, `CY_X` is the (2,1)
 entry, etc.
 
 # Fields
 
 - `comments::Vector{String}`: Comments for the covariance matrix section.
+    (**Default**: `String[]`)
 - `cov_ref_frame::Union{String, Nothing}`: Reference frame of the covariance matrix.
+    (**Default**: `nothing`)
 - `cx_x::Float64`: (1,1) element [km²].
 - `cy_x::Float64`: (2,1) element [km²].
 - `cy_y::Float64`: (2,2) element [km²].
@@ -100,6 +142,78 @@ entry, etc.
     cz_dot_z_dot::Float64
 end
 
+"""
+    struct OmmData
+
+Data section of an Orbit Mean-Elements Message (OMM) as defined by the CCSDS 502.0-B-3
+standard, containing the mean Keplerian elements and the optional spacecraft parameters,
+TLE-related parameters, covariance matrix, and user-defined parameters.
+
+# Fields
+
+- `comments::Vector{String}`: Comments for the data section.
+    (**Default**: `String[]`)
+- `mean_elements_comments::Vector{String}`: Comments for the mean elements section.
+    (**Default**: `String[]`)
+- `epoch::NanoDate`: Epoch of the mean Keplerian elements.
+- `semi_major_axis::Union{Float64, Nothing}`: Semi-major axis [km].
+    (**Default**: `nothing`)
+- `mean_motion::Union{Float64, Nothing}`: Mean motion [rev/day].
+    (**Default**: `nothing`)
+- `eccentricity::Float64`: Eccentricity.
+- `inclination::Float64`: Inclination [deg].
+- `raan::Float64`: Right ascension of the ascending node [deg].
+- `arg_of_pericenter::Float64`: Argument of pericenter [deg].
+- `mean_anomaly::Float64`: Mean anomaly [deg].
+- `GM::Union{Float64, Nothing}`: Gravitational coefficient [km³/s²].
+    (**Default**: `nothing`)
+- `spacecraft_parameters_comments::Vector{String}`: Comments for the spacecraft parameters
+    section.
+    (**Default**: `String[]`)
+- `mass::Union{Float64, Nothing}`: Spacecraft mass [kg].
+    (**Default**: `nothing`)
+- `solar_rad_area::Union{Float64, Nothing}`: Effective area for solar radiation pressure
+    [m²].
+    (**Default**: `nothing`)
+- `solar_rad_coeff::Union{Float64, Nothing}`: Solar radiation pressure coefficient.
+    (**Default**: `nothing`)
+- `drag_area::Union{Float64, Nothing}`: Effective area for atmospheric drag [m²].
+    (**Default**: `nothing`)
+- `drag_coeff::Union{Float64, Nothing}`: Atmospheric drag coefficient.
+    (**Default**: `nothing`)
+- `tle_parameters_comments::Vector{String}`: Comments for the TLE-related parameters
+    section.
+    (**Default**: `String[]`)
+- `ephemeris_type::Union{Int, Nothing}`: Default ephemeris type associated with the TLE.
+    (**Default**: `nothing`)
+- `classification_type::Union{Char, Nothing}`: Classification type, e.g. `'U'` for
+    unclassified.
+    (**Default**: `nothing`)
+- `norad_cat_id::Union{Int, Nothing}`: NORAD catalog number.
+    (**Default**: `nothing`)
+- `element_set_number::Union{Int, Nothing}`: Element set number.
+    (**Default**: `nothing`)
+- `rev_at_epoch::Union{Int, Nothing}`: Revolution number at epoch.
+    (**Default**: `nothing`)
+- `bstar::Union{Float64, Nothing}`: SGP4 drag term (B*) [1/ER].
+    (**Default**: `nothing`)
+- `bterm::Union{Float64, Nothing}`: Ballistic coefficient [m²/kg].
+    (**Default**: `nothing`)
+- `mean_motion_dot::Union{Float64, Nothing}`: First time derivative of the mean motion
+    [rev/day²].
+    (**Default**: `nothing`)
+- `mean_motion_ddot::Union{Float64, Nothing}`: Second time derivative of the mean motion
+    [rev/day³].
+    (**Default**: `nothing`)
+- `agom::Union{Float64, Nothing}`: Solar radiation pressure coefficient AGOM [m²/kg].
+    (**Default**: `nothing`)
+- `covariance_matrix::Union{OmmCovarianceMatrix, Nothing}`: Covariance matrix of the
+    message.
+    (**Default**: `nothing`)
+- `user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}}`: User-defined
+    parameters as a vector of `key => value` pairs.
+    (**Default**: `nothing`)
+"""
 @kwdef struct OmmData
     # == Mean Keplerian Elements ===========================================================
 
@@ -224,10 +338,12 @@ end
 Create an Orbit Mean-Elements Message (OMM) from the keyword arguments `kwargs...`.
 
 This constructor assembles the internal header, metadata, and data sections defined by the
-CCSDS 502.0-B-3 standard, returning a message compatible with version 3.0. The required
-keywords are the message originator, the object identification, the reference frame and
-time system, and the mean Keplerian elements. All angular quantities (`inclination`,
-`raan`, `arg_of_pericenter`, and `mean_anomaly`) are expressed in **degrees**.
+CCSDS 502.0-B-3 standard, returning a message with version 3.0 unless `version` is
+provided. The required keywords are the message creation date, the originator, the object
+identification, the reference frame and time system, and the mean Keplerian elements. All
+angular quantities (`inclination`, `raan`, `arg_of_pericenter`, and `mean_anomaly`) are
+expressed in **degrees**. An `ArgumentError` is thrown if the keyword combination violates
+the message rules (see the extended help).
 
 The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be provided as
 `NanoDate` objects so that the sub-second precision is preserved.
@@ -317,19 +433,25 @@ The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be prov
 - `mean_motion_ddot::Union{Float64, Nothing}`: Second time derivative of the mean motion
     [rev/day³].
     (**Default**: `nothing`)
-- `agom::Union{Float64, Nothing}`: Solar radiation pressure coefficient [m²/kg].
+- `agom::Union{Float64, Nothing}`: Solar radiation pressure coefficient AGOM [m²/kg].
+    (**Default**: `nothing`)
+- `covariance_matrix::Union{OmmCovarianceMatrix, Nothing}`: Covariance matrix of the
+    message.
     (**Default**: `nothing`)
 - `user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}}`: User-defined
     parameters as a vector of `key => value` pairs.
     (**Default**: `nothing`)
 
-    OrbitMeanElementsMessage(
-        omm::OrbitMeanElementsMessage;
-        kwargs...
-    ) -> OrbitMeanElementsMessage
+# Extended help
 
-Create a copy of `omm`, overriding the fields specified in `kwargs...`. Any keyword accepted
-by the main constructor can be used; the remaining fields are copied from `omm`.
+## Throws
+
+- `ArgumentError`: If `version` is not `v"2.0"` or `v"3.0"`.
+- `ArgumentError`: If not exactly one of `semi_major_axis` and `mean_motion` is provided.
+- `ArgumentError`: If the TLE-related parameters section is present (any of its keywords
+    or comments is set) and not exactly one of `bstar` and `bterm` is provided, or
+    `mean_motion_dot` is missing, or not exactly one of `mean_motion_ddot` and `agom` is
+    provided.
 """
 function OrbitMeanElementsMessage(;
     # == Version ===========================================================================
@@ -496,6 +618,16 @@ function OrbitMeanElementsMessage(;
     return OrbitMeanElementsMessage(version, header, metadata, data)
 end
 
+"""
+    OrbitMeanElementsMessage(
+        omm::OrbitMeanElementsMessage;
+        kwargs...
+    ) -> OrbitMeanElementsMessage
+
+Create a copy of `omm`, overriding the fields specified in `kwargs...`. Any keyword
+accepted by the keyword constructor can be used; the remaining fields, including the
+message version, are copied from `omm`.
+"""
 function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
     return OrbitMeanElementsMessage(;
         # == Version =======================================================================
@@ -574,4 +706,12 @@ end
 
 # == Fetchers ==============================================================================
 
+"""
+    abstract type AbstractOmmFetcher
+
+Supertype of all Orbit Mean-Elements Message (OMM) fetchers.
+
+Every supported service defines a concrete subtype (e.g. [`CelestrakOmmFetcher`](@ref))
+together with methods for [`create_omm_fetcher`](@ref) and [`fetch_omms`](@ref).
+"""
 abstract type AbstractOmmFetcher end
