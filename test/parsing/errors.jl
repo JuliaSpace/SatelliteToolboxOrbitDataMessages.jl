@@ -374,3 +374,18 @@ end
     @test exception isa ArgumentError
     @test occursin("NORAD_CAT_ID", exception.msg)
 end
+
+@testset "Invalid Date Values" begin
+    # The error message must name the OMM field that contains the invalid date.
+    for epoch in ("not-a-date", "2025-366T00:00:00")
+        exception = try
+            parse_omm(_minimal_omm_xml(; epoch))
+            nothing
+        catch exception
+            exception
+        end
+
+        @test exception isa ArgumentError
+        @test occursin("EPOCH", exception.msg)
+    end
+end

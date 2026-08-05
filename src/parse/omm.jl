@@ -292,16 +292,26 @@ the field is dimensionless.
 _omm_field_unit(field::Symbol) = get(_OMM_FIELD_UNIT, field, nothing)
 
 """
-    _omm_parse_field(::Type{T}, value::AbstractString, keyword::AbstractString) -> T
+    _omm_parse_field(
+        ::Type{T},
+        value::AbstractString,
+        keyword::AbstractString
+    ) -> Union{Nothing, T}
 
 Parse the raw `value` of the OMM field identified by the CCSDS `keyword` as type `T`,
-throwing an `ArgumentError` that names the keyword if the value is invalid.
+throwing an `ArgumentError` that names the keyword if the value is invalid. The `NanoDate`
+method returns `nothing` when `value` is empty or contains only whitespace.
 """
 _omm_parse_field(::Type{String}, value::AbstractString, keyword::AbstractString) =
     String(value)
 
 function _omm_parse_field(::Type{NanoDate}, value::AbstractString, keyword::AbstractString)
-    return _parse_ndm_date(value)
+    try
+        return _parse_ndm_date(value)
+    catch e
+        e isa ArgumentError || rethrow()
+        throw(ArgumentError("OMM field `$keyword` contains an invalid date: \"$value\"."))
+    end
 end
 
 function _omm_parse_field(::Type{Char}, value::AbstractString, keyword::AbstractString)
