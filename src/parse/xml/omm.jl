@@ -27,6 +27,15 @@ function _xml_omm__parse(xml::XML.Cursor, strict::Bool)
     return nothing
 end
 
+# Sections of the OMM data element, in the order defined by the CCSDS 502.0-B-3 standard.
+const _XML_OMM__DATA_SECTIONS = (
+    "meanElements",
+    "spacecraftParameters",
+    "tleParameters",
+    "covarianceMatrix",
+    "userDefinedParameters",
+)
+
 # Map lowercase OMM structural tag names to their canonical schema-defined casing for
 # case-insensitive parsing.
 const _XML_OMM__STRUCTURAL_TAGS = Dict(
@@ -48,7 +57,7 @@ const _XML_OMM__STRUCTURAL_TAGS = Dict(
 )
 
 """
-    _xml_omm__tag(node::Cursor, strict::Bool) -> Union{String, Nothing}
+    _xml_omm__tag(node::Cursor, strict::Bool) -> Union{Nothing, SubString{String}}
 
 Return the canonical OMM tag for `node`, matching case-insensitively unless `strict` is
 `true`.
@@ -58,7 +67,13 @@ function _xml_omm__tag(node::XML.Cursor, strict::Bool)
     (strict || isnothing(node_tag)) && return node_tag
 
     lowercase_tag = lowercase(node_tag)
-    return get(_XML_OMM__STRUCTURAL_TAGS, lowercase_tag, uppercase(node_tag))
+
+    # The closure form of `get` avoids allocating the uppercase default when the tag is a
+    # known structural tag, and the `SubString` wrap keeps the return type uniform across
+    # the strict and lenient paths.
+    return SubString(
+        get(() -> uppercase(node_tag), _XML_OMM__STRUCTURAL_TAGS, lowercase_tag)
+    )
 end
 
 """
@@ -99,11 +114,13 @@ function _xml_omm__parse_element(xml::XML.Cursor, strict::Bool)
 
     # The OMM element must contain exactly one `header` followed by one `body`, so we only
     # need to count the element children and check that the expected tag appears at each
-    # position.
-    header_fields  = nothing
-    segment        = nothing
-    valid_children = true
-    child_count    = 0
+    # position. The dictionaries are initialized here so that the locals stay
+    # concretely typed.
+    header_fields   = Dict{Symbol, Any}()
+    metadata_fields = Dict{Symbol, Any}()
+    data_fields     = Dict{Symbol, Any}()
+    valid_children  = true
+    child_count     = 0
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
@@ -113,7 +130,7 @@ function _xml_omm__parse_element(xml::XML.Cursor, strict::Bool)
         if (child_count == 1) && (lt == "header")
             header_fields = _xml_omm__parse_header(node, strict)
         elseif (child_count == 2) && (lt == "body")
-            segment = _xml_omm__parse_body(node, strict)
+            metadata_fields, data_fields = _xml_omm__parse_body(node, strict)
         else
             valid_children = false
             skip_element!(node)
@@ -126,13 +143,11 @@ function _xml_omm__parse_element(xml::XML.Cursor, strict::Bool)
         ),
     )
 
-    metadata_fields, data_fields = segment
-
     return (; version, header_fields, metadata_fields, data_fields)
 end
 
 """
-    _xml_omm__scalar_value(xml::Cursor) -> String
+    _xml_omm__scalar_value(xml::Cursor) -> SubString{String}
 
 Read the text or CDATA value of the current OMM scalar element while advancing the cursor
 past that element. Non-value child nodes are ignored.
@@ -156,9 +171,10 @@ function _xml_omm__scalar_value(xml::XML.Cursor)
         end
     end
 
-    isnothing(result) && return ""
-
-    return String(strip(result))
+    # Returning a `SubString` avoids copying the value: the numeric fields (the large
+    # majority) are parsed directly from it, and the string fields are converted once by
+    # `_omm_parse_field`.
+    return strip(something(result, ""))
 end
 
 """
@@ -188,7 +204,7 @@ function _xml_omm__parse_section!(
     description::String,
 )
     comments = String[]
-    seen     = Set{String}()
+    seen     = UInt32(0)
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
@@ -202,11 +218,16 @@ function _xml_omm__parse_section!(
 
         # The mapping is an ordered vector of pairs, so we perform a linear search. The
         # sections are small, hence the lookup cost is negligible.
-        i     = findfirst(p -> first(p) == lt, mapping)
-        field = isnothing(i) ? nothing : last(mapping[i])
-        isnothing(field) && throw(ArgumentError("Unknown OMM $description `$lt`."))
-        lt in seen && throw(ArgumentError("Duplicate OMM $description `$lt`."))
-        push!(seen, lt)
+        i = findfirst(p -> first(p) == lt, mapping)
+        isnothing(i) && throw(ArgumentError("Unknown OMM $description `$lt`."))
+
+        # Every mapping has at most 22 entries, so a bitmask over the mapping index
+        # detects duplicates without allocating a `Set`.
+        mask = UInt32(1) << (i - 1)
+        (seen & mask) != 0 && throw(ArgumentError("Duplicate OMM $description `$lt`."))
+        seen |= mask
+
+        field = last(mapping[i])
 
         if isempty(v)
             strict && throw(ArgumentError("OMM field `$lt` cannot be empty."))
@@ -351,7 +372,7 @@ are checked afterwards by [`_omm_check_mandatory_fields`](@ref).
 function _xml_omm__parse_data(xml::XML.Cursor, strict::Bool)
     fields        = Dict{Symbol, Any}()
     data_comments = String[]
-    seen_sections = Set{String}()
+    seen_sections = UInt8(0)
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
@@ -362,16 +383,14 @@ function _xml_omm__parse_data(xml::XML.Cursor, strict::Bool)
             continue
         end
 
-        lt ∉ (
-            "meanElements",
-            "spacecraftParameters",
-            "tleParameters",
-            "covarianceMatrix",
-            "userDefinedParameters",
-        ) && throw(ArgumentError("Unknown OMM data section `$lt`."))
+        i = findfirst(==(lt), _XML_OMM__DATA_SECTIONS)
+        isnothing(i) && throw(ArgumentError("Unknown OMM data section `$lt`."))
 
-        lt in seen_sections && throw(ArgumentError("Duplicate OMM data section `$lt`."))
-        push!(seen_sections, lt)
+        # A bitmask over the section index detects duplicates without allocating a `Set`.
+        mask = UInt8(1) << (i - 1)
+        (seen_sections & mask) != 0 &&
+            throw(ArgumentError("Duplicate OMM data section `$lt`."))
+        seen_sections |= mask
 
         if lt == "meanElements"
             _xml_omm__parse_section!(
