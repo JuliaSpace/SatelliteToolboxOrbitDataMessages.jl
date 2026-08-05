@@ -288,6 +288,18 @@
         @test omm.header.originator == ""
     end
 
+    # == Missing CREATION_DATE in KVN ======================================================
+
+    @testset "Missing CREATION_DATE in KVN" begin
+        kvn_no_date = replace(kvn, "CREATION_DATE = 2025-12-30T23:36:37\n" => "")
+
+        # The presence requirement applies to every format when parsing strictly.
+        @test_throws ArgumentError parse_omm(kvn_no_date; file_type = :kvn)
+
+        omm = parse_omm(kvn_no_date; file_type = :kvn, strict = false)
+        @test omm.header.creation_date === nothing
+    end
+
     # == Duplicate KVN Keywords ============================================================
 
     @testset "Duplicate KVN Keywords" begin

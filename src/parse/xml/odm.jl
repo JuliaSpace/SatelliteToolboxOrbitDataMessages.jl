@@ -56,7 +56,7 @@ To add support for a new message type, define a method for the corresponding tag
 assembled message.
 """
 function _xml_odm__parse_message(::Val{:omm}, xml::XML.Cursor, strict::Bool)
-    return _omm_assemble(_xml_omm__parse_element(xml, strict))
+    return _omm_assemble(_xml_omm__parse_element(xml, strict), strict)
 end
 
 for (tag, name) in (

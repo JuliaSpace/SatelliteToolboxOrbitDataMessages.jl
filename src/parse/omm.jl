@@ -41,7 +41,7 @@ function parse_omm(str::AbstractString; file_type::Symbol = :auto, strict::Bool 
     isnothing(parsed_omm) && return nothing
 
     # Check the mandatory fields and assemble the message.
-    return _omm_assemble(parsed_omm)
+    return _omm_assemble(parsed_omm, strict)
 end
 
 """
@@ -69,7 +69,7 @@ function parse_omms(str::AbstractString; file_type::Symbol = :auto, strict::Bool
         file_type = occursin(r"^\s*<", str) ? :xml : :kvn
     end
 
-    file_type == :kvn && return _kvn_omms__parse(str)
+    file_type == :kvn && return _kvn_omms__parse(str, strict)
     file_type == :xml && return _xml_omms__parse(str, strict)
 
     return throw(ArgumentError("Unsupported file type: $file_type."))
@@ -336,13 +336,16 @@ _omm_is_absent(value::AbstractString) = isempty(value)
         version::VersionNumber,
         header_fields::Dict{Symbol, Any},
         metadata_fields::Dict{Symbol, Any},
-        data_fields::Dict{Symbol, Any}
+        data_fields::Dict{Symbol, Any},
+        strict::Bool
     ) -> Nothing
 
 Check if all mandatory fields of an Orbit Mean-Elements Message (OMM) with `version` (2.0 or
 3.0) are present in the dictionaries `header_fields`, `metadata_fields`, and `data_fields`
 returned by a format-specific parser, throwing an `ArgumentError` otherwise. A field whose
-value is `nothing` or an empty string is treated as absent.
+value is `nothing` or an empty string is treated as absent. If `strict` is `false`, the
+`CREATION_DATE` presence requirement is relaxed, allowing real-world files with an omitted
+creation date to be processed.
 
 This function is format-agnostic so that every supported file type is validated by the same
 rules.
@@ -352,8 +355,13 @@ function _omm_check_mandatory_fields(
     header_fields::Dict{Symbol, Any},
     metadata_fields::Dict{Symbol, Any},
     data_fields::Dict{Symbol, Any},
+    strict::Bool,
 )
     # == Header ============================================================================
+
+    # The `CREATION_DATE` presence requirement is relaxed when parsing leniently.
+    strict && _omm_is_absent(get(header_fields, :creation_date, nothing)) &&
+        throw(ArgumentError("OMM header is missing required field `CREATION_DATE`."))
 
     # In OMM version 2.0, we allow a blank `ORIGINATOR` to accommodate real-world files
     # (e.g. from Celestrak) that omit its value.
@@ -472,21 +480,23 @@ end
         version::Union{Nothing, Float64},
         header_fields::Dict{Symbol, Any},
         metadata_fields::Dict{Symbol, Any},
-        data_fields::Dict{Symbol, Any}
+        data_fields::Dict{Symbol, Any},
+        strict::Bool
     ) -> OrbitMeanElementsMessage
 
 Assemble an Orbit Mean-Elements Message (OMM) from the information returned by a
 format-specific parser: the format `version` (`nothing` if it is absent in the input) and
 the dictionaries `header_fields`, `metadata_fields`, and `data_fields` with the raw field
 values of the corresponding sections. The dictionaries only contain the fields that are
-present in the input.
+present in the input. The `strict` flag selects whether the mandatory fields are validated
+strictly (see [`_omm_check_mandatory_fields`](@ref)).
 
 The version and the mandatory fields are validated before the message is created. Then, each
 dictionary is converted to keyword arguments of the corresponding OMM section constructor.
 The covariance matrix, if present, must be stored in `data_fields[:covariance_matrix]` as a
 `Dict{Symbol, Any}` with its raw element values.
 
-    _omm_assemble(parsed_omm::NamedTuple) -> OrbitMeanElementsMessage
+    _omm_assemble(parsed_omm::NamedTuple, strict::Bool) -> OrbitMeanElementsMessage
 
 Assemble an OMM from the container `(; version, header_fields, metadata_fields,
     data_fields)` holding the same information.
@@ -496,6 +506,7 @@ function _omm_assemble(
     header_fields::Dict{Symbol, Any},
     metadata_fields::Dict{Symbol, Any},
     data_fields::Dict{Symbol, Any},
+    strict::Bool,
 )
     # == Version ===========================================================================
 
@@ -509,7 +520,9 @@ function _omm_assemble(
 
     # == Mandatory Fields ==================================================================
 
-    _omm_check_mandatory_fields(omm_version, header_fields, metadata_fields, data_fields)
+    _omm_check_mandatory_fields(
+        omm_version, header_fields, metadata_fields, data_fields, strict
+    )
 
     # == Assembling ========================================================================
 
@@ -532,11 +545,12 @@ function _omm_assemble(
     )
 end
 
-function _omm_assemble(parsed_omm::NamedTuple)
+function _omm_assemble(parsed_omm::NamedTuple, strict::Bool)
     return _omm_assemble(
         parsed_omm.version,
         parsed_omm.header_fields,
         parsed_omm.metadata_fields,
         parsed_omm.data_fields,
+        strict,
     )
 end

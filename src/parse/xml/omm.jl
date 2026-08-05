@@ -238,13 +238,6 @@ function _xml_omm__parse_header(xml::XML.Cursor, strict::Bool)
         fields, xml, strict, _OMM_HEADER_KEYWORD_TO_FIELD, :comments, "header field"
     )
 
-    # `CREATION_DATE` is checked here instead of in `_omm_check_mandatory_fields` because
-    # its presence requirement is relaxed when parsing leniently, allowing real-world files
-    # with an omitted creation date to be processed.
-    strict &&
-        !haskey(fields, :creation_date) &&
-        throw(ArgumentError("OMM header is missing required field `CREATION_DATE`."))
-
     return fields
 end
 
