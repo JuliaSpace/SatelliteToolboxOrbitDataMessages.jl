@@ -17,8 +17,9 @@ const _KVN_OMM__MINIMUM_KEYWORD_WIDTH = 19
 const _KVN_OMM__VALUE_WIDTH = 15
 
 # Prefix prepended to the user-defined parameter names, matching the prefix stripped by
-# the KVN parser.
+# the KVN parser, and its width in the keyword column.
 const _KVN_OMM__USER_DEFINED_PREFIX = "USER_DEFINED_"
+const _KVN_OMM__USER_DEFINED_PREFIX_WIDTH = textwidth(_KVN_OMM__USER_DEFINED_PREFIX)
 
 # Regular expression with the keyword grammar accepted by the KVN parser.
 const _KVN_OMM__KEYWORD_GRAMMAR_REGEX = r"^[0-9A-Z_]+$"
@@ -55,7 +56,7 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
     user_defined_keyword_width =
         isnothing(data.user_defined_parameters) ? 0 :
         maximum(
-            p -> textwidth(first(p)) + textwidth(_KVN_OMM__USER_DEFINED_PREFIX),
+            p -> textwidth(first(p)) + _KVN_OMM__USER_DEFINED_PREFIX_WIDTH,
             data.user_defined_parameters;
             init = 0,
         )

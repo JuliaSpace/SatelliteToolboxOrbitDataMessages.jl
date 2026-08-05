@@ -68,7 +68,8 @@ function write_omm(
     file_type::Symbol = :auto,
 )
     if file_type == :auto
-        file_type = endswith(lowercase(file), ".kvn") ? :kvn : :xml
+        # Lowercase only the extension instead of copying the whole path.
+        file_type = lowercase(last(splitext(file))) == ".kvn" ? :kvn : :xml
     end
 
     # Validate everything before opening the file so that a failure does not truncate an
