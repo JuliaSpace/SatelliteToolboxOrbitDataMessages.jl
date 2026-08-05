@@ -14,12 +14,13 @@ using HTTP
 using PrecompileTools
 using Scratch
 using Serialization
-using StyledStrings: annotatedstring
+using StyledStrings
 using URIs
 using XML
 
 import Base: ==
 import NanoDates: NanoDate
+import StyledStrings: annotatedstring
 
 ############################################################################################
 #                                          Types                                           #
