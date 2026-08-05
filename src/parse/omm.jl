@@ -25,6 +25,10 @@ the file does not contain an OMM message, `nothing` is returned.
     (**Default**: `true`)
 """
 function parse_omm(str::AbstractString; file_type::Symbol = :auto, strict::Bool = true)
+    # Remove a leading byte-order mark, which some real-world files include and would
+    # otherwise break the file type detection and the KVN parser.
+    str = chopprefix(str, "\ufeff")
+
     if file_type == :auto
         file_type = occursin(r"^\s*<", str) ? :xml : :kvn
     end
@@ -65,6 +69,10 @@ an OMM message, an empty vector is returned. If the root tag is not recognized, 
     (**Default**: `true`)
 """
 function parse_omms(str::AbstractString; file_type::Symbol = :auto, strict::Bool = true)
+    # Remove a leading byte-order mark, which some real-world files include and would
+    # otherwise break the file type detection and the KVN parser.
+    str = chopprefix(str, "\ufeff")
+
     if file_type == :auto
         file_type = occursin(r"^\s*<", str) ? :xml : :kvn
     end

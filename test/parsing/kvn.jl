@@ -128,6 +128,12 @@ end
         @test length(parse_omms(kvn)) == 1
     end
 
+    @testset "Byte-Order Mark Handling" begin
+        @test parse_omm("\ufeff" * _fixture_omm_xml()) isa OrbitMeanElementsMessage
+        @test parse_omm("\ufeff" * kvn) isa OrbitMeanElementsMessage
+        @test length(parse_omms("\ufeff" * kvn)) == 1
+    end
+
     @testset "Chunk Detection Requires Exact Keyword" begin
         # A keyword merely starting with `CCSDS_OMM_VERS` must not start a new message.
         omms = parse_omms("CCSDS_OMM_VERSION = 9.9\n" * kvn; file_type = :kvn)
