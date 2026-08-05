@@ -341,6 +341,32 @@ function _omm_parse_field(
 end
 
 """
+    _omm_parse_field_value(
+        field::Symbol,
+        value::AbstractString,
+        keyword::AbstractString
+    ) -> Any
+
+Parse the raw `value` of the OMM `field` identified by the CCSDS `keyword` using the field
+type defined in `_OMM_FIELD_TYPE`.
+
+The explicit branch on the field type lets inference split the call to
+[`_omm_parse_field`](@ref), avoiding a dynamic dispatch for every parsed field.
+"""
+function _omm_parse_field_value(
+    field::Symbol, value::AbstractString, keyword::AbstractString
+)
+    T = _omm_field_type(field)
+
+    T === String   && return _omm_parse_field(String, value, keyword)
+    T === NanoDate && return _omm_parse_field(NanoDate, value, keyword)
+    T === Char     && return _omm_parse_field(Char, value, keyword)
+    T === Int      && return _omm_parse_field(Int, value, keyword)
+
+    return _omm_parse_field(Float64, value, keyword)
+end
+
+"""
     _omm_is_absent(value::Any) -> Bool
 
 Check if the raw field `value` returned by a format-specific parser must be treated as

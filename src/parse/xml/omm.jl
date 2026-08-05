@@ -213,7 +213,7 @@ function _xml_omm__parse_section!(
             continue
         end
 
-        fields[field] = _omm_parse_field(_omm_field_type(field), v, lt)
+        fields[field] = _omm_parse_field_value(field, v, lt)
     end
 
     isempty(comments) || (fields[comments_key] = comments)

@@ -116,13 +116,11 @@ function _kvn_omm__parse(str::AbstractString)
 
         last_comments = flush_comments!(fields, comments_key)
 
-        T = _omm_field_type(field)
-
         # A trailing `[unit]` annotation is only meaningful for fields that are not
         # strings, so string values are kept verbatim.
-        (T === String) || (value = _kvn__strip_unit(value))
+        (_omm_field_type(field) === String) || (value = _kvn__strip_unit(value))
 
-        fields[field] = _omm_parse_field(T, value, key)
+        fields[field] = _omm_parse_field_value(field, value, key)
     end
 
     # Assign the trailing comments to the section of the last recognized keyword,
