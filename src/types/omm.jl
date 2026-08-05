@@ -234,6 +234,10 @@ The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be prov
 
 # Keywords
 
+- `version::VersionNumber`: OMM format version (`v"2.0"` or `v"3.0"`). The
+    version-specific field rules are enforced by the parsers, and the writers always emit
+    version 3.0.
+    (**Default**: `v"3.0"`)
 - `header_comments::Vector{String}`: Comments for the header section.
     (**Default**: `String[]`)
 - `classification::Union{String, Nothing}`: Message classification.
@@ -326,6 +330,9 @@ Create a copy of `omm`, overriding the fields specified in `kwargs...`. Any keyw
 by the main constructor can be used; the remaining fields are copied from `omm`.
 """
 function OrbitMeanElementsMessage(;
+    # == Version ===========================================================================
+    version::VersionNumber = v"3.0",
+
     # == Header ============================================================================
     header_comments::Vector{String} = String[],
     classification::Union{String, Nothing} = nothing,
@@ -390,6 +397,9 @@ function OrbitMeanElementsMessage(;
 
     user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}} = nothing,
 )
+    version ∈ (v"2.0", v"3.0") ||
+        throw(ArgumentError("Unsupported OMM version: $version."))
+
     (isnothing(semi_major_axis) == isnothing(mean_motion)) && throw(
         ArgumentError(
             "Exactly one of `semi_major_axis` and `mean_motion` must be provided."
@@ -480,11 +490,15 @@ function OrbitMeanElementsMessage(;
         user_defined_parameters,
     )
 
-    return OrbitMeanElementsMessage(v"3.0", header, metadata, data)
+    return OrbitMeanElementsMessage(version, header, metadata, data)
 end
 
 function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
     return OrbitMeanElementsMessage(;
+        # == Version =======================================================================
+
+        version = omm.version,
+
         # == Header ========================================================================
 
         header_comments = omm.header.comments,

@@ -145,6 +145,40 @@
         @test omm2.data.raan == omm.data.raan
     end
 
+    @testset "Version Handling" begin
+        kwargs = (;
+            creation_date,
+            originator = "TEST",
+            object_name = "TEST SAT",
+            object_id = "2025-001A",
+            center_name = "EARTH",
+            ref_frame = "TEME",
+            time_system = "UTC",
+            mean_element_theory = "SGP4",
+            epoch,
+            mean_motion = 15.0,
+            eccentricity = 0.001,
+            inclination = 45.0,
+            raan = 100.0,
+            arg_of_pericenter = 50.0,
+            mean_anomaly = 200.0,
+        )
+
+        omm_v2 = OrbitMeanElementsMessage(; kwargs..., version = v"2.0")
+        @test omm_v2.version == v"2.0"
+
+        # The copy constructor preserves the version unless it is overridden.
+        @test OrbitMeanElementsMessage(omm_v2).version == v"2.0"
+        @test OrbitMeanElementsMessage(omm_v2) == omm_v2
+        @test OrbitMeanElementsMessage(omm_v2; version = v"3.0").version == v"3.0"
+
+        # Copying a parsed version 2.0 message must yield an equal message.
+        omm_parsed = parse_omm(_minimal_omm_xml(; omm_version = "2.0"))
+        @test OrbitMeanElementsMessage(omm_parsed) == omm_parsed
+
+        @test_throws ArgumentError OrbitMeanElementsMessage(; kwargs..., version = v"2.1")
+    end
+
     @testset "Exactly One Mean-Motion Representation" begin
         kwargs = (;
             creation_date,
