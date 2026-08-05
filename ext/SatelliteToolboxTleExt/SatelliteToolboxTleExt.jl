@@ -8,6 +8,10 @@ using SatelliteToolboxTle
 import Base: convert
 import SatelliteToolboxOrbitDataMessages: _parse_omm_object_id
 
+# Number of nanoseconds in one day, used to convert an epoch time of day to a day
+# fraction.
+const _NANOSECONDS_PER_DAY = 86_400 * 1_000_000_000
+
 ############################################################################################
 #                                        Julia API                                         #
 ############################################################################################
@@ -23,8 +27,9 @@ function convert(::Type{TLE}, omm::OrbitMeanElementsMessage)
 
     # Convert the epoch to TLE format.
     epoch_year = mod(year(data.epoch), 100)
-    midnight   = NanoDate(Date(data.epoch))
-    epoch_day  = dayofyear(data.epoch) + Dates.value(data.epoch - midnight) / (1_000_000_000 * 86400)
+    epoch_day  =
+        dayofyear(data.epoch) +
+        Dates.value(data.epoch - Date(data.epoch)) / _NANOSECONDS_PER_DAY
 
     # Obtain the mean motion from the parameters.
     mean_motion = data.mean_motion
