@@ -5,6 +5,8 @@
 ############################################################################################
 
 """
+    _ndm_render_value(value::String) -> String
+    _ndm_render_value(value::NanoDate) -> String
     _ndm_render_value(value::Any) -> String
 
 Render the given `value` as a string suitable for NDM outputs (e.g. XML or KVN).
@@ -46,7 +48,8 @@ end
     _parse_ndm_date(str::AbstractString) -> Union{Nothing, NanoDate}
 
 Parse an NDM date/time string into a `NanoDate`, returning `nothing` if `str` is empty or
-contains only whitespace.
+contains only whitespace. An `ArgumentError` is thrown if the date is malformed or the
+ordinal day is outside the year.
 
 The CCSDS 502.0-B-3 standard allows two formats for absolute time tags and epochs:
 

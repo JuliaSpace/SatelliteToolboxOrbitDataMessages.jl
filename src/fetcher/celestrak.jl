@@ -69,9 +69,9 @@ succeeding, an [`OdmFetchError`](@ref) is thrown.
     (**Default**: `nothing`)
 - `satellite_name::Union{Nothing, AbstractString}`: Name of the satellite.
     (**Default**: `nothing`)
-- `strict::Bool`: Require schema-defined XML tag casing when parsing the fetched OMMs. For
-    more information, see [`parse_omms`](@ref). Celestrak currently emits empty required
-    OMM 2.0 header values, hence the relaxed default.
+- `strict::Bool`: Select the validation strictness when parsing the fetched OMMs; see
+    [`parse_omms`](@ref) for the exact rules. Celestrak currently emits OMM 2.0 messages
+    with empty header values, hence the relaxed default.
     (**Default**: `false`)
 
 Exactly one of `international_designator`, `satellite_number`, and `satellite_name` must
@@ -106,7 +106,8 @@ function fetch_omms(
 
         isnothing(object_id) && throw(
             ArgumentError(
-                "The international designator must have the format `YYYY-NNN` or `YYYY-NNNP`.",
+                "The international designator must have the format `YYYY-NNN` or " *
+                "`YYYY-NNNP`.",
             ),
         )
 

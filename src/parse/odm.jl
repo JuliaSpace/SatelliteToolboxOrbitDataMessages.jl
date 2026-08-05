@@ -14,13 +14,17 @@ document, and return the parsed message(s).
 
 The return value is always a `Vector{OrbitDataMessage}`: a single-element vector for a
 stand-alone message, or a multi-element vector for a Navigation Data Message (NDM) wrapping
-multiple messages. Unsupported message types (OPM, OEM, OCM) are skipped with a warning,
-returning an empty vector. If the root tag is not recognized, an `ArgumentError` is thrown.
+multiple messages. Unsupported message types (OPM, OEM, OCM) are skipped with a warning;
+if no supported message remains, an empty vector is returned. If the root tag is not
+recognized, an `ArgumentError` is thrown.
 
 # Keywords
 
-- `strict::Bool`: Require schema-defined XML tag casing. If `false`, match tags and the OMM
-    `id` attribute value case-insensitively.
+- `strict::Bool`: Select the validation strictness. If `true`, the schema-defined XML tag
+    casing is required, empty XML element values are rejected, and the `CREATION_DATE`
+    field must be present. If `false`, tags and the OMM `id` attribute value are matched
+    case-insensitively, empty XML element values are skipped, and the `CREATION_DATE` may
+    be absent.
     (**Default**: `true`)
 """
 function parse_odm(str::AbstractString; strict::Bool = true)

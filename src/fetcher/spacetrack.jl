@@ -183,8 +183,8 @@ fails, an [`OdmFetchError`](@ref) is thrown.
     see the
     [Space-Track API documentation](https://www.space-track.org/documentation#/api).
     (**Default**: `:gp`)
-- `strict::Bool`: Require schema-defined XML tag casing when parsing the fetched OMMs. For
-    more information, see [`parse_omms`](@ref).
+- `strict::Bool`: Select the validation strictness when parsing the fetched OMMs; see
+    [`parse_omms`](@ref) for the exact rules.
     (**Default**: `true`)
 
 # Extended Help

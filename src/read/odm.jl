@@ -8,16 +8,16 @@ export read_odm
 
 """
     read_odm(file::AbstractString; kwargs...) -> Vector{OrbitDataMessage}
-
-Read an Orbit Data Message (ODM) from the provided `file`.
-
     read_odm(io::IO; kwargs...) -> Vector{OrbitDataMessage}
 
-Read an Orbit Data Message (ODM) from the provided `io` stream.
+Read the Orbit Data Messages (ODM) from the provided `file` or `io` stream.
+
+For more information, see [`parse_odm`](@ref).
 
 # Keywords
 
-- `strict::Bool`: Require schema-defined XML tag casing.
+- `strict::Bool`: Select the validation strictness. For more information, see
+    [`parse_odm`](@ref).
     (**Default**: `true`)
 """
 function read_odm(file::AbstractString; strict::Bool = true)

@@ -33,7 +33,11 @@ function _xml_odm__parse(str::AbstractString, strict::Bool)
 
     t == "ndm" && return _xml_odm__parse_ndm(root_node, strict)
 
-    t in _XML_ODM__TAGS || throw(ArgumentError("The root tag `$t` is not recognized."))
+    # The raw tag is interpolated in the error message since `t` may have been uppercased
+    # by the case-insensitive matching.
+    t in _XML_ODM__TAGS || throw(
+        ArgumentError("The root tag `$(tag(root_node))` is not recognized."),
+    )
 
     message = _xml_odm__parse_message(Val(Symbol(t)), root_node, strict)
 

@@ -20,8 +20,11 @@ the file does not contain an OMM message, `nothing` is returned.
 - `file_type::Symbol`: The input file type. If `:auto`, the file type is inferred from the
     content. It can be `:auto`, `:kvn`, or `:xml`.
     (**Default**: `:auto`)
-- `strict::Bool`: Require schema-defined XML tag casing. If `false`, match tags and the OMM
-    `id` attribute value case-insensitively.
+- `strict::Bool`: Select the validation strictness. If `true`, the schema-defined XML tag
+    casing is required, empty XML element values are rejected, and the `CREATION_DATE`
+    field must be present in any format. If `false`, tags and the OMM `id` attribute value
+    are matched case-insensitively, empty XML element values are skipped, and the
+    `CREATION_DATE` may be absent.
     (**Default**: `true`)
 """
 function parse_omm(str::AbstractString; file_type::Symbol = :auto, strict::Bool = true)
@@ -52,20 +55,24 @@ end
     parse_omms(str::AbstractString; kwargs...) -> Vector{OrbitMeanElementsMessage}
 
 Parse a set of Orbit Mean-Elements Messages (OMM) in the string `str` and return the
-parsed messages. The input format must be XML.
+parsed messages.
 
-If the XML is a Navigation Data Message (NDM), only the OMM messages are returned; other
-message types (OPM, OEM, OCM) are skipped with a warning. If the document does not contain
-an OMM message, an empty vector is returned. If the root tag is not recognized, an
-`ArgumentError` is thrown.
+For XML input, the document can be a stand-alone message or a Navigation Data Message
+(NDM): only the OMM messages are returned, and other message types (OPM, OEM, OCM) are
+skipped with a warning. If the root tag is not recognized, an `ArgumentError` is thrown.
+For KVN input, each message must begin with its `CCSDS_OMM_VERS` keyword. If the input
+does not contain an OMM message, an empty vector is returned.
 
 # Keywords
 
 - `file_type::Symbol`: The input file type. If `:auto`, the file type is inferred from the
     content. It can be `:auto`, `:kvn`, or `:xml`.
     (**Default**: `:auto`)
-- `strict::Bool`: Require schema-defined XML tag casing. If `false`, match tags and the OMM
-    `id` attribute value case-insensitively.
+- `strict::Bool`: Select the validation strictness. If `true`, the schema-defined XML tag
+    casing is required, empty XML element values are rejected, and the `CREATION_DATE`
+    field must be present in any format. If `false`, tags and the OMM `id` attribute value
+    are matched case-insensitively, empty XML element values are skipped, and the
+    `CREATION_DATE` may be absent.
     (**Default**: `true`)
 """
 function parse_omms(str::AbstractString; file_type::Symbol = :auto, strict::Bool = true)
@@ -584,7 +591,10 @@ function _omm_assemble(
     # == Version ===========================================================================
 
     isnothing(version) && throw(
-        ArgumentError("The OMM is missing the required format version (`CCSDS_OMM_VERS`)."),
+        ArgumentError(
+            "The OMM is missing the required format version (the KVN `CCSDS_OMM_VERS` " *
+            "keyword or the XML `version` attribute).",
+        ),
     )
 
     version ∈ (2.0, 3.0) || throw(ArgumentError("Unsupported OMM version: $version."))

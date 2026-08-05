@@ -5,11 +5,13 @@
 ############################################################################################
 
 """
-    _xml_omm__parse(str::AbstractString, strict::Bool)
+    _xml_omm__parse(str::AbstractString, strict::Bool) -> Union{Nothing, NamedTuple}
+    _xml_omm__parse(xml::XML.Cursor, strict::Bool) -> Union{Nothing, NamedTuple}
 
-Parse the first Orbit Mean-Elements Message (OMM) from the XML input in `str`, returning the
-container `(; version, header_fields, metadata_fields, data_fields)` with the raw field
-values. If the document does not contain an OMM message, `nothing` is returned.
+Parse the first Orbit Mean-Elements Message (OMM) from the XML input in `str` (or at the
+`Cursor` `xml`), returning the container `(; version, header_fields, metadata_fields,
+data_fields)` with the raw field values. If the document does not contain an OMM message,
+`nothing` is returned.
 """
 function _xml_omm__parse(str::AbstractString, strict::Bool)
     # Open the XML file.
@@ -230,7 +232,7 @@ function _xml_omm__parse_section!(
         field = last(mapping[i])
 
         if isempty(v)
-            strict && throw(ArgumentError("OMM field `$lt` cannot be empty."))
+            strict && throw(ArgumentError("OMM $description `$lt` cannot be empty."))
             continue
         end
 
@@ -281,8 +283,8 @@ function _xml_omm__parse_body(xml::XML.Cursor, strict::Bool)
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
 
-        _xml_omm__tag(node, strict) == "segment" ||
-            throw(ArgumentError("Unknown OMM body element."))
+        lt = _xml_omm__tag(node, strict)
+        lt == "segment" || throw(ArgumentError("Unknown OMM body element `$lt`."))
 
         segment_count += 1
 
@@ -321,7 +323,8 @@ function _xml_omm__parse_segment(xml::XML.Cursor, strict::Bool)
         nodetype(node) === Element || continue
 
         lt = _xml_omm__tag(node, strict)
-        lt ∈ ("metadata", "data") || throw(ArgumentError("Unknown OMM segment element."))
+        lt ∈ ("metadata", "data") ||
+            throw(ArgumentError("Unknown OMM segment element `$lt`."))
 
         if lt == "metadata"
             !isnothing(metadata) && throw(
@@ -451,9 +454,12 @@ end
     _xml_omm__parse_user_defined_parameters(
         xml::Cursor,
         strict::Bool
-    ) -> Vector{Pair{String,String}}
+    ) -> Vector{Pair{String, String}}
 
-Parse an OMM `userDefinedParameters` section at the cursor's current position.
+Parse an OMM `userDefinedParameters` section at the cursor's current position, matching
+the tags case-insensitively when `strict` is `false`. An `ArgumentError` is thrown if the
+section contains an unknown element or a `USER_DEFINED` element without the `parameter`
+attribute.
 """
 function _xml_omm__parse_user_defined_parameters(xml::XML.Cursor, strict::Bool)
     parameters = Pair{String, String}[]
