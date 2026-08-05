@@ -179,6 +179,38 @@
         @test_throws ArgumentError OrbitMeanElementsMessage(; kwargs..., version = v"2.1")
     end
 
+    @testset "Defensive Copies" begin
+        header_comments         = ["Header comment"]
+        user_defined_parameters = ["KEY" => "VALUE"]
+
+        omm = OrbitMeanElementsMessage(;
+            header_comments,
+            creation_date       = creation_date,
+            originator          = "TEST",
+            object_name         = "TEST SAT",
+            object_id           = "2025-001A",
+            center_name         = "EARTH",
+            ref_frame           = "TEME",
+            time_system         = "UTC",
+            mean_element_theory = "SGP4",
+            epoch               = epoch,
+            mean_motion         = 15.0,
+            eccentricity        = 0.001,
+            inclination         = 45.0,
+            raan                = 100.0,
+            arg_of_pericenter   = 50.0,
+            mean_anomaly        = 200.0,
+            user_defined_parameters,
+        )
+
+        # Mutating the caller's vectors must not change the message.
+        push!(header_comments, "Another comment")
+        push!(user_defined_parameters, "OTHER" => "X")
+
+        @test omm.header.comments == ["Header comment"]
+        @test omm.data.user_defined_parameters == ["KEY" => "VALUE"]
+    end
+
     @testset "Copy Leniently Parsed Message" begin
         # Lenient parsing can produce a message without a creation date, which the copy
         # constructor must accept.

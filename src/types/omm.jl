@@ -489,7 +489,8 @@ function OrbitMeanElementsMessage(;
         mean_motion_ddot,
         agom,
         covariance_matrix,
-        user_defined_parameters,
+        user_defined_parameters = isnothing(user_defined_parameters) ? nothing :
+            copy(user_defined_parameters),
     )
 
     return OrbitMeanElementsMessage(version, header, metadata, data)
