@@ -98,21 +98,19 @@ function _render_field(
 )
     sty_name = styled"{satellitetoolbox_odm_field:$field_name}"
 
-    # The row is built with a manual padding and a single `annotatedstring` call instead
-    # of `rpad` and string concatenation, avoiding intermediate strings and preserving the
-    # styling annotations on every supported Julia version.
+    # The row is built with a manual padding and string concatenation using `*`, which
+    # preserves styling annotations on all supported Julia versions (`annotatedstring` was
+    # only introduced in Julia 1.11).
     padding = " "^max(0, name_width - textwidth(field_name))
 
     if isempty(unit)
-        return rstrip(annotatedstring(sty_name, padding, " : ", field_value))
+        return rstrip(*(sty_name, padding, " : ", field_value))
     end
 
     sty_unit  = styled"{satellitetoolbox_odm_unit:$unit}"
     separator = unit == "°" ? "" : " "
 
-    return rstrip(
-        annotatedstring(sty_name, padding, " : ", field_value, separator, sty_unit)
-    )
+    return rstrip(*(sty_name, padding, " : ", field_value, separator, sty_unit))
 end
 
 """
