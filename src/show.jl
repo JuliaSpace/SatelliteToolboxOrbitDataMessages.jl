@@ -145,27 +145,25 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     # == Print Output ======================================================================
 
-    out = IOContext(IOBuffer(), :color => get(io, :color, false))
-
     # Rail used to draw the tree of data subsections under the `Data` section.
     data_rail = "  "
 
-    _print_node(out, "OrbitMeanElementsMessage:", "", "", :satellitetoolbox_odm_title)
+    _print_node(io, "OrbitMeanElementsMessage:", "", "", :satellitetoolbox_odm_title)
 
     # -- Header (top-level heading, drawn without a connector) --------------------------
 
-    _print_node(out, "Header", "  ", "", :satellitetoolbox_odm_section)
-    _print_fields(out, header_fields, "    ")
+    _print_node(io, "Header", "  ", "", :satellitetoolbox_odm_section)
+    _print_fields(io, header_fields, "    ")
 
     # -- Metadata --------------------------------------------------------------------------
 
-    _print_node(out, "Metadata", "  ", "", :satellitetoolbox_odm_section)
-    _print_fields(out, metadata_fields, "    ")
+    _print_node(io, "Metadata", "  ", "", :satellitetoolbox_odm_section)
+    _print_fields(io, metadata_fields, "    ")
 
     # -- Data ------------------------------------------------------------------------------
 
-    _print_node(out, "Data", "  ", "", :satellitetoolbox_odm_section)
-    _print_fields(out, data_fields, "    ")
+    _print_node(io, "Data", "  ", "", :satellitetoolbox_odm_section)
+    _print_fields(io, data_fields, "    ")
 
     # Build the list of present data subsections so the last one is closed with `└─`.
     data_sections = filter(
@@ -184,11 +182,9 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
         connector = is_last ? "└─ " : "├─ "
         field_rail = data_rail * (is_last ? "     " : "│    ")
 
-        _print_node(out, title, data_rail, connector, :satellitetoolbox_odm_node)
-        _print_fields(out, fields, field_rail)
+        _print_node(io, title, data_rail, connector, :satellitetoolbox_odm_node)
+        _print_fields(io, fields, field_rail)
     end
-
-    print(io, String(take!(out.io)))
 
     return nothing
 end
