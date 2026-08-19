@@ -23,7 +23,7 @@ SatelliteToolboxTleExt = "SatelliteToolboxTle"
 [compat]
 Dates = "1.10"
 HTTP = "1.10.17, 2"
-NanoDates = "1.0.3"
+NanoDates = "1.0.3, 2"
 PrecompileTools = "1"
 SatelliteToolboxTle = "1"
 Scratch = "1.3.0"
