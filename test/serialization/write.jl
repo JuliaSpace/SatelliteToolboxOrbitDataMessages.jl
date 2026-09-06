@@ -61,7 +61,7 @@
             @test read(file, String) == "precious content"
 
             # A message that cannot be written must not truncate the file.
-            omm_lenient = parse_omm(_minimal_omm_xml(; creation_date = ""); strict = false)
+            omm_lenient = parse_omm(_minimal_omm_xml(; creation_date = ""))
 
             @test_throws ArgumentError write_omm(file, omm_lenient)
             @test read(file, String) == "precious content"

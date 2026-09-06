@@ -20,9 +20,6 @@ contain an OMM, `nothing` is returned. For more information, see [`parse_omm`](@
 - `file_type::Symbol`: The input file type. If `:auto`, the file type is inferred from the
     content. It can be `:auto`, `:kvn`, or `:xml`.
     (**Default**: `:auto`)
-- `strict::Bool`: Select the validation strictness. For more information, see
-    [`parse_omm`](@ref).
-    (**Default**: `true`)
 """
 read_omm(file::AbstractString; kwargs...) = parse_omm(read(file, String); kwargs...)
 
@@ -43,9 +40,6 @@ contain an OMM, an empty vector is returned. For more information, see
 - `file_type::Symbol`: The input file type. If `:auto`, the file type is inferred from the
     content. It can be `:auto`, `:kvn`, or `:xml`.
     (**Default**: `:auto`)
-- `strict::Bool`: Select the validation strictness. For more information, see
-    [`parse_omms`](@ref).
-    (**Default**: `true`)
 """
 read_omms(file::AbstractString; kwargs...) = parse_omms(read(file, String); kwargs...)
 

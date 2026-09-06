@@ -93,12 +93,12 @@
             "<EPOCH>2025-12-30T18:12:04.533984</EPOCH>" => "<EPOCH></EPOCH>",
         )
 
-        @test_throws OdmParseError parse_omm(creation_xml)
-        @test_throws OdmParseError parse_omm(epoch_xml)
+        # An empty creation date is tolerated, whereas the epoch is mandatory.
+        omm = parse_omm(creation_xml)
+        @test isnothing(omm.header.creation_date)
+        @test_throws ArgumentError write_omm(IOBuffer(), omm)
 
-        permissive_omm = parse_omm(creation_xml; strict = false)
-        @test isnothing(permissive_omm.header.creation_date)
-        @test_throws ArgumentError write_omm(IOBuffer(), permissive_omm)
+        @test_throws OdmParseError parse_omm(epoch_xml)
     end
 
     @testset "Ordinal Format Without Fractional Seconds" begin

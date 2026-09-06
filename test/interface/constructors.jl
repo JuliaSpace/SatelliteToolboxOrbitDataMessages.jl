@@ -212,9 +212,9 @@
     end
 
     @testset "Copy Leniently Parsed Message" begin
-        # Lenient parsing can produce a message without a creation date, which the copy
-        # constructor must accept.
-        omm = parse_omm(_minimal_omm_xml(; creation_date = ""); strict = false)
+        # Parsing an input without a creation date produces a message without one, which
+        # the copy constructor must accept.
+        omm = parse_omm(_minimal_omm_xml(; creation_date = ""))
         @test omm.header.creation_date === nothing
 
         copied = OrbitMeanElementsMessage(omm; object_name = "NEW NAME")

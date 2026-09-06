@@ -5,13 +5,12 @@
 ############################################################################################
 
 """
-    _kvn_omms__parse(str::AbstractString, strict::Bool) -> Vector{OrbitMeanElementsMessage}
+    _kvn_omms__parse(str::AbstractString) -> Vector{OrbitMeanElementsMessage}
 
 Parse a set of Orbit Mean-Elements Messages (OMM) in the KVN input `str` and return the
-parsed messages. The `strict` flag selects whether the mandatory fields are validated
-strictly (see [`_omm_check_mandatory_fields`](@ref)).
+parsed messages.
 """
-function _kvn_omms__parse(str::AbstractString, strict::Bool)
+function _kvn_omms__parse(str::AbstractString)
     # There is no standard for KVN OMMs, so we will assume that each OMM is delimited by the
     # `CCSDS_OMM_VERS` keyword. The input is sliced into one `SubString` chunk per message,
     # avoiding any copy of the line contents. Content before the first `CCSDS_OMM_VERS` line
@@ -34,7 +33,7 @@ function _kvn_omms__parse(str::AbstractString, strict::Bool)
             # one.
             if chunk_start > 0
                 chunk = SubString(str, chunk_start, prevind(str, pos))
-                push!(omms, _omm_assemble(_kvn_omm__parse(chunk), strict))
+                push!(omms, _omm_assemble(_kvn_omm__parse(chunk)))
             end
 
             chunk_start = pos
@@ -46,7 +45,7 @@ function _kvn_omms__parse(str::AbstractString, strict::Bool)
     # Parse the last OMM in the input, if any.
     if chunk_start > 0
         chunk = SubString(str, chunk_start, i_last)
-        push!(omms, _omm_assemble(_kvn_omm__parse(chunk), strict))
+        push!(omms, _omm_assemble(_kvn_omm__parse(chunk)))
     end
 
     return omms

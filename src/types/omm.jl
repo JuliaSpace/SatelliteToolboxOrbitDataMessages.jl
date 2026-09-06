@@ -28,8 +28,8 @@ standard.
 - `classification::Union{String, Nothing}`: Message classification.
     (**Default**: `nothing`)
 - `creation_date::Union{NanoDate, Nothing}`: Message creation date. It can only be
-    `nothing` for messages parsed leniently, which cannot be written until a creation date
-    is set.
+    `nothing` for parsed messages whose input omits it, which cannot be written until a
+    creation date is set.
     (**Default**: `nothing`)
 - `originator::String`: Message originator.
 - `message_id::Union{String, Nothing}`: Unique message identifier.
@@ -359,7 +359,7 @@ The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be prov
 - `classification::Union{String, Nothing}`: Message classification.
     (**Default**: `nothing`)
 - `creation_date::Union{NanoDate, Nothing}`: Message creation date (**required**). It can
-    only be `nothing` for messages parsed leniently (see `strict` in [`parse_omm`](@ref)),
+    only be `nothing` for parsed messages whose input omits it (see [`parse_omm`](@ref)),
     which cannot be written until a creation date is set.
 - `originator::String`: Message originator (**required**).
 - `message_id::Union{String, Nothing}`: Unique message identifier.

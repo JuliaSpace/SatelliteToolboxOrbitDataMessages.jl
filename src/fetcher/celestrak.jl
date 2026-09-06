@@ -72,17 +72,12 @@ be provided.
     (**Default**: `nothing`)
 - `satellite_name::Union{Nothing, AbstractString}`: Name of the satellite.
     (**Default**: `nothing`)
-- `strict::Bool`: Select the validation strictness when parsing the fetched OMMs; see
-    [`parse_omms`](@ref) for the exact rules. Celestrak currently emits OMM 2.0 messages
-    with empty header values, hence the relaxed default.
-    (**Default**: `false`)
 """
 function fetch_omms(
     fetcher::CelestrakOmmFetcher;
     international_designator::Union{Nothing, AbstractString} = nothing,
     satellite_number::Union{Nothing, Integer} = nothing,
     satellite_name::Union{Nothing, AbstractString} = nothing,
-    strict::Bool = false,
 )
     selector_count = count(
         !isnothing, (satellite_number, international_designator, satellite_name)
@@ -169,5 +164,5 @@ function fetch_omms(
         throw(OdmFetchError("Invalid query: $query_str"; url = url))
     end
 
-    return parse_omms(str; strict)
+    return parse_omms(str)
 end

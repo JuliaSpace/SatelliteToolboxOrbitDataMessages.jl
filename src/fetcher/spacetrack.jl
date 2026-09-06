@@ -190,9 +190,6 @@ fails, an [`OdmFetchError`](@ref) is thrown.
     see the
     [Space-Track API documentation](https://www.space-track.org/documentation#/api).
     (**Default**: `:gp`)
-- `strict::Bool`: Select the validation strictness when parsing the fetched OMMs; see
-    [`parse_omms`](@ref) for the exact rules.
-    (**Default**: `true`)
 
 # Extended help
 
@@ -340,7 +337,6 @@ function fetch_omms(
     satellite_name::Union{Nothing, AbstractString} = nothing,
     satellite_number::Union{Nothing, Integer} = nothing,
     space_data::Symbol = :gp,
-    strict::Bool = true,
 ) where {D1 <: Union{Date, DateTime}, D2 <: Union{Date, DateTime}, P}
     # Check if the cookie is still valid.
     _spacetrack__is_cookie_valid(fetcher.cookiejar) || throw(
@@ -509,7 +505,7 @@ function fetch_omms(
         rethrow(e)
     end
 
-    omms = parse_omms(String(response.body); strict)
+    omms = parse_omms(String(response.body))
 
     # If the request is successful, we need to save the cookiejar because the expire
     # period may have been updated.

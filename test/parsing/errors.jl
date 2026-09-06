@@ -15,7 +15,12 @@
     # == Missing Required Header Fields ====================================================
 
     @testset "Missing Required Header Fields" begin
-        @test_throws OdmParseError parse_omm(_minimal_omm_xml(; creation_date = ""))
+        # A missing `CREATION_DATE` is tolerated, yielding a message without a creation
+        # date, whereas the `ORIGINATOR` is required in OMM version 3.0.
+        omm = parse_omm(_minimal_omm_xml(; creation_date = ""))
+        @test isnothing(omm.header.creation_date)
+        @test_throws ArgumentError write_omm(IOBuffer(), omm)
+
         @test_throws OdmParseError parse_omm(_minimal_omm_xml(; originator = ""))
     end
 
@@ -251,11 +256,12 @@
     # == Empty CLASSIFICATION_TYPE =========================================================
 
     @testset "Empty CLASSIFICATION_TYPE" begin
+        # An empty element is treated as an absent field.
         tle_xml = """
         <tleParameters><CLASSIFICATION_TYPE></CLASSIFICATION_TYPE></tleParameters>
         """
         xml = _minimal_omm_xml(tle_params_xml = tle_xml)
-        @test_throws OdmParseError parse_omm(xml)
+        @test isnothing(parse_omm(xml).data.classification_type)
     end
 
     # == Empty KVN String Values ===========================================================
@@ -303,10 +309,7 @@
     @testset "Missing CREATION_DATE in KVN" begin
         kvn_no_date = replace(kvn, "CREATION_DATE = 2025-12-30T23:36:37\n" => "")
 
-        # The presence requirement applies to every format when parsing strictly.
-        @test_throws OdmParseError parse_omm(kvn_no_date; file_type = :kvn)
-
-        omm = parse_omm(kvn_no_date; file_type = :kvn, strict = false)
+        omm = parse_omm(kvn_no_date; file_type = :kvn)
         @test omm.header.creation_date === nothing
     end
 

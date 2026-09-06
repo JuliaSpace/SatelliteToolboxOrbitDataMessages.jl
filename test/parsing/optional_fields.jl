@@ -74,9 +74,6 @@
         omm = parse_omm(xml)
         @test omm.header.originator == ""
 
-        omm = parse_omm(xml; strict = false)
-        @test omm.header.originator == ""
-
         kvn = """
         CCSDS_OMM_VERS      = 2.0
         CREATION_DATE       = 2025-12-30T23:36:37

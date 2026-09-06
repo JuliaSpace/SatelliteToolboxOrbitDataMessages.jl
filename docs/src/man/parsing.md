@@ -23,15 +23,14 @@ This package parses Orbit Data Messages provided as strings in the **XML** and *
 can be selected explicitly with the `file_type` keyword (`:auto`, `:xml`, or `:kvn`) of
 [`parse_omm`](@ref) and [`parse_omms`](@ref).
 
-Parsing is strict and case-sensitive by default. Pass `strict = false` to `parse_omm`,
-`parse_omms`, or `parse_odm` to match XML tags and the required OMM `id` attribute value
-case-insensitively. Permissive mode also preserves an empty OMM header creation date as
-`nothing`, which accommodates known Celestrak OMM 2.0 output without inventing a timestamp.
-Additionally, a blank `ORIGINATOR` is allowed in OMM version 2.0 regardless of the parsing
-mode, defaulting to an empty string. Such incomplete messages cannot be written as OMM 3.0.
-Both modes otherwise reject unrecognized tags and malformed or incomplete OMM sections by
-throwing an [`OdmParseError`](@ref), which carries the related CCSDS keyword and, for KVN
-input, the line number.
+The parsers accommodate the deviations commonly found in real-world files: the XML tags and
+the OMM `id` attribute value are matched ignoring the case, empty XML elements are treated
+as absent fields, and a missing `CREATION_DATE` is preserved as `nothing`, which
+accommodates known Celestrak OMM 2.0 output without inventing a timestamp. Additionally, a
+blank `ORIGINATOR` is allowed in OMM version 2.0, defaulting to an empty string. Such
+incomplete messages cannot be written as OMM 3.0. Unrecognized tags and malformed or
+incomplete OMM sections are rejected by throwing an [`OdmParseError`](@ref), which carries
+the related CCSDS keyword and, for KVN input, the line number.
 
 Throughout this page, we assume the variable `omm_xml` holds the XML string of a single OMM,
 and `ndm_xml` holds a Navigation Data Message (NDM) that bundles two OMMs (`AMAZONIA 1` and

@@ -24,6 +24,29 @@ function _ndm_render_value(value::NanoDate)
 end
 
 """
+    _ascii_iequal(a::AbstractString, b::AbstractString) -> Bool
+
+Check if the strings `a` and `b` are equal ignoring the case of the ASCII letters. The
+other code units are compared exactly, so the function is safe for any UTF-8 input, and it
+does not allocate.
+"""
+function _ascii_iequal(a::AbstractString, b::AbstractString)
+    ncodeunits(a) == ncodeunits(b) || return false
+
+    for i in 1:ncodeunits(a)
+        ca = codeunit(a, i)
+        cb = codeunit(b, i)
+        ca == cb && continue
+
+        # Fold the ASCII letters to lowercase before comparing them.
+        fa = ca | 0x20
+        (fa == (cb | 0x20)) && (UInt8('a') <= fa <= UInt8('z')) || return false
+    end
+
+    return true
+end
+
+"""
     _parse_omm_object_id(object_id::AbstractString) -> Union{Nothing, NamedTuple}
 
 Parse an OMM `OBJECT_ID` in the international designator format `YYYY-NNN` or `YYYY-NNNP`,
