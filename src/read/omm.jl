@@ -18,8 +18,8 @@ contain an OMM, an [`OdmParseError`](@ref) is thrown. For more information, see
 
 # Keywords
 
-- `file_type::Symbol`: The input file type. If `:auto`, the file type is inferred from the
-    content. It can be `:auto`, `:kvn`, or `:xml`.
+- `format::Symbol`: The input format. If `:auto`, the format is inferred from the content.
+    It can be `:auto`, `:kvn`, or `:xml`.
     (**Default**: `:auto`)
 """
 read_omm(file::AbstractString; kwargs...) = parse_omm(read(file, String); kwargs...)
@@ -38,8 +38,8 @@ contain an OMM, an empty vector is returned. For more information, see
 
 # Keywords
 
-- `file_type::Symbol`: The input file type. If `:auto`, the file type is inferred from the
-    content. It can be `:auto`, `:kvn`, or `:xml`.
+- `format::Symbol`: The input format. If `:auto`, the format is inferred from the content.
+    It can be `:auto`, `:kvn`, or `:xml`.
     (**Default**: `:auto`)
 """
 read_omms(file::AbstractString; kwargs...) = parse_omms(read(file, String); kwargs...)

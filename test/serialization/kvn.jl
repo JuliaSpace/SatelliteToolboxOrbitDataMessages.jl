@@ -11,7 +11,7 @@
 
     @testset "Output Structure" begin
         buf = IOBuffer()
-        write_omm(buf, omm; file_type = :kvn)
+        write_omm(buf, omm; format = :kvn)
         out = String(take!(buf))
 
         @test startswith(out, "CCSDS_OMM_VERS")
@@ -25,8 +25,8 @@
 
     @testset "Round Trip" begin
         buf = IOBuffer()
-        write_omm(buf, omm; file_type = :kvn)
-        omm_reparsed = parse_omm(String(take!(buf)); file_type = :kvn)
+        write_omm(buf, omm; format = :kvn)
+        omm_reparsed = parse_omm(String(take!(buf)); format = :kvn)
 
         @test omm_reparsed == omm
     end
@@ -35,7 +35,7 @@
         omm_cov = parse_omm(_minimal_omm_xml(; covariance_matrix_xml = _COV_XML))
 
         buf = IOBuffer()
-        write_omm(buf, omm_cov; file_type = :kvn)
+        write_omm(buf, omm_cov; format = :kvn)
         out = String(take!(buf))
 
         # The covariance elements carry their CCSDS units in the KVN output.
@@ -43,7 +43,7 @@
         @test occursin(r"CX_DOT_X +?= 7\.0 +\[km\*\*2/s\]", out)
         @test occursin(r"CX_DOT_X_DOT +?= 10\.0 +\[km\*\*2/s\*\*2\]", out)
 
-        omm_reparsed = parse_omm(out; file_type = :kvn)
+        omm_reparsed = parse_omm(out; format = :kvn)
 
         @test omm_reparsed == omm_cov
         @test omm_reparsed.data.covariance_matrix.comments ==
@@ -61,12 +61,12 @@
 
         buf = IOBuffer()
         @test_logs (:warn, r"spacecraft parameters") write_omm(
-            buf, omm_sc; file_type = :kvn
+            buf, omm_sc; format = :kvn
         )
         out = String(take!(buf))
 
         @test !occursin("COMMENT SC", out)
-        @test parse_omm(out; file_type = :kvn) ==
+        @test parse_omm(out; format = :kvn) ==
             OrbitMeanElementsMessage(omm_sc; spacecraft_parameters_comments = String[])
     end
 
@@ -74,15 +74,42 @@
 
     @testset "Vector Form" begin
         buf = IOBuffer()
-        write_omm(buf, [omm, omm]; file_type = :kvn)
-        omms = parse_omms(String(take!(buf)); file_type = :kvn)
+        write_omm(buf, [omm, omm]; format = :kvn)
+        omms = parse_omms(String(take!(buf)); format = :kvn)
 
         @test length(omms) == 2
         @test omms[1] == omm
         @test omms[2] == omm
     end
 
-    # == File Type Inference From the Extension ============================================
+    # == write_odm =========================================================================
+
+    @testset "write_odm" begin
+        buf = IOBuffer()
+        write_odm(buf, omm; format = :kvn)
+        out = String(take!(buf))
+        @test startswith(out, "CCSDS_OMM_VERS")
+        @test parse_odm(out; format = :kvn) == [omm]
+
+        buf = IOBuffer()
+        write_odm(buf, OrbitDataMessage[omm, omm]; format = :kvn)
+        @test parse_odm(String(take!(buf))) == [omm, omm]
+
+        mktempdir() do dir
+            file = joinpath(dir, "omm.kvn")
+            write_odm(file, omm)
+            @test startswith(read(file, String), "CCSDS_OMM_VERS")
+            @test read_odm(file) == [omm]
+
+            write_odm(file, [omm]; format = :xml)
+            @test startswith(read(file, String), "<?xml")
+            @test read_odm(file) == [omm]
+
+            @test_throws ArgumentError write_odm(file, omm; format = :json)
+        end
+    end
+
+    # == Format Inference From the Extension ===============================================
 
     @testset "File Extension Inference" begin
         outfile = joinpath(mktempdir(), "omm.kvn")
@@ -103,7 +130,7 @@
     # == Errors ============================================================================
 
     @testset "Unsupported File Type" begin
-        @test_throws ArgumentError write_omm(IOBuffer(), omm; file_type = :json)
-        @test_throws ArgumentError write_omm(IOBuffer(), [omm]; file_type = :json)
+        @test_throws ArgumentError write_omm(IOBuffer(), omm; format = :json)
+        @test_throws ArgumentError write_omm(IOBuffer(), [omm]; format = :json)
     end
 end

@@ -54,13 +54,13 @@ same rules described in [Parsing Messages](@ref Parsing-Messages).
 Given an [`OrbitMeanElementsMessage`](@ref) object, we can serialize it with
 [`write_omm`](@ref). The function accepts a file path, inferring the output format from
 the extension (case-insensitive): `.kvn` selects the KVN format, whereas any other
-extension selects the XML format. The `file_type` keyword (`:auto`, `:xml`, or `:kvn`)
+extension selects the XML format. The `format` keyword (`:auto`, `:xml`, or `:kvn`)
 overrides the inference:
 
 ```julia
 write_omm("amazonia_1.xml", omm)                    # XML output.
 write_omm("amazonia_1.kvn", omm)                    # KVN output.
-write_omm("amazonia_1.omm", omm; file_type = :kvn)  # KVN output with another extension.
+write_omm("amazonia_1.omm", omm; format = :kvn)  # KVN output with another extension.
 ```
 
 The function also receives an `IO` stream, which makes it easy to inspect the output in
@@ -77,7 +77,7 @@ print(String(take!(io)))
 The same message in the KVN format:
 
 ```@repl rw
-write_omm(io, omm; file_type = :kvn)
+write_omm(io, omm; format = :kvn)
 
 print(String(take!(io)))
 ```
@@ -97,10 +97,11 @@ write_omm("catalog.kvn", omms)
 ```
 
 The [`write_odm`](@ref) function provides the same functionality for generic Orbit Data
-Messages, always using the NDM/XML output:
+Messages, accepting the same `format` keyword:
 
 ```julia
 write_odm("catalog.xml", omms)
+write_odm("catalog.kvn", omms)
 ```
 
 This is convenient, for example, to persist the full set of messages returned by one of the

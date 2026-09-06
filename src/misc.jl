@@ -5,6 +5,57 @@
 ############################################################################################
 
 """
+    _odm_prepare_input(str::AbstractString, format::Symbol) -> Tuple{AbstractString, Symbol}
+
+Prepare the input `str` of a parsing function, returning it without a leading byte-order
+mark together with its resolved `format`. If `format` is `:auto`, the format is inferred
+from the content: an input starting with an XML tag is `:xml`, and anything else is
+`:kvn`. An `ArgumentError` is thrown if `format` is not `:auto`, `:xml`, or `:kvn`.
+"""
+function _odm_prepare_input(str::AbstractString, format::Symbol)
+    # Remove a leading byte-order mark, which some real-world files include and would
+    # otherwise break the format detection and the KVN parser.
+    str = chopprefix(str, "\ufeff")
+
+    if format == :auto
+        format = occursin(r"^\s*<", str) ? :xml : :kvn
+    end
+
+    _odm_check_output_format(format)
+
+    return str, format
+end
+
+"""
+    _odm_output_format(file::AbstractString, format::Symbol) -> Symbol
+
+Resolve the output `format` of a writing function for the file at `file`. If `format` is
+`:auto`, it is inferred from the file extension (case-insensitive): `.kvn` selects `:kvn`,
+whereas any other extension selects `:xml`. An `ArgumentError` is thrown if `format` is
+not `:auto`, `:xml`, or `:kvn`.
+"""
+function _odm_output_format(file::AbstractString, format::Symbol)
+    if format == :auto
+        # Lowercase only the extension instead of copying the whole path.
+        format = lowercase(last(splitext(file))) == ".kvn" ? :kvn : :xml
+    end
+
+    _odm_check_output_format(format)
+
+    return format
+end
+
+"""
+    _odm_check_output_format(format::Symbol) -> Nothing
+
+Throw an `ArgumentError` if `format` is neither `:xml` nor `:kvn`.
+"""
+function _odm_check_output_format(format::Symbol)
+    format ∈ (:xml, :kvn) || throw(ArgumentError("Unsupported format: $format."))
+    return nothing
+end
+
+"""
     _ndm_render_value(value::String) -> String
     _ndm_render_value(value::NanoDate) -> String
     _ndm_render_value(value::Any) -> String

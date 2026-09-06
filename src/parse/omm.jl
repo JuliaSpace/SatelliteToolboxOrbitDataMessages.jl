@@ -23,27 +23,15 @@ as absent fields, and a missing `CREATION_DATE` yields a message whose creation 
 
 # Keywords
 
-- `file_type::Symbol`: The input file type. If `:auto`, the file type is inferred from the
-    content. It can be `:auto`, `:kvn`, or `:xml`.
+- `format::Symbol`: The input format. If `:auto`, the format is inferred from the content.
+    It can be `:auto`, `:kvn`, or `:xml`.
     (**Default**: `:auto`)
 """
-function parse_omm(str::AbstractString; file_type::Symbol = :auto)
-    # Remove a leading byte-order mark, which some real-world files include and would
-    # otherwise break the file type detection and the KVN parser.
-    str = chopprefix(str, "\ufeff")
+function parse_omm(str::AbstractString; format::Symbol = :auto)
+    str, format = _odm_prepare_input(str, format)
 
-    if file_type == :auto
-        file_type = occursin(r"^\s*<", str) ? :xml : :kvn
-    end
-
-    # Parse the file, obtaining the container with the raw field values.
-    parsed_omm = if file_type == :xml
-        _xml_omm__parse(str)
-    elseif file_type == :kvn
-        _kvn_omm__parse(str)
-    else
-        throw(ArgumentError("Unsupported file type: $file_type."))
-    end
+    # Parse the input, obtaining the container with the raw field values.
+    parsed_omm = format == :xml ? _xml_omm__parse(str) : _kvn_omm__parse(str)
 
     # Check the mandatory fields and assemble the message.
     return _omm_assemble(parsed_omm)
@@ -64,23 +52,16 @@ returned. See [`parse_omm`](@ref) for the accommodated deviations from the stand
 
 # Keywords
 
-- `file_type::Symbol`: The input file type. If `:auto`, the file type is inferred from the
-    content. It can be `:auto`, `:kvn`, or `:xml`.
+- `format::Symbol`: The input format. If `:auto`, the format is inferred from the content.
+    It can be `:auto`, `:kvn`, or `:xml`.
     (**Default**: `:auto`)
 """
-function parse_omms(str::AbstractString; file_type::Symbol = :auto)
-    # Remove a leading byte-order mark, which some real-world files include and would
-    # otherwise break the file type detection and the KVN parser.
-    str = chopprefix(str, "\ufeff")
+function parse_omms(str::AbstractString; format::Symbol = :auto)
+    str, format = _odm_prepare_input(str, format)
 
-    if file_type == :auto
-        file_type = occursin(r"^\s*<", str) ? :xml : :kvn
-    end
+    format == :xml && return _xml_omms__parse(str)
 
-    file_type == :kvn && return _kvn_omms__parse(str)
-    file_type == :xml && return _xml_omms__parse(str)
-
-    return throw(ArgumentError("Unsupported file type: $file_type."))
+    return _kvn_omms__parse(str)
 end
 
 ############################################################################################
@@ -98,7 +79,7 @@ end
 # The dictionaries only contain the fields that are present in the input. The
 # mandatory-field validation and the message assembly are performed here by converting the
 # dictionaries to keyword arguments of the OMM section constructors. Hence, adding a new
-# file type only requires writing the corresponding parser.
+# format only requires writing the corresponding parser.
 
 # Mandatory fields of the OMM metadata section. Each entry maps the parsed field name to
 # the CCSDS keyword used in the error message.
@@ -422,7 +403,7 @@ returned by a format-specific parser, throwing an `OdmParseError` otherwise. A f
 value is `nothing` or an empty string is treated as absent. The `CREATION_DATE` is not
 required, allowing real-world files with an omitted creation date to be processed.
 
-This function is format-agnostic so that every supported file type is validated by the same
+This function is format-agnostic so that every supported format is validated by the same
 rules.
 """
 function _omm_check_mandatory_fields(

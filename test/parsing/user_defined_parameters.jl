@@ -55,13 +55,13 @@
 
         # A message holding an empty vector is written without the section, so the XML and
         # KVN round trips yield equal messages.
-        for file_type in (:xml, :kvn)
+        for format in (:xml, :kvn)
             buf = IOBuffer()
-            write_omm(buf, omm; file_type)
+            write_omm(buf, omm; format)
             out = String(take!(buf))
             @test !occursin("USER_DEFINED", out)
             @test !occursin("userDefinedParameters", out)
-            @test parse_omm(out; file_type) == omm
+            @test parse_omm(out; format) == omm
         end
     end
 

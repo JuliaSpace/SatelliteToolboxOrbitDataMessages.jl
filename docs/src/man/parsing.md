@@ -20,8 +20,8 @@ ndm_xml = """
 
 This package parses Orbit Data Messages provided as strings in the **XML** and **KVN**
 (Key-Value Notation) formats. The format is detected automatically from the content, or it
-can be selected explicitly with the `file_type` keyword (`:auto`, `:xml`, or `:kvn`) of
-[`parse_omm`](@ref) and [`parse_omms`](@ref).
+can be selected explicitly with the `format` keyword (`:auto`, `:xml`, or `:kvn`) of
+[`parse_omm`](@ref), [`parse_omms`](@ref), and [`parse_odm`](@ref).
 
 The parsers accommodate the deviations commonly found in real-world files: the XML tags and
 the OMM `id` attribute value are matched ignoring the case, empty XML elements are treated
@@ -65,8 +65,8 @@ recognized document contains no supported OMM.
 
 ## Parsing Generic Orbit Data Messages
 
-The [`parse_odm`](@ref) function is the most general entry point. It inspects the root tag
-of the document and dispatches to the appropriate parser:
+The [`parse_odm`](@ref) function is the most general entry point. For XML input, it
+inspects the root tag of the document and dispatches to the appropriate parser:
 
 `parse_odm` always returns a `Vector{OrbitDataMessage}`. A stand-alone `<omm>` produces a
 single-element vector, while an `<ndm>` produces a vector containing every supported message.
@@ -115,7 +115,7 @@ omm = parse_omm(omm_kvn)
 ```
 
 The format is inferred automatically: input starting with an XML tag is parsed as XML, and
-anything else as KVN. Pass `file_type = :xml` or `file_type = :kvn` to skip the detection.
+anything else as KVN. Pass `format = :xml` or `format = :kvn` to skip the detection.
 
 The KVN parser preserves the `COMMENT` lines, attributing each one to the section of the
 keyword that follows it, and reads user-defined parameters from keywords with the

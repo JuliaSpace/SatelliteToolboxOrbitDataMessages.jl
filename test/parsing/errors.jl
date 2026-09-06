@@ -288,10 +288,10 @@
     @testset "Empty KVN String Values" begin
         # An empty value for a mandatory string field must be treated as absent.
         @test_throws OdmParseError parse_omm(
-            replace(kvn, "ORIGINATOR = 18 SPCS" => "ORIGINATOR ="); file_type = :kvn
+            replace(kvn, "ORIGINATOR = 18 SPCS" => "ORIGINATOR ="); format = :kvn
         )
         @test_throws OdmParseError parse_omm(
-            replace(kvn, "OBJECT_NAME = AMAZONIA 1" => "OBJECT_NAME ="); file_type = :kvn
+            replace(kvn, "OBJECT_NAME = AMAZONIA 1" => "OBJECT_NAME ="); format = :kvn
         )
 
         # A blank `ORIGINATOR` is allowed in OMM version 2.0.
@@ -300,7 +300,7 @@
             "CCSDS_OMM_VERS = 3.0" => "CCSDS_OMM_VERS = 2.0",
             "ORIGINATOR = 18 SPCS" => "ORIGINATOR =",
         )
-        omm = parse_omm(kvn_v2; file_type = :kvn)
+        omm = parse_omm(kvn_v2; format = :kvn)
         @test omm.header.originator == ""
     end
 
@@ -309,7 +309,7 @@
     @testset "Missing CREATION_DATE in KVN" begin
         kvn_no_date = replace(kvn, "CREATION_DATE = 2025-12-30T23:36:37\n" => "")
 
-        omm = parse_omm(kvn_no_date; file_type = :kvn)
+        omm = parse_omm(kvn_no_date; format = :kvn)
         @test omm.header.creation_date === nothing
     end
 
@@ -319,7 +319,7 @@
         kvn_dup = kvn * "INCLINATION = 0.0\n"
 
         exception = try
-            parse_omm(kvn_dup; file_type = :kvn)
+            parse_omm(kvn_dup; format = :kvn)
             nothing
         catch exception
             exception
@@ -368,8 +368,8 @@
         @test omm.metadata.object_name == "AMAZONIA 1"
 
         # A KVN input without the version keyword contains no OMM.
-        @test_throws OdmParseError parse_omm("OBJECT_NAME = X\n"; file_type = :kvn)
-        @test isempty(parse_omms("OBJECT_NAME = X\n"; file_type = :kvn))
+        @test_throws OdmParseError parse_omm("OBJECT_NAME = X\n"; format = :kvn)
+        @test isempty(parse_omms("OBJECT_NAME = X\n"; format = :kvn))
     end
 
     # == Unknown Optional-Section Elements =================================================

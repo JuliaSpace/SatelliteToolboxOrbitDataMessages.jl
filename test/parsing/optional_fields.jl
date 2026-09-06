@@ -92,7 +92,7 @@
         MEAN_ANOMALY        = 262.7545
         """
 
-        omm = parse_omm(kvn; file_type = :kvn)
+        omm = parse_omm(kvn; format = :kvn)
         @test omm.header.originator == ""
 
         # Such an incomplete message cannot be written as OMM 3.0.

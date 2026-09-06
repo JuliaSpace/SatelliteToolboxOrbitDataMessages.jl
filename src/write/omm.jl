@@ -32,58 +32,55 @@ The written version is always `3.0`, regardless of the version stored in the mes
 
 # Keywords
 
-- `file_type::Symbol`: The output file type, which can be `:xml` or `:kvn`. The methods that
-    write to a file also accept `:auto`, which infers the file type from the file extension
+- `format::Symbol`: The output format, which can be `:xml` or `:kvn`. The methods that
+    write to a file also accept `:auto`, which infers the format from the file extension
     (case-insensitive): `.kvn` selects the KVN format, whereas any other extension selects
     the XML format.
     (**Default**: `:xml` when writing to an `io` stream, `:auto` when writing to a file)
 """
-function write_omm(io::IO, omm::OrbitMeanElementsMessage; file_type::Symbol = :xml)
+function write_omm(io::IO, omm::OrbitMeanElementsMessage; format::Symbol = :xml)
+    _odm_check_output_format(format)
+
     # Check if the message contains all fields required for writing.
-    _omm_check_writable(omm, file_type)
+    _omm_check_writable(omm, format)
 
-    # Write the message using the desired file type.
-    file_type == :xml && return _xml_omm__write(io, omm)
-    file_type == :kvn && return _kvn_omm__write(io, omm)
+    # Write the message using the desired format.
+    format == :xml && return _xml_omm__write(io, omm)
 
-    return throw(ArgumentError("Unsupported file type: $file_type."))
+    return _kvn_omm__write(io, omm)
 end
 
 function write_omm(
-    io::IO, vomm::AbstractVector{OrbitMeanElementsMessage}; file_type::Symbol = :xml
+    io::IO, vomm::AbstractVector{OrbitMeanElementsMessage}; format::Symbol = :xml
 )
+    _odm_check_output_format(format)
+
     # Check if the messages contain all fields required for writing.
-    foreach(omm -> _omm_check_writable(omm, file_type), vomm)
+    foreach(omm -> _omm_check_writable(omm, format), vomm)
 
-    # Write the messages using the desired file type.
-    file_type == :xml && return _xml_omm__write(io, vomm)
-    file_type == :kvn && return _kvn_omm__write(io, vomm)
+    # Write the messages using the desired format.
+    format == :xml && return _xml_omm__write(io, vomm)
 
-    return throw(ArgumentError("Unsupported file type: $file_type."))
+    return _kvn_omm__write(io, vomm)
 end
 
 function write_omm(
     file::AbstractString,
     omm::Union{OrbitMeanElementsMessage, AbstractVector{OrbitMeanElementsMessage}};
-    file_type::Symbol = :auto,
+    format::Symbol = :auto,
 )
-    if file_type == :auto
-        # Lowercase only the extension instead of copying the whole path.
-        file_type = lowercase(last(splitext(file))) == ".kvn" ? :kvn : :xml
-    end
-
     # Validate everything before opening the file so that a failure does not truncate an
     # existing output file.
-    file_type ∈ (:xml, :kvn) || throw(ArgumentError("Unsupported file type: $file_type."))
+    format = _odm_output_format(file, format)
 
     if omm isa AbstractVector
-        foreach(o -> _omm_check_writable(o, file_type), omm)
+        foreach(o -> _omm_check_writable(o, format), omm)
     else
-        _omm_check_writable(omm, file_type)
+        _omm_check_writable(omm, format)
     end
 
     open(file, "w") do io
-        return write_omm(io, omm; file_type)
+        return write_omm(io, omm; format)
     end
 
     return nothing
@@ -94,23 +91,23 @@ end
 ############################################################################################
 
 """
-    _omm_check_writable(omm::OrbitMeanElementsMessage, file_type::Symbol) -> Nothing
+    _omm_check_writable(omm::OrbitMeanElementsMessage, format::Symbol) -> Nothing
 
-Check if `omm` contains all fields required to write an OMM 3.0 output as `file_type`,
+Check if `omm` contains all fields required to write an OMM 3.0 output as `format`,
 throwing an `ArgumentError` otherwise.
 
-The format-independent rules are shared by every file type, whereas `file_type` selects
-the additional format-specific rules (currently, the KVN keyword grammar for the
-user-defined parameter names).
+The format-independent rules are shared by every format, whereas `format` selects the
+additional format-specific rules (currently, the KVN keyword grammar for the user-defined
+parameter names).
 """
-function _omm_check_writable(omm::OrbitMeanElementsMessage, file_type::Symbol)
+function _omm_check_writable(omm::OrbitMeanElementsMessage, format::Symbol)
     isnothing(omm.header.creation_date) &&
         throw(ArgumentError("Cannot write OMM 3.0 without a creation date."))
 
     isempty(omm.header.originator) &&
         throw(ArgumentError("Cannot write OMM 3.0 without an originator."))
 
-    file_type == :kvn && _kvn_omm__check_user_defined_keys(omm)
+    format == :kvn && _kvn_omm__check_user_defined_keys(omm)
 
     return nothing
 end

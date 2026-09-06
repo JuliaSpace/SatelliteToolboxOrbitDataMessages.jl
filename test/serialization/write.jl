@@ -56,8 +56,8 @@
             file = joinpath(dir, "omm.xml")
             write(file, "precious content")
 
-            # An unsupported file type must not truncate the file.
-            @test_throws ArgumentError write_omm(file, omm; file_type = :json)
+            # An unsupported format must not truncate the file.
+            @test_throws ArgumentError write_omm(file, omm; format = :json)
             @test read(file, String) == "precious content"
 
             # A message that cannot be written must not truncate the file.
@@ -83,7 +83,7 @@
 
         # A name outside the KVN keyword grammar cannot be written back, so it must be
         # rejected instead of producing an unparseable file.
-        @test_throws ArgumentError write_omm(IOBuffer(), omm_bad; file_type = :kvn)
+        @test_throws ArgumentError write_omm(IOBuffer(), omm_bad; format = :kvn)
 
         # The XML format accepts arbitrary parameter names.
         buf = IOBuffer()

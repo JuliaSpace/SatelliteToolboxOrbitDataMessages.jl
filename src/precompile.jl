@@ -46,7 +46,7 @@
         parse_omm(String(take!(xml_buffer)))
 
         kvn_buffer = IOBuffer()
-        write_omm(kvn_buffer, omm; file_type = :kvn)
+        write_omm(kvn_buffer, omm; format = :kvn)
         parse_omm(String(take!(kvn_buffer)))
 
         show(IOBuffer(), MIME("text/plain"), omm)
