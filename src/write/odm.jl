@@ -39,22 +39,15 @@ Message types that cannot be written yet are skipped with a warning.
     the XML format.
     (**Default**: `:xml` when writing to an `io` stream, `:auto` when writing to a file)
 """
-function write_odm(io::IO, odm::OrbitDataMessage; format::Symbol = :xml)
-    return write_odm(io, [odm]; format)
-end
-
 function write_odm(
-    io::IO, vodm::AbstractVector{T}; format::Symbol = :xml
-) where {T <: OrbitDataMessage}
+    io::IO,
+    odm::Union{OrbitDataMessage, AbstractVector{<:OrbitDataMessage}};
+    format::Symbol = :xml,
+)
     _odm_check_output_format(format)
-
-    # Check if the messages contain all fields required for writing.
-    foreach(odm -> _odm_check_writable(odm, format), vodm)
-
-    # Write the messages using the desired format.
-    format == :xml && return _xml_odm__write(io, vodm)
-
-    return _kvn_odm__write(io, vodm)
+    _odm_check_writable(odm, format)
+    _odm_write(io, odm, format)
+    return nothing
 end
 
 function write_odm(
@@ -65,15 +58,10 @@ function write_odm(
     # Validate everything before opening the file so that a failure does not truncate an
     # existing output file.
     format = _odm_output_format(file, format)
-
-    if odm isa AbstractVector
-        foreach(o -> _odm_check_writable(o, format), odm)
-    else
-        _odm_check_writable(odm, format)
-    end
+    _odm_check_writable(odm, format)
 
     open(file, "w") do io
-        return write_odm(io, odm; format)
+        return _odm_write(io, odm, format)
     end
 
     return nothing
@@ -84,14 +72,40 @@ end
 ############################################################################################
 
 """
-    _odm_check_writable(odm::OrbitDataMessage, format::Symbol) -> Nothing
+    _odm_write(
+        io::IO,
+        odm::Union{OrbitDataMessage, AbstractVector{<:OrbitDataMessage}},
+        format::Symbol
+    ) -> Nothing
 
-Check if `odm` contains all fields required for writing it as `format`, throwing an
-`ArgumentError` otherwise. The check is dispatched to the corresponding message type;
-unsupported message types are accepted here and skipped with a warning by the
-format-specific writer.
+Write the message (or messages) `odm` to `io` in the given `format`, which must be `:xml`
+or `:kvn`. A single message is written as a one-element set. The messages must have been
+validated with [`_odm_check_writable`](@ref).
+"""
+_odm_write(io::IO, odm::OrbitDataMessage, format::Symbol) = _odm_write(io, [odm], format)
+
+function _odm_write(
+    io::IO, vodm::AbstractVector{<:OrbitDataMessage}, format::Symbol
+)
+    format == :xml && return _xml_odm__write(io, vodm)
+    return _kvn_odm__write(io, vodm)
+end
+
+"""
+    _odm_check_writable(odm::OrbitDataMessage, format::Symbol) -> Nothing
+    _odm_check_writable(vodm::AbstractVector{<:OrbitDataMessage}, format::Symbol) -> Nothing
+
+Check if `odm` (or every message in `vodm`) contains all fields required for writing it as
+`format`, throwing an `ArgumentError` otherwise. The check is dispatched to the
+corresponding message type; unsupported message types are accepted here and skipped with a
+warning by the format-specific writer.
 """
 _odm_check_writable(omm::OrbitMeanElementsMessage, format::Symbol) =
     _omm_check_writable(omm, format)
 
 _odm_check_writable(::OrbitDataMessage, ::Symbol) = nothing
+
+function _odm_check_writable(vodm::AbstractVector{<:OrbitDataMessage}, format::Symbol)
+    foreach(odm -> _odm_check_writable(odm, format), vodm)
+    return nothing
+end

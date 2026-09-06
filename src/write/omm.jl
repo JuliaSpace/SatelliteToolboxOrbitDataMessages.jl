@@ -38,30 +38,15 @@ The written version is always `3.0`, regardless of the version stored in the mes
     the XML format.
     (**Default**: `:xml` when writing to an `io` stream, `:auto` when writing to a file)
 """
-function write_omm(io::IO, omm::OrbitMeanElementsMessage; format::Symbol = :xml)
-    _odm_check_output_format(format)
-
-    # Check if the message contains all fields required for writing.
-    _omm_check_writable(omm, format)
-
-    # Write the message using the desired format.
-    format == :xml && return _xml_omm__write(io, omm)
-
-    return _kvn_omm__write(io, omm)
-end
-
 function write_omm(
-    io::IO, vomm::AbstractVector{OrbitMeanElementsMessage}; format::Symbol = :xml
+    io::IO,
+    omm::Union{OrbitMeanElementsMessage, AbstractVector{OrbitMeanElementsMessage}};
+    format::Symbol = :xml,
 )
     _odm_check_output_format(format)
-
-    # Check if the messages contain all fields required for writing.
-    foreach(omm -> _omm_check_writable(omm, format), vomm)
-
-    # Write the messages using the desired format.
-    format == :xml && return _xml_omm__write(io, vomm)
-
-    return _kvn_omm__write(io, vomm)
+    _omm_check_writable(omm, format)
+    _omm_write(io, omm, format)
+    return nothing
 end
 
 function write_omm(
@@ -72,15 +57,10 @@ function write_omm(
     # Validate everything before opening the file so that a failure does not truncate an
     # existing output file.
     format = _odm_output_format(file, format)
-
-    if omm isa AbstractVector
-        foreach(o -> _omm_check_writable(o, format), omm)
-    else
-        _omm_check_writable(omm, format)
-    end
+    _omm_check_writable(omm, format)
 
     open(file, "w") do io
-        return write_omm(io, omm; format)
+        return _omm_write(io, omm, format)
     end
 
     return nothing
@@ -91,10 +71,33 @@ end
 ############################################################################################
 
 """
-    _omm_check_writable(omm::OrbitMeanElementsMessage, format::Symbol) -> Nothing
+    _omm_write(
+        io::IO,
+        omm::Union{OrbitMeanElementsMessage, AbstractVector{OrbitMeanElementsMessage}},
+        format::Symbol
+    ) -> Nothing
 
-Check if `omm` contains all fields required to write an OMM 3.0 output as `format`,
-throwing an `ArgumentError` otherwise.
+Write the message (or messages) `omm` to `io` in the given `format`, which must be `:xml`
+or `:kvn`. The messages must have been validated with [`_omm_check_writable`](@ref).
+"""
+function _omm_write(
+    io::IO,
+    omm::Union{OrbitMeanElementsMessage, AbstractVector{OrbitMeanElementsMessage}},
+    format::Symbol,
+)
+    format == :xml && return _xml_omm__write(io, omm)
+    return _kvn_omm__write(io, omm)
+end
+
+"""
+    _omm_check_writable(omm::OrbitMeanElementsMessage, format::Symbol) -> Nothing
+    _omm_check_writable(
+        vomm::AbstractVector{OrbitMeanElementsMessage},
+        format::Symbol
+    ) -> Nothing
+
+Check if `omm` (or every message in `vomm`) contains all fields required to write an OMM
+3.0 output as `format`, throwing an `ArgumentError` otherwise.
 
 The format-independent rules are shared by every format, whereas `format` selects the
 additional format-specific rules (currently, the KVN keyword grammar for the user-defined
@@ -109,5 +112,12 @@ function _omm_check_writable(omm::OrbitMeanElementsMessage, format::Symbol)
 
     format == :kvn && _kvn_omm__check_user_defined_keys(omm)
 
+    return nothing
+end
+
+function _omm_check_writable(
+    vomm::AbstractVector{OrbitMeanElementsMessage}, format::Symbol
+)
+    foreach(omm -> _omm_check_writable(omm, format), vomm)
     return nothing
 end
