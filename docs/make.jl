@@ -22,6 +22,9 @@ makedocs(;
     ),
     sitename = "SatelliteToolboxOrbitDataMessages.jl",
     authors = "Ronan Arraes Jardim Chagas",
+    # Only the exported names must be documented in the manual; the private functions have
+    # docstrings for the developers, which are not rendered.
+    checkdocs = :exports,
     pages = [
         "Home" => "index.md",
         "Quick Start" => "man/quick_start.md",

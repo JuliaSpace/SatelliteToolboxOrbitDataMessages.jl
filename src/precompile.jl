@@ -50,5 +50,8 @@
         parse_omm(String(take!(kvn_buffer)))
 
         show(IOBuffer(), MIME("text/plain"), omm)
+
+        omm.epoch
+        OrbitMeanElementsMessage(omm; originator = "SatelliteToolbox")
     end
 end

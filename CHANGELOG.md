@@ -11,23 +11,60 @@ Version 0.2.0
   `omm.body.segment.metadata.object_name`.
 - ![BREAKING][badge-breaking] The public parsing API is now string-based only: the
   `parse_omm`, `parse_omms`, and `parse_odm` methods that received an `XML.Cursor` were
-  removed. The validation is now based on the OMM version instead of the `strict` keyword,
-  adding support for the version 2.0 rules.
+  removed. The validation is based on the OMM version, adding support for the version 2.0
+  rules.
+- ![BREAKING][badge-breaking] The `strict` keyword was removed from the parsing functions
+  and the fetchers. The parsers always accommodate the deviations found in real-world
+  files: the XML tags and the OMM `id` attribute are matched ignoring the case, empty XML
+  elements are treated as absent fields, and a missing `CREATION_DATE` is preserved as
+  `nothing`.
+- ![BREAKING][badge-breaking] Malformed input now throws the new `OdmParseError`, which
+  carries the related CCSDS keyword and, for KVN input, the line number, instead of an
+  `ArgumentError`. `ArgumentError` is reserved for invalid keyword arguments.
+- ![BREAKING][badge-breaking] `parse_omm` and `read_omm` throw an `OdmParseError` when the
+  input does not contain an OMM instead of returning `nothing`, and every parser rejects
+  XML documents whose root tag is not recognized. In the KVN format, any content before
+  the first version keyword is ignored by every entry point.
+- ![BREAKING][badge-breaking] The keyword `file_type` was renamed to `format` in every
+  parsing, reading, and writing function.
+- ![BREAKING][badge-breaking] The field `user_defined_parameters` is always a
+  `Vector{Pair{String, String}}`; an empty vector means that the section is absent, as for
+  the comments.
+- ![BREAKING][badge-breaking] The accessor module `ODM` was removed. Every field of the
+  header, metadata, and data sections is now a property of the message, so `omm.epoch` is
+  equivalent to `omm.data.epoch`. The `comments` fields are only reachable through their
+  sections.
+- ![BREAKING][badge-breaking] The Space-Track fetcher always URL-encodes the predicate
+  values, keeping the characters used by its operators, so the `HTML{String}` marker for
+  raw values is no longer accepted.
 - ![Feature][badge-feature] `parse_omm` and `parse_omms` now support the KVN format, which
-  is automatically detected from the content or selected with the new `file_type` keyword.
+  is automatically detected from the content or selected with the new `format` keyword.
   The comments are preserved and attributed to the corresponding message sections.
-- ![Feature][badge-feature] `write_omm` now supports the KVN format through the `file_type`
+- ![Feature][badge-feature] `write_omm` now supports the KVN format through the `format`
   keyword, which can be `:xml`, `:kvn`, or, when writing to a file, `:auto` to infer the
   format from the file extension. It also accepts a vector of messages: the XML output
   wraps them in an NDM document, whereas the KVN output writes them sequentially.
+- ![Feature][badge-feature] `parse_odm`, `read_odm`, and `write_odm` accept the `format`
+  keyword as well, adding the KVN format to the generic ODM functions. Other message types
+  found in KVN input are skipped with a warning, as in XML.
 - ![Feature][badge-feature] Add `read_omms` to read a set of OMMs from a file or IO stream.
   Additionally, `read_omm` and `read_omms` now forward every keyword to the parsing
-  functions, so `file_type` can also be selected when reading.
-- ![Enhancement][badge-enhancement] Improve the performance of parsing and comparing
-  messages: `==` and `hash` are now type-stable and allocation-free, and the parsers
-  perform fewer allocations and keyword lookups.
-- ![Enhancement][badge-enhancement] Reduce the allocations and dynamic dispatches in the
-  parsers, the writers, and the display code.
+  functions, so `format` can also be selected when reading.
+- ![Feature][badge-feature] The section types `OmmHeader`, `OmmMetadata`, and `OmmData` are
+  exported with their keyword constructors and a copy constructor each, and the message
+  can be assembled from them with `OrbitMeanElementsMessage(header, metadata, data;
+  version)`. Every constructor validates the rules relating the fields. The alias `OMM`
+  can be used instead of `OrbitMeanElementsMessage`.
+- ![Feature][badge-feature] `OmmCovarianceMatrix` can be created from a 6×6 matrix and
+  converted back with `Matrix` or `SMatrix`.
+- ![Enhancement][badge-enhancement] The parsers and writers are several times faster and
+  allocate a fraction of the memory: the fields are parsed into typed builders, the dates
+  are read and written without `DateFormat`, the KVN lines are scanned without regular
+  expressions in a single pass, and the XML output is streamed instead of built as a tree.
+  Parsing one XML message went from 20 μs and 27 KiB to 9 μs and 8 KiB, and writing it
+  from 15 μs and 46 KiB to 7 μs and 23 KiB. The XML documents now end with a line break.
+- ![Enhancement][badge-enhancement] Improve the performance of comparing messages: `==`
+  and `hash` are now type-stable and allocation-free.
 - ![Enhancement][badge-enhancement] Print the messages with the tree helpers of
   **SatelliteToolboxBase.jl** v2.1, which is now a dependency, so that the layout matches
   the other types of the ecosystem: the header, the metadata, and the data are tree nodes,
