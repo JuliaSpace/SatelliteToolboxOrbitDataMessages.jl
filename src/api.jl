@@ -197,7 +197,7 @@ const _OMM_DATA_ACCESSORS = (
     (
         :user_defined_parameters,
         :user_defined_parameters,
-        "Union{Nothing, Vector{Pair{String, String}}}",
+        "Vector{Pair{String, String}}",
         "the user-defined parameters",
     ),
 )

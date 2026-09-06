@@ -170,9 +170,9 @@ function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
 
     # .. User-Defined Parameters ...........................................................
 
-    # An empty vector is treated as an absent section, matching the parsers and avoiding
-    # an empty element that does not satisfy the schema content model.
-    if !isnothing(data.user_defined_parameters) && !isempty(data.user_defined_parameters)
+    # An empty vector is an absent section, so no empty element is written, which would
+    # not satisfy the schema content model.
+    if !isempty(data.user_defined_parameters)
         user_defined_parameters_node = XML.Element("userDefinedParameters")
 
         for (key, value) in data.user_defined_parameters

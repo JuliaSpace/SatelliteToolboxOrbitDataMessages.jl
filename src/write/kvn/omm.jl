@@ -52,13 +52,11 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
 
     # Compute the width of the keyword column. The user-defined parameter names can be
     # longer than every standard keyword, so we take them into account here.
-    user_defined_keyword_width =
-        isnothing(data.user_defined_parameters) ? 0 :
-        maximum(
-            p -> textwidth(first(p)) + _KVN_OMM__USER_DEFINED_PREFIX_WIDTH,
-            data.user_defined_parameters;
-            init = 0,
-        )
+    user_defined_keyword_width = maximum(
+        p -> textwidth(first(p)) + _KVN_OMM__USER_DEFINED_PREFIX_WIDTH,
+        data.user_defined_parameters;
+        init = 0,
+    )
 
     keyword_width = max(_KVN_OMM__MINIMUM_KEYWORD_WIDTH, user_defined_keyword_width)
 
@@ -147,13 +145,10 @@ function _kvn_omm__write(io::IO, omm::OrbitMeanElementsMessage)
 
     # -- User-Defined Parameters -----------------------------------------------------------
 
-    # An empty vector is treated as an absent section, matching the parsers.
-    if !isnothing(data.user_defined_parameters) && !isempty(data.user_defined_parameters)
-        for (key, value) in data.user_defined_parameters
-            _kvn_omm__write_element(
-                io, _KVN_OMM__USER_DEFINED_PREFIX * key, value, keyword_width
-            )
-        end
+    for (key, value) in data.user_defined_parameters
+        _kvn_omm__write_element(
+            io, _KVN_OMM__USER_DEFINED_PREFIX * key, value, keyword_width
+        )
     end
 
     return nothing
@@ -175,10 +170,7 @@ Check if every user-defined parameter name in `omm` matches the KVN keyword gram
 other name would produce a KVN output that cannot be parsed back.
 """
 function _kvn_omm__check_user_defined_keys(omm::OrbitMeanElementsMessage)
-    user_defined_parameters = omm.data.user_defined_parameters
-    isnothing(user_defined_parameters) && return nothing
-
-    for (key, _) in user_defined_parameters
+    for (key, _) in omm.data.user_defined_parameters
         occursin(_KVN_OMM__KEYWORD_GRAMMAR_REGEX, key) || throw(
             ArgumentError(
                 "The user-defined parameter name \"$key\" cannot be written in the KVN " *

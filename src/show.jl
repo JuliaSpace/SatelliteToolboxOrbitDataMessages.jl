@@ -153,12 +153,9 @@ function print_tree_body(io::IO, omm::OrbitMeanElementsMessage)
 
     # -- User-Defined Parameters -----------------------------------------------------------
 
-    user_fields             = PrintedField[]
-    user_defined_parameters = data.user_defined_parameters
-    if !isnothing(user_defined_parameters)
-        for (k, v) in user_defined_parameters
-            _po!(user_fields, k, v, "")
-        end
+    user_fields = PrintedField[]
+    for (k, v) in data.user_defined_parameters
+        _po!(user_fields, k, v, "")
     end
 
     # == Print Output ======================================================================

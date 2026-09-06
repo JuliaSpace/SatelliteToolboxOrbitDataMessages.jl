@@ -210,9 +210,9 @@ TLE-related parameters, covariance matrix, and user-defined parameters.
 - `covariance_matrix::Union{OmmCovarianceMatrix, Nothing}`: Covariance matrix of the
     message.
     (**Default**: `nothing`)
-- `user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}}`: User-defined
-    parameters as a vector of `key => value` pairs.
-    (**Default**: `nothing`)
+- `user_defined_parameters::Vector{Pair{String, String}}`: User-defined parameters as a
+    vector of `key => value` pairs. An empty vector means that the section is absent.
+    (**Default**: `Pair{String, String}[]`)
 """
 @kwdef struct OmmData
     # == Mean Keplerian Elements ===========================================================
@@ -258,7 +258,7 @@ TLE-related parameters, covariance matrix, and user-defined parameters.
 
     # == User-Defined Parameters ===========================================================
 
-    user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}} = nothing
+    user_defined_parameters::Vector{Pair{String, String}} = Pair{String, String}[]
 end
 
 # -- OMM -----------------------------------------------------------------------------------
@@ -438,9 +438,9 @@ The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be prov
 - `covariance_matrix::Union{OmmCovarianceMatrix, Nothing}`: Covariance matrix of the
     message.
     (**Default**: `nothing`)
-- `user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}}`: User-defined
-    parameters as a vector of `key => value` pairs.
-    (**Default**: `nothing`)
+- `user_defined_parameters::Vector{Pair{String, String}}`: User-defined parameters as a
+    vector of `key => value` pairs. An empty vector means that the section is absent.
+    (**Default**: `Pair{String, String}[]`)
 
 # Extended help
 
@@ -519,7 +519,7 @@ function OrbitMeanElementsMessage(;
 
     # -- User-Defined Parameters -----------------------------------------------------------
 
-    user_defined_parameters::Union{Nothing, Vector{Pair{String, String}}} = nothing,
+    user_defined_parameters::Vector{Pair{String, String}} = Pair{String, String}[],
 )
     version ∈ (v"2.0", v"3.0") ||
         throw(ArgumentError("Unsupported OMM version: $version."))
@@ -612,8 +612,7 @@ function OrbitMeanElementsMessage(;
         mean_motion_ddot,
         agom,
         covariance_matrix,
-        user_defined_parameters = isnothing(user_defined_parameters) ? nothing :
-            copy(user_defined_parameters),
+        user_defined_parameters = copy(user_defined_parameters),
     )
 
     return OrbitMeanElementsMessage(version, header, metadata, data)

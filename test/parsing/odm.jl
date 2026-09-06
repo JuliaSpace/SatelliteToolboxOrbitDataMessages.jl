@@ -63,7 +63,6 @@
     @test omm.data.mean_motion_ddot ≈ 0.0 atol = 1e-13
 
     # == Data Fields - User-Defined Parameters ============================================
-    @test omm.data.user_defined_parameters !== nothing
     @test length(omm.data.user_defined_parameters) == 12
 
     # Check some specific user-defined parameters
@@ -143,7 +142,6 @@ end
     @test omm.data.mean_motion_ddot ≈ 0.0 atol = 1e-13
 
     # == Data Fields - User-Defined Parameters ============================================
-    @test omm.data.user_defined_parameters !== nothing
     @test length(omm.data.user_defined_parameters) == 12
 
     # Check some specific user-defined parameters

@@ -5,13 +5,13 @@
 ############################################################################################
 
 @testset "User-Defined Parameters" verbose = true begin
-    # == No userDefinedParameters Section -> nothing =======================================
+    # == No userDefinedParameters Section -> Empty Vector ==================================
 
     @testset "No Section" begin
         xml = _minimal_omm_xml()
         omm = parse_omm(xml)
         @test !isnothing(omm)
-        @test isnothing(omm.data.user_defined_parameters)
+        @test isempty(omm.data.user_defined_parameters)
     end
 
     # == Missing Parameter Attribute =======================================================
@@ -46,24 +46,22 @@
         @test udp[2].second == "val2"
     end
 
-    # == Empty Section -> nothing ==========================================================
+    # == Empty Section -> Empty Vector =====================================================
 
     @testset "Empty Section" begin
         ud_xml = "<userDefinedParameters></userDefinedParameters>"
         omm    = parse_omm(_minimal_omm_xml(; user_defined_xml = ud_xml))
-        @test isnothing(omm.data.user_defined_parameters)
+        @test isempty(omm.data.user_defined_parameters)
 
-        # A message holding an empty vector is written without the section, so the
-        # XML and KVN round trips yield equal messages.
-        omm_empty = OrbitMeanElementsMessage(
-            omm; user_defined_parameters = Pair{String, String}[]
-        )
-
+        # A message holding an empty vector is written without the section, so the XML and
+        # KVN round trips yield equal messages.
         for file_type in (:xml, :kvn)
             buf = IOBuffer()
-            write_omm(buf, omm_empty; file_type)
-            reparsed = parse_omm(String(take!(buf)); file_type)
-            @test isnothing(reparsed.data.user_defined_parameters)
+            write_omm(buf, omm; file_type)
+            out = String(take!(buf))
+            @test !occursin("USER_DEFINED", out)
+            @test !occursin("userDefinedParameters", out)
+            @test parse_omm(out; file_type) == omm
         end
     end
 

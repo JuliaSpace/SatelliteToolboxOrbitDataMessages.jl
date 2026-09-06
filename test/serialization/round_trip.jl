@@ -78,14 +78,7 @@
         @test d1.mean_motion_dot ≈ d2.mean_motion_dot
         @test d1.mean_motion_ddot ≈ d2.mean_motion_ddot
 
-        # User-defined parameters: compare as Dict (ordering may differ).
-        ud1 =
-            isnothing(d1.user_defined_parameters) ? Dict() :
-            Dict(d1.user_defined_parameters)
-        ud2 =
-            isnothing(d2.user_defined_parameters) ? Dict() :
-            Dict(d2.user_defined_parameters)
-        @test ud1 == ud2
+        @test d1.user_defined_parameters == d2.user_defined_parameters
     end
 
     # == read_omms =========================================================================

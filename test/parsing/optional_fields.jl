@@ -28,7 +28,7 @@
         @test omm.data.classification_type === nothing
         @test omm.data.norad_cat_id === nothing
         @test omm.data.bstar === nothing
-        @test omm.data.user_defined_parameters === nothing
+        @test isempty(omm.data.user_defined_parameters)
     end
 
     # == semi_major_axis Without mean_motion ===============================================

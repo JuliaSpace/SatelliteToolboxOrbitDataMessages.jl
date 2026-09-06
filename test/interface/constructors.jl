@@ -78,7 +78,7 @@
         @test omm.data.GM === nothing
         @test omm.data.mass === nothing
         @test omm.data.bstar === nothing
-        @test omm.data.user_defined_parameters === nothing
+        @test isempty(omm.data.user_defined_parameters)
     end
 
     # == Reconstruction Override One Field =================================================
