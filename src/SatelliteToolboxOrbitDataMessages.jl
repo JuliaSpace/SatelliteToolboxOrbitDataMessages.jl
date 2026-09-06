@@ -43,6 +43,7 @@ include("./fetcher/api.jl")
 include("./fetcher/celestrak.jl")
 include("./fetcher/spacetrack.jl")
 
+include("./parse/builder.jl")
 include("./parse/odm.jl")
 include("./parse/omm.jl")
 include("./parse/kvn/odm.jl")

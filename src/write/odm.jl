@@ -8,7 +8,11 @@ export write_odm
 
 """
     write_odm(io::IO, odm::OrbitDataMessage; kwargs...) -> Nothing
-    write_odm(io::IO, vodm::AbstractVector{T}; kwargs...) where T<:OrbitDataMessage -> Nothing
+    write_odm(
+        io::IO,
+        vodm::AbstractVector{T};
+        kwargs...
+    ) where T<:OrbitDataMessage -> Nothing
 
 Write the given `odm` (or the set of messages in `vodm`) to the provided `io` stream. In
 the XML format, the messages are wrapped in a Navigation Data Message (NDM) document,

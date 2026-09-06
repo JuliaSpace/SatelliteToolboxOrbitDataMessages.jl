@@ -5,11 +5,10 @@
 ############################################################################################
 
 """
-    _xml_omm__parse(str::AbstractString) -> NamedTuple
+    _xml_omm__parse(str::AbstractString) -> _OmmBuilder
 
 Parse the first Orbit Mean-Elements Message (OMM) from the XML input in `str`, returning
-the container `(; version, header_fields, metadata_fields, data_fields)` with the raw field
-values.
+the builder with the raw field values.
 
 The document can be a stand-alone OMM or a Navigation Data Message (NDM), in which case the
 first wrapped OMM is parsed and the other messages are skipped. An `OdmParseError` is
@@ -60,11 +59,11 @@ function _xml_omm__tag_is(node::XML.Cursor, name::String)
 end
 
 """
-    _xml_omm__parse_element(xml::Cursor) -> NamedTuple
+    _xml_omm__parse_element(xml::Cursor) -> _OmmBuilder
 
-Parse an OMM element at the `Cursor` `xml`, returning the container
-`(; version, header_fields, metadata_fields, data_fields)` with the raw field values. The
-version and the mandatory fields are checked afterwards by [`_omm_assemble`](@ref).
+Parse an OMM element at the `Cursor` `xml`, returning the builder with the raw field
+values. The version and the mandatory fields are checked afterwards by
+[`_omm_assemble`](@ref).
 """
 function _xml_omm__parse_element(xml::XML.Cursor)
     _xml_omm__tag_is(xml, "omm") ||
@@ -79,8 +78,8 @@ function _xml_omm__parse_element(xml::XML.Cursor)
         ),
     )
 
+    builder           = _OmmBuilder()
     version_attribute = get(xml, "version", nothing)
-    version = nothing
 
     if !isnothing(version_attribute)
         version = tryparse(Float64, version_attribute)
@@ -91,26 +90,30 @@ function _xml_omm__parse_element(xml::XML.Cursor)
                 "\"$version_attribute\".",
             ),
         )
+
+        builder.version = version
     end
 
     # The OMM element must contain exactly one `header` followed by one `body`, so we only
     # need to count the element children and check that the expected tag appears at each
-    # position. The dictionaries are initialized here so that the locals stay
-    # concretely typed.
-    header_fields   = Dict{Symbol, Any}()
-    metadata_fields = Dict{Symbol, Any}()
-    data_fields     = Dict{Symbol, Any}()
-    valid_children  = true
-    child_count     = 0
+    # position.
+    valid_children = true
+    child_count    = 0
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
         child_count += 1
 
         if (child_count == 1) && _xml_omm__tag_is(node, "header")
-            header_fields = _xml_omm__parse_header(node)
+            _xml_omm__parse_section!(
+                builder.header,
+                node,
+                _OMM_HEADER_KEYWORD_TO_FIELD,
+                builder.header.comments,
+                "header field",
+            )
         elseif (child_count == 2) && _xml_omm__tag_is(node, "body")
-            metadata_fields, data_fields = _xml_omm__parse_body(node)
+            _xml_omm__parse_body!(builder, node)
         else
             valid_children = false
             skip_element!(node)
@@ -123,7 +126,7 @@ function _xml_omm__parse_element(xml::XML.Cursor)
         ),
     )
 
-    return (; version, header_fields, metadata_fields, data_fields)
+    return builder
 end
 
 """
@@ -159,30 +162,29 @@ end
 
 """
     _xml_omm__parse_section!(
-        fields::Dict{Symbol, Any},
+        builder,
         xml::Cursor,
         mapping::Vector{Pair{String, Symbol}},
-        comments_key::Symbol,
+        comments::Vector{String},
         description::String
     ) -> Nothing
 
 Parse an OMM section composed only of scalar elements at the `Cursor` `xml`, storing the raw
-field values in `fields`. The recognized keywords and their fields are given by `mapping`,
-the comments are stored in `fields[comments_key]` when present, and `description` names the
-section fields in error messages (e.g. `"metadata field"`).
+field values in the section `builder`. The recognized keywords and their fields are given
+by `mapping`, the comments are pushed to `comments`, and `description` names the section
+fields in error messages (e.g. `"metadata field"`).
 
 The tags are matched ignoring the ASCII case, and empty values are skipped, allowing
 real-world files with omitted values to be processed.
 """
 function _xml_omm__parse_section!(
-    fields::Dict{Symbol, Any},
+    builder,
     xml::XML.Cursor,
     mapping::Vector{Pair{String, Symbol}},
-    comments_key::Symbol,
+    comments::Vector{String},
     description::String,
 )
-    comments = String[]
-    seen     = UInt32(0)
+    seen = UInt32(0)
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
@@ -207,50 +209,25 @@ function _xml_omm__parse_section!(
             throw(OdmParseError("Duplicate OMM $description `$lt`."; keyword = lt))
         seen |= mask
 
-        keyword, field = mapping[i]
-
         # An empty value is treated as an absent field.
         isempty(v) && continue
 
-        fields[field] = _omm_parse_field_value(field, v, keyword)
+        keyword, field = mapping[i]
+        _omm_set_field!(builder, field, v, keyword)
     end
 
-    isempty(comments) || (fields[comments_key] = comments)
-
     return nothing
-end
-
-# == Header Parsing ========================================================================
-
-"""
-    _xml_omm__parse_header(xml::Cursor) -> Dict{Symbol, Any}
-
-Parse the header of an Orbit Mean-Elements Message (OMM) from a `Cursor` `xml`
-representation, returning a dictionary with the raw field values. Fields that are absent are
-omitted from the dictionary; the mandatory fields are checked afterwards by
-[`_omm_check_mandatory_fields`](@ref).
-"""
-function _xml_omm__parse_header(xml::XML.Cursor)
-    fields = Dict{Symbol, Any}()
-
-    _xml_omm__parse_section!(
-        fields, xml, _OMM_HEADER_KEYWORD_TO_FIELD, :comments, "header field"
-    )
-
-    return fields
 end
 
 # == Body Parsing ==========================================================================
 
 """
-    _xml_omm__parse_body(xml::Cursor) -> Tuple{Dict{Symbol, Any}, Dict{Symbol, Any}}
+    _xml_omm__parse_body!(builder::_OmmBuilder, xml::Cursor) -> Nothing
 
-Parse the body of an Orbit Mean-Elements Message (OMM) from a `Cursor` `xml` representation,
-returning dictionaries with the raw field values of the metadata and data sections of its
-single segment.
+Parse the body of an Orbit Mean-Elements Message (OMM) at the `Cursor` `xml`, storing the
+raw field values of the metadata and data sections of its single segment in `builder`.
 """
-function _xml_omm__parse_body(xml::XML.Cursor)
-    segment = nothing
+function _xml_omm__parse_body!(builder::_OmmBuilder, xml::XML.Cursor)
     segment_count = 0
 
     XML.@for_each_child xml node begin
@@ -262,7 +239,7 @@ function _xml_omm__parse_body(xml::XML.Cursor)
         segment_count += 1
 
         if segment_count == 1
-            segment = _xml_omm__parse_segment(node)
+            _xml_omm__parse_segment!(builder, node)
         else
             skip_element!(node)
         end
@@ -273,76 +250,63 @@ function _xml_omm__parse_body(xml::XML.Cursor)
         OdmParseError("The OMM body contains multiple segments, which is not supported."),
     )
 
-    return segment
+    return nothing
 end
 
 # -- Body Segment Parsing ------------------------------------------------------------------
 
 """
-    _xml_omm__parse_segment(xml::Cursor) -> Tuple{Dict{Symbol, Any}, Dict{Symbol, Any}}
+    _xml_omm__parse_segment!(builder::_OmmBuilder, xml::Cursor) -> Nothing
 
-Parse a segment of the body of an Orbit Mean-Elements Message (OMM) from a `Cursor` `xml`
-representation, returning dictionaries with the raw field values of its metadata and data
-sections.
+Parse a segment of the body of an Orbit Mean-Elements Message (OMM) at the `Cursor` `xml`,
+storing the raw field values of its metadata and data sections in `builder`.
 """
-function _xml_omm__parse_segment(xml::XML.Cursor)
-    metadata = nothing
-    data = nothing
+function _xml_omm__parse_segment!(builder::_OmmBuilder, xml::XML.Cursor)
+    has_metadata = false
+    has_data     = false
 
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
 
         if _xml_omm__tag_is(node, "metadata")
-            !isnothing(metadata) && throw(
+            has_metadata && throw(
                 OdmParseError("The OMM segment contains duplicate metadata sections.")
             )
-            metadata = _xml_omm__parse_metadata(node)
+            has_metadata = true
+
+            _xml_omm__parse_section!(
+                builder.metadata,
+                node,
+                _OMM_METADATA_KEYWORD_TO_FIELD,
+                builder.metadata.comments,
+                "metadata field",
+            )
         elseif _xml_omm__tag_is(node, "data")
-            !isnothing(data) &&
+            has_data &&
                 throw(OdmParseError("The OMM segment contains duplicate data sections."))
-            data = _xml_omm__parse_data(node)
+            has_data = true
+
+            _xml_omm__parse_data!(builder.data, node)
         else
             throw(OdmParseError("Unknown OMM segment element `$(tag(node))`."))
         end
     end
 
-    isnothing(metadata) &&
+    has_metadata ||
         throw(OdmParseError("The OMM segment is missing the metadata section."))
 
-    isnothing(data) && throw(OdmParseError("The OMM segment is missing the data section."))
+    has_data || throw(OdmParseError("The OMM segment is missing the data section."))
 
-    return (metadata, data)
+    return nothing
 end
 
 """
-    _xml_omm__parse_metadata(xml::Cursor) -> Dict{Symbol, Any}
+    _xml_omm__parse_data!(data::_OmmDataBuilder, xml::Cursor) -> Nothing
 
-Parse the metadata of the segment body of an Orbit Mean-Elements Message (OMM) from a
-`Cursor` `xml` representation, returning a dictionary with the raw field values. Fields that
-are absent are omitted from the dictionary; the mandatory fields are checked afterwards by
-[`_omm_check_mandatory_fields`](@ref).
+Parse the data of the segment body of an Orbit Mean-Elements Message (OMM) at the `Cursor`
+`xml`, storing the raw field values of all data subsections in `data`.
 """
-function _xml_omm__parse_metadata(xml::XML.Cursor)
-    fields = Dict{Symbol, Any}()
-
-    _xml_omm__parse_section!(
-        fields, xml, _OMM_METADATA_KEYWORD_TO_FIELD, :comments, "metadata field"
-    )
-
-    return fields
-end
-
-"""
-    _xml_omm__parse_data(xml::Cursor) -> Dict{Symbol, Any}
-
-Parse the data of the segment body of an Orbit Mean-Elements Message (OMM) from a `Cursor`
-`xml` representation, returning a dictionary with the raw field values of all data
-subsections. Fields that are absent are omitted from the dictionary; the mandatory fields
-are checked afterwards by [`_omm_check_mandatory_fields`](@ref).
-"""
-function _xml_omm__parse_data(xml::XML.Cursor)
-    fields        = Dict{Symbol, Any}()
-    data_comments = String[]
+function _xml_omm__parse_data!(data::_OmmDataBuilder, xml::XML.Cursor)
     seen_sections = UInt8(0)
 
     XML.@for_each_child xml node begin
@@ -350,7 +314,7 @@ function _xml_omm__parse_data(xml::XML.Cursor)
         lt = tag(node)::SubString{String}
 
         if _ascii_iequal(lt, "COMMENT")
-            push!(data_comments, _xml_omm__scalar_value(node))
+            push!(data.comments, _xml_omm__scalar_value(node))
             continue
         end
 
@@ -365,65 +329,62 @@ function _xml_omm__parse_data(xml::XML.Cursor)
 
         if i == 1
             _xml_omm__parse_section!(
-                fields,
+                data,
                 node,
                 _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD,
-                :mean_elements_comments,
+                data.mean_elements_comments,
                 "mean-elements field",
             )
         elseif i == 2
             _xml_omm__parse_section!(
-                fields,
+                data,
                 node,
                 _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD,
-                :spacecraft_parameters_comments,
+                data.spacecraft_parameters_comments,
                 "spacecraft parameter",
             )
         elseif i == 3
             _xml_omm__parse_section!(
-                fields,
+                data,
                 node,
                 _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD,
-                :tle_parameters_comments,
+                data.tle_parameters_comments,
                 "TLE parameter",
             )
         elseif i == 4
-            covariance_fields = Dict{Symbol, Any}()
+            covariance_matrix = _OmmCovarianceMatrixBuilder()
 
             _xml_omm__parse_section!(
-                covariance_fields,
+                covariance_matrix,
                 node,
                 _OMM_COVARIANCE_KEYWORD_TO_FIELD,
-                :comments,
+                covariance_matrix.comments,
                 "covariance element",
             )
 
-            fields[:covariance_matrix] = covariance_fields
+            data.covariance_matrix = covariance_matrix
         else
-            user_defined_parameters = _xml_omm__parse_user_defined_parameters(node)
-
-            # An empty section is normalized to an absent field so that every format
-            # yields the same message.
-            isempty(user_defined_parameters) ||
-                (fields[:user_defined_parameters] = user_defined_parameters)
+            _xml_omm__parse_user_defined_parameters!(data.user_defined_parameters, node)
         end
     end
 
-    isempty(data_comments) || (fields[:comments] = data_comments)
-
-    return fields
+    return nothing
 end
 
 """
-    _xml_omm__parse_user_defined_parameters(xml::Cursor) -> Vector{Pair{String, String}}
+    _xml_omm__parse_user_defined_parameters!(
+        parameters::Vector{Pair{String, String}},
+        xml::Cursor
+    ) -> Nothing
 
-Parse an OMM `userDefinedParameters` section at the cursor's current position, matching
-the tags ignoring the ASCII case. An `OdmParseError` is thrown if the section contains an
-unknown element or a `USER_DEFINED` element without the `parameter` attribute.
+Parse an OMM `userDefinedParameters` section at the cursor's current position, pushing the
+parameters to `parameters` and matching the tags ignoring the ASCII case. An
+`OdmParseError` is thrown if the section contains an unknown element or a `USER_DEFINED`
+element without the `parameter` attribute.
 """
-function _xml_omm__parse_user_defined_parameters(xml::XML.Cursor)
-    parameters = Pair{String, String}[]
-
+function _xml_omm__parse_user_defined_parameters!(
+    parameters::Vector{Pair{String, String}}, xml::XML.Cursor
+)
     XML.@for_each_child xml node begin
         nodetype(node) === Element || continue
 
@@ -443,5 +404,5 @@ function _xml_omm__parse_user_defined_parameters(xml::XML.Cursor)
         push!(parameters, String(key) => _xml_omm__scalar_value(node))
     end
 
-    return parameters
+    return nothing
 end

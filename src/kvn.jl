@@ -15,9 +15,6 @@ const _KVN_KEYWORD_REGEX = r"^\s*(?<keyword>[0-9A-Z_]+)\s*=\s*(?<value>.*?)\s*$"
 # `COMMENT` keyword by a single space or tab, so any additional indentation is preserved.
 const _KVN_COMMENT_REGEX = r"^\s*(?<keyword>COMMENT)(?:[ \t](?<comment>.*))?$"
 
-# Regular expression for a KVN value with a trailing `[unit]` annotation.
-const _KVN_VALUE_WITH_UNIT_REGEX = r"^(?<value>.*?)\s*\[[^\]]*\]$"
-
 ############################################################################################
 #                                    Private Functions                                     #
 ############################################################################################
@@ -50,10 +47,17 @@ end
 """
     _kvn__strip_unit(value::AbstractString) -> AbstractString
 
-Return `value` without its trailing `[unit]` annotation, or `value` unchanged if it has
-none.
+Return `value` without its trailing `[unit]` annotation and the whitespace preceding it, or
+`value` unchanged if it has none.
+
+The check for the closing bracket is cheap, so the function can be called for every
+non-string value regardless of the input format.
 """
 function _kvn__strip_unit(value::AbstractString)
-    m = match(_KVN_VALUE_WITH_UNIT_REGEX, value)
-    return isnothing(m) ? value : m[1]
+    endswith(value, ']') || return value
+
+    i = findlast('[', value)
+    isnothing(i) && return value
+
+    return rstrip(SubString(value, firstindex(value), prevind(value, i)))
 end
