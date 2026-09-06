@@ -7,14 +7,14 @@
 export parse_omm, parse_omms
 
 """
-    parse_omm(str::AbstractString; kwargs...) -> Union{Nothing, OrbitMeanElementsMessage}
+    parse_omm(str::AbstractString; kwargs...) -> OrbitMeanElementsMessage
 
 Parse an Orbit Mean-Elements Message (OMM) in the string `str` and return the parsed
 message.
 
-If the XML is a Navigation Data Message (NDM), only the first OMM message is returned. If
-the file does not contain an OMM message, `nothing` is returned. An [`OdmParseError`](@ref)
-is thrown if the input is malformed or violates the CCSDS 502.0-B-3 rules.
+If the XML is a Navigation Data Message (NDM), only the first OMM message is returned. An
+[`OdmParseError`](@ref) is thrown if the input does not contain an OMM message, is
+malformed, or violates the CCSDS 502.0-B-3 rules.
 
 The parsers accommodate the deviations commonly found in real-world files: the XML tags and
 the OMM `id` attribute value are matched ignoring the case, empty XML elements are treated
@@ -44,8 +44,6 @@ function parse_omm(str::AbstractString; file_type::Symbol = :auto)
     else
         throw(ArgumentError("Unsupported file type: $file_type."))
     end
-
-    isnothing(parsed_omm) && return nothing
 
     # Check the mandatory fields and assemble the message.
     return _omm_assemble(parsed_omm)

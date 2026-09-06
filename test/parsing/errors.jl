@@ -342,7 +342,34 @@
         """
         @test_throws OdmParseError parse_odm(xml)
         @test_throws OdmParseError parse_omms(xml)
-        @test isnothing(parse_omm(xml))
+        @test_throws OdmParseError parse_omm(xml)
+
+        # An OMM nested under an unrecognized root is not found either.
+        nested = "<foo><bar/>" * _omm_element_from_fixture() * "</foo>"
+        @test_throws OdmParseError parse_omm(nested)
+        @test_throws OdmParseError parse_omms(nested)
+    end
+
+    # == No OMM in the Input ===============================================================
+
+    @testset "No OMM in the Input" begin
+        opm = "<opm id=\"CCSDS_OPM_VERS\" version=\"3.0\"><header/><body/></opm>"
+
+        # A single-message parse must find an OMM, whereas the multi-message parsers
+        # return an empty vector for a recognized document without OMMs.
+        @test_throws OdmParseError parse_omm(opm)
+        @test_throws OdmParseError parse_omm(_ndm_xml(opm))
+        @test_throws OdmParseError parse_omm(_ndm_xml())
+        @test_logs (:warn, r"OPM") @test isempty(parse_omms(opm))
+        @test isempty(parse_omms(_ndm_xml()))
+
+        # The first OMM of an NDM is returned even after other message types.
+        omm = parse_omm(_ndm_xml(opm, _omm_element_from_fixture()))
+        @test omm.metadata.object_name == "AMAZONIA 1"
+
+        # A KVN input without the version keyword contains no OMM.
+        @test_throws OdmParseError parse_omm("OBJECT_NAME = X\n"; file_type = :kvn)
+        @test isempty(parse_omms("OBJECT_NAME = X\n"; file_type = :kvn))
     end
 
     # == Unknown Optional-Section Elements =================================================

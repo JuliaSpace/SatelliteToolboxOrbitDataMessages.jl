@@ -5,27 +5,37 @@
 ############################################################################################
 
 """
-    _xml_omm__parse(str::AbstractString) -> Union{Nothing, NamedTuple}
-    _xml_omm__parse(xml::XML.Cursor) -> Union{Nothing, NamedTuple}
+    _xml_omm__parse(str::AbstractString) -> NamedTuple
 
-Parse the first Orbit Mean-Elements Message (OMM) from the XML input in `str` (or at the
-`Cursor` `xml`), returning the container `(; version, header_fields, metadata_fields,
-data_fields)` with the raw field values. If the document does not contain an OMM message,
-`nothing` is returned.
+Parse the first Orbit Mean-Elements Message (OMM) from the XML input in `str`, returning
+the container `(; version, header_fields, metadata_fields, data_fields)` with the raw field
+values.
+
+The document can be a stand-alone OMM or a Navigation Data Message (NDM), in which case the
+first wrapped OMM is parsed and the other messages are skipped. An `OdmParseError` is
+thrown if the root tag is not recognized or the document does not contain an OMM.
 """
 function _xml_omm__parse(str::AbstractString)
     # Open the XML file.
-    xml = XML.Cursor(String(str))
-    return _xml_omm__parse(xml)
-end
+    xml       = XML.Cursor(String(str))
+    root_node = _xml__root_element(xml)
 
-function _xml_omm__parse(xml::XML.Cursor)
-    for node in xml
-        nodetype(node) === Element || continue
-        _xml_omm__tag_is(node, "omm") && return _xml_omm__parse_element(node)
+    if _xml_omm__tag_is(root_node, "ndm")
+        XML.@for_each_child root_node node begin
+            nodetype(node) === Element || continue
+            _xml_omm__tag_is(node, "omm") && return _xml_omm__parse_element(node)
+            skip_element!(node)
+        end
+
+        throw(OdmParseError("The NDM does not contain an OMM."))
     end
 
-    return nothing
+    _xml_omm__tag_is(root_node, "omm") && return _xml_omm__parse_element(root_node)
+
+    isnothing(_xml_odm__message_index(root_node)) &&
+        throw(OdmParseError("The root tag `$(tag(root_node))` is not recognized."))
+
+    throw(OdmParseError("The document contains a `$(tag(root_node))` instead of an OMM."))
 end
 
 # Sections of the OMM data element, in the order defined by the CCSDS 502.0-B-3 standard.

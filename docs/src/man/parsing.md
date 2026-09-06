@@ -45,7 +45,7 @@ is an NDM containing several OMMs, only the **first** one is returned:
 omm = parse_omm(omm_xml)
 ```
 
-If the input does not contain any OMM, the function returns `nothing`.
+If the input does not contain any OMM, the function throws an [`OdmParseError`](@ref).
 
 ## Parsing Multiple OMMs
 

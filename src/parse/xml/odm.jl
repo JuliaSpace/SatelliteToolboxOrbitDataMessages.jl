@@ -21,12 +21,7 @@ function _xml_odm__parse(str::AbstractString)
     # Open the XML file.
     xml = XML.Cursor(String(str))
 
-    # Get the document root node.
-    root_node = next!(xml)
-    while !isnothing(root_node) && nodetype(root_node) !== Element
-        root_node = next!(xml)
-    end
-    isnothing(root_node) && throw(OdmParseError("The XML document has no root element."))
+    root_node = _xml__root_element(xml)
 
     # Process the root node.
     _xml_omm__tag_is(root_node, "ndm") && return _xml_odm__parse_ndm(root_node)

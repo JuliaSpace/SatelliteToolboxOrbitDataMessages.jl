@@ -7,13 +7,14 @@
 export read_omm, read_omms
 
 """
-    read_omm(file::AbstractString; kwargs...) -> Union{Nothing, OrbitMeanElementsMessage}
-    read_omm(io::IO; kwargs...) -> Union{Nothing, OrbitMeanElementsMessage}
+    read_omm(file::AbstractString; kwargs...) -> OrbitMeanElementsMessage
+    read_omm(io::IO; kwargs...) -> OrbitMeanElementsMessage
 
 Read an Orbit Mean-Elements Message (OMM) from the provided `file` or `io` stream.
 
 If the input contains multiple messages, only the first OMM is returned. If it does not
-contain an OMM, `nothing` is returned. For more information, see [`parse_omm`](@ref).
+contain an OMM, an [`OdmParseError`](@ref) is thrown. For more information, see
+[`parse_omm`](@ref).
 
 # Keywords
 
