@@ -21,9 +21,6 @@ const _KVN_OMM__VALUE_WIDTH = 15
 const _KVN_OMM__USER_DEFINED_PREFIX = "USER_DEFINED_"
 const _KVN_OMM__USER_DEFINED_PREFIX_WIDTH = textwidth(_KVN_OMM__USER_DEFINED_PREFIX)
 
-# Regular expression with the keyword grammar accepted by the KVN parser.
-const _KVN_OMM__KEYWORD_GRAMMAR_REGEX = r"^[0-9A-Z_]+$"
-
 ############################################################################################
 #                                    Private Functions                                     #
 ############################################################################################
@@ -171,7 +168,7 @@ other name would produce a KVN output that cannot be parsed back.
 """
 function _kvn_omm__check_user_defined_keys(omm::OrbitMeanElementsMessage)
     for (key, _) in omm.data.user_defined_parameters
-        occursin(_KVN_OMM__KEYWORD_GRAMMAR_REGEX, key) || throw(
+        _kvn__is_keyword(key) || throw(
             ArgumentError(
                 "The user-defined parameter name \"$key\" cannot be written in the KVN " *
                 "format, whose keywords only accept uppercase letters, digits, and " *

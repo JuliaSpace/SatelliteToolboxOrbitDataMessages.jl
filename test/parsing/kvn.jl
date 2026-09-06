@@ -158,6 +158,48 @@ end
         @test length(parse_omms("\ufeff" * kvn)) == 1
     end
 
+    @testset "Prologue Is Ignored" begin
+        # Any content before the first version keyword is ignored, including lines that
+        # would be invalid inside a message.
+        prologue = "Generated file\nfoo bar\nOBJECT_NAME = IGNORED\n"
+        @test parse_omm(prologue * kvn).metadata.object_name == "AMAZONIA 1"
+        @test length(parse_omms(prologue * kvn)) == 1
+        @test isempty(parse_omms(prologue))
+    end
+
+    @testset "Line Numbers Are Absolute" begin
+        # The line numbers in the errors refer to the whole input, not to the message.
+        kvn_2 = _minimal_omm_kvn(; object_name = "SAT 2")
+
+        exception = try
+            parse_omms(kvn * kvn_2 * "INCLINATION = 0.0\n")
+            nothing
+        catch exception
+            exception
+        end
+
+        @test exception isa OdmParseError
+        @test exception.line == 33
+    end
+
+    @testset "Other Message Types" begin
+        opm = "CCSDS_OPM_VERS = 3.0\nCREATION_DATE = 2025-01-01T00:00:00\nX = 1\n"
+        kvn_2 = _minimal_omm_kvn(; object_name = "SAT 2")
+
+        @test_logs (:warn, r"OPM") (:warn, r"OPM") (:warn, r"OPM") begin
+            odms = parse_odm(opm * kvn * opm * kvn_2 * opm)
+            @test length(odms) == 2
+            @test odms[1].metadata.object_name == "AMAZONIA 1"
+            @test odms[2].metadata.object_name == "SAT 2"
+        end
+
+        # The first OMM is returned even after another message type, whose content is
+        # not parsed.
+        @test parse_omm(opm * kvn).metadata.object_name == "AMAZONIA 1"
+        @test_throws OdmParseError parse_omm(opm)
+        @test_logs (:warn, r"OPM") @test isempty(parse_omms(opm))
+    end
+
     @testset "Chunk Detection Requires Exact Keyword" begin
         # A keyword merely starting with `CCSDS_OMM_VERS` must not start a new message.
         omms = parse_omms("CCSDS_OMM_VERSION = 9.9\n" * kvn; format = :kvn)

@@ -25,8 +25,36 @@ const _KVN_OMM__KEYWORD_TO_SECTION_AND_FIELD = Dict{String, Tuple{Int, Symbol}}(
 Parse the first Orbit Mean-Elements Message (OMM) in the KVN input `str`, returning the
 builder with the raw field values. The version and the mandatory fields are checked
 afterwards by [`_omm_assemble`](@ref).
+
+The message starts at the first `CCSDS_OMM_VERS` keyword, and any content before it is
+ignored. An `OdmParseError` is thrown if the input does not contain an OMM.
 """
 function _kvn_omm__parse(str::AbstractString)
+    scanner = _KvnScanner(str)
+
+    while true
+        line = _kvn__next_line!(scanner)
+        isnothing(line) && break
+
+        km = _kvn__parse_keyword(line)
+        (isnothing(km) || (km[1] != "CCSDS_OMM_VERS")) && continue
+
+        _kvn__unread_line!(scanner)
+        return _kvn_omm__parse!(scanner)
+    end
+
+    throw(OdmParseError("The KVN input does not contain an OMM."))
+end
+
+"""
+    _kvn_omm__parse!(scanner::_KvnScanner) -> _OmmBuilder
+
+Parse the Orbit Mean-Elements Message (OMM) starting at the next line of `scanner`, which
+must be its `CCSDS_OMM_VERS` keyword, returning the builder with the raw field values. The
+message ends at the input end or right before the next version keyword (see
+`_KVN_ODM__VERSION_KEYWORDS`), which is left in the scanner for the next message parser.
+"""
+function _kvn_omm__parse!(scanner::_KvnScanner)
     builder = _OmmBuilder()
 
     # Comments precede the content of the section they refer to in KVN files. Hence, we
@@ -36,13 +64,35 @@ function _kvn_omm__parse(str::AbstractString)
     pending_comments = String[]
     last_section     = 1
 
-    # == Parse File ========================================================================
+    # == Version ===========================================================================
 
-    for (l, line) in enumerate(eachsplit(str, '\n'))
-        sline = strip(line)
-        isempty(sline) && continue
+    version_line = _kvn__next_line!(scanner)
+    km           = isnothing(version_line) ? nothing : _kvn__parse_keyword(version_line)
 
-        km = _kvn__parse_keyword(sline)
+    (isnothing(km) || (km[1] != "CCSDS_OMM_VERS")) &&
+        throw(OdmParseError("The KVN OMM must start with the `CCSDS_OMM_VERS` keyword."))
+
+    version = tryparse(Float64, km[2])
+
+    isnothing(version) && throw(
+        OdmParseError(
+            "Invalid value for the KVN keyword `CCSDS_OMM_VERS` in line $(scanner.line): " *
+            "$(km[2]).";
+            keyword = "CCSDS_OMM_VERS",
+            line = scanner.line,
+        ),
+    )
+
+    builder.version = version
+
+    # == Fields ============================================================================
+
+    while true
+        line = _kvn__next_line!(scanner)
+        isnothing(line) && break
+
+        l  = scanner.line
+        km = _kvn__parse_keyword(line)
 
         isnothing(km) &&
             throw(OdmParseError("Invalid KVN keyword format in line $l: $line."; line = l))
@@ -54,24 +104,10 @@ function _kvn_omm__parse(str::AbstractString)
             continue
         end
 
-        if key == "CCSDS_OMM_VERS"
-            # If the version was already assigned, we are starting a new OMM, so we stop
-            # processing here.
-            isnothing(builder.version) || break
-
-            version = tryparse(Float64, value)
-
-            isnothing(version) && throw(
-                OdmParseError(
-                    "Invalid value for the KVN keyword `CCSDS_OMM_VERS` in line $l: " *
-                    "$value.";
-                    keyword = "CCSDS_OMM_VERS",
-                    line = l,
-                ),
-            )
-
-            builder.version = version
-            continue
+        # A version keyword starts a new message, so we stop processing here.
+        if !isnothing(_kvn_odm__message_index(key))
+            _kvn__unread_line!(scanner)
+            break
         end
 
         # User-defined parameters use the keyword prefix `USER_DEFINED_`. The prefix is
