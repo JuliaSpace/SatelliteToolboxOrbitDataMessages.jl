@@ -19,28 +19,8 @@ Write the set of Orbit Mean-Elements Messages in the vector `vomm` to the provid
 stream as a Navigation Data Message (NDM) XML document.
 """
 function _xml_omm__write(io::IO, omm::OrbitMeanElementsMessage)
-    doc = XML.Document()
-
-    # XML Declaration.
-    decl = XML.Declaration(; version = "1.0", encoding = "UTF-8")
-    push!(doc, decl)
-
-    # Our XML is compatible with version 3.
-    root = XML.Element(
-        "omm";
-        id = "CCSDS_OMM_VERS",
-        version = "3.0",
-        var"xmlns:xsi" = "http://www.w3.org/2001/XMLSchema-instance",
-        var"xsi:noNamespaceSchemaLocation" =
-            "https://sanaregistry.org/files/ndmxml_unqualified/ndmxml-4.0.0-master-4.0.xsd",
-    )
-
-    push!(doc, root)
-
-    _xml_omm__add_tags!(root, omm)
-
-    XML.write(io, doc)
-
+    println(io, _XML__DECLARATION)
+    _xml_omm__write_element(io, omm, 0; root = true)
     return nothing
 end
 
@@ -51,121 +31,135 @@ function _xml_omm__write(io::IO, vomm::AbstractVector{OrbitMeanElementsMessage})
 end
 
 """
-    _xml_omm__write_element(omm::OrbitMeanElementsMessage) -> XML.Node
+    _xml_omm__write_element(
+        io::IO,
+        omm::OrbitMeanElementsMessage,
+        level::Int;
+        root::Bool = false
+    ) -> Nothing
 
-Convert the given `omm` to an XML element suitable for embedding within another XML document
-(e.g. an NDM). Hence, the XML declaration is omitted.
+Write the given `omm` to the provided `io` stream as an `omm` XML element at the
+indentation `level`. If `root` is `true`, the element carries the schema attributes of a
+stand-alone document; otherwise, it is suitable for embedding within another XML document
+(e.g. an NDM).
 
-The written version is always `3.0`, regardless of the version stored in the `omm`. This
-matches the schema declared by the enclosing document.
-"""
-function _xml_omm__write_element(omm::OrbitMeanElementsMessage)
-    element = XML.Element("omm"; id = "CCSDS_OMM_VERS", version = "3.0")
-
-    _xml_omm__add_tags!(element, omm)
-
-    return element
-end
-
-"""
-    _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage) -> Nothing
-
-Add the OMM tags from the given `omm` message to the `parent` XML node.
-
-The tags of each section are obtained automatically from the corresponding keyword mapping
-(see `_xml_omm__add_section_tags!`), so the output follows the keyword order defined by the
+The written version is always `3.0`, regardless of the version stored in the `omm`. The
+tags of each section are obtained from the corresponding keyword mapping (see
+[`_xml_omm__write_section`](@ref)), so the output follows the keyword order defined by the
 CCSDS 502.0-B-3 standard.
 """
-function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
+function _xml_omm__write_element(
+    io::IO, omm::OrbitMeanElementsMessage, level::Int; root::Bool = false
+)
     data = omm.data
+
+    _xml__indent(io, level)
+    print(io, "<omm id=\"CCSDS_OMM_VERS\" version=\"3.0\"")
+    root && print(io, ' ', _XML__SCHEMA_ATTRIBUTES)
+    print(io, ">\n")
 
     # == Header ============================================================================
 
-    header_node = XML.Element("header")
-    push!(parent, header_node)
+    _xml__open_tag(io, level + 1, "header")
 
-    _xml_omm__add_section_tags!(
-        header_node, omm.header, _OMM_HEADER_KEYWORD_TO_FIELD, omm.header.comments
+    _xml_omm__write_section(
+        io, level + 2, omm.header, _OMM_HEADER_KEYWORD_TO_FIELD, omm.header.comments
     )
+
+    _xml__close_tag(io, level + 1, "header")
 
     # == Body ==============================================================================
 
-    body_node = XML.Element("body")
-    push!(parent, body_node)
-
-    segment_node = XML.Element("segment")
-    push!(body_node, segment_node)
+    _xml__open_tag(io, level + 1, "body")
+    _xml__open_tag(io, level + 2, "segment")
 
     # -- Metadata --------------------------------------------------------------------------
 
-    metadata_node = XML.Element("metadata")
-    push!(segment_node, metadata_node)
+    _xml__open_tag(io, level + 3, "metadata")
 
-    _xml_omm__add_section_tags!(
-        metadata_node, omm.metadata, _OMM_METADATA_KEYWORD_TO_FIELD, omm.metadata.comments
+    _xml_omm__write_section(
+        io, level + 4, omm.metadata, _OMM_METADATA_KEYWORD_TO_FIELD, omm.metadata.comments
     )
+
+    _xml__close_tag(io, level + 3, "metadata")
 
     # -- Data ------------------------------------------------------------------------------
 
-    data_node = XML.Element("data")
-    push!(segment_node, data_node)
+    _xml__open_tag(io, level + 3, "data")
 
-    foreach(comment -> _xml_add_tag!(data_node, "COMMENT", comment), data.comments)
+    for comment in data.comments
+        _xml__write_element(io, level + 4, "COMMENT", comment)
+    end
 
     # .. Mean Keplerian Elements ...........................................................
 
-    mean_elements_node = XML.Element("meanElements")
-    push!(data_node, mean_elements_node)
+    _xml__open_tag(io, level + 4, "meanElements")
 
-    _xml_omm__add_section_tags!(
-        mean_elements_node,
+    _xml_omm__write_section(
+        io,
+        level + 5,
         data,
         _OMM_MEAN_ELEMENTS_KEYWORD_TO_FIELD,
         data.mean_elements_comments,
     )
 
+    _xml__close_tag(io, level + 4, "meanElements")
+
     # .. Spacecraft Parameters .............................................................
 
-    # The optional sections are only added to the document if they contain any tag.
-    spacecraft_parameters_node = XML.Element("spacecraftParameters")
-
-    _xml_omm__add_section_tags!(
-        spacecraft_parameters_node,
+    # The optional sections are only written if they contain any element.
+    if !_xml_omm__section_is_empty(
         data,
         _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD,
         data.spacecraft_parameters_comments,
     )
+        _xml__open_tag(io, level + 4, "spacecraftParameters")
 
-    isempty(children(spacecraft_parameters_node)) ||
-        push!(data_node, spacecraft_parameters_node)
+        _xml_omm__write_section(
+            io,
+            level + 5,
+            data,
+            _OMM_SPACECRAFT_PARAMETERS_KEYWORD_TO_FIELD,
+            data.spacecraft_parameters_comments,
+        )
+
+        _xml__close_tag(io, level + 4, "spacecraftParameters")
+    end
 
     # .. TLE Related Parameters ............................................................
 
-    tle_parameters_node = XML.Element("tleParameters")
-
-    _xml_omm__add_section_tags!(
-        tle_parameters_node,
-        data,
-        _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD,
-        data.tle_parameters_comments,
+    if !_xml_omm__section_is_empty(
+        data, _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD, data.tle_parameters_comments
     )
+        _xml__open_tag(io, level + 4, "tleParameters")
 
-    isempty(children(tle_parameters_node)) || push!(data_node, tle_parameters_node)
+        _xml_omm__write_section(
+            io,
+            level + 5,
+            data,
+            _OMM_TLE_PARAMETERS_KEYWORD_TO_FIELD,
+            data.tle_parameters_comments,
+        )
+
+        _xml__close_tag(io, level + 4, "tleParameters")
+    end
 
     # .. Covariance Matrix .................................................................
 
-    if !isnothing(data.covariance_matrix)
-        covariance_matrix = data.covariance_matrix
-        covariance_matrix_node = XML.Element("covarianceMatrix")
+    covariance_matrix = data.covariance_matrix
 
-        _xml_omm__add_section_tags!(
-            covariance_matrix_node,
+    if !isnothing(covariance_matrix)
+        _xml__open_tag(io, level + 4, "covarianceMatrix")
+
+        _xml_omm__write_section(
+            io,
+            level + 5,
             covariance_matrix,
             _OMM_COVARIANCE_KEYWORD_TO_FIELD,
             covariance_matrix.comments,
         )
 
-        push!(data_node, covariance_matrix_node)
+        _xml__close_tag(io, level + 4, "covarianceMatrix")
     end
 
     # .. User-Defined Parameters ...........................................................
@@ -173,45 +167,75 @@ function _xml_omm__add_tags!(parent::XML.Node, omm::OrbitMeanElementsMessage)
     # An empty vector is an absent section, so no empty element is written, which would
     # not satisfy the schema content model.
     if !isempty(data.user_defined_parameters)
-        user_defined_parameters_node = XML.Element("userDefinedParameters")
+        _xml__open_tag(io, level + 4, "userDefinedParameters")
 
         for (key, value) in data.user_defined_parameters
-            child = XML.Element("USER_DEFINED"; parameter = key)
-            push!(child, XML.Text(_ndm_render_value(value)))
-            push!(user_defined_parameters_node, child)
+            _xml__indent(io, level + 5)
+            print(io, "<USER_DEFINED parameter=\"")
+            _xml__escape(io, key)
+            print(io, "\">")
+            _xml__escape(io, value)
+            print(io, "</USER_DEFINED>\n")
         end
 
-        push!(data_node, user_defined_parameters_node)
+        _xml__close_tag(io, level + 4, "userDefinedParameters")
+    end
+
+    _xml__close_tag(io, level + 3, "data")
+    _xml__close_tag(io, level + 2, "segment")
+    _xml__close_tag(io, level + 1, "body")
+    _xml__close_tag(io, level, "omm")
+
+    return nothing
+end
+
+"""
+    _xml_omm__write_section(
+        io::IO,
+        level::Int,
+        section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix},
+        mapping::Vector{Pair{String, Symbol}},
+        comments::Vector{String}
+    ) -> Nothing
+
+Write the elements of the OMM `section` to the provided `io` stream at the indentation
+`level`. The written tags and their fields are given by `mapping`, whose order is preserved
+in the output, and the section `comments` are written before the fields.
+
+Fields whose value is `nothing` are omitted from the output.
+"""
+function _xml_omm__write_section(
+    io::IO,
+    level::Int,
+    section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix},
+    mapping::Vector{Pair{String, Symbol}},
+    comments::Vector{String},
+)
+    for comment in comments
+        _xml__write_element(io, level, "COMMENT", comment)
+    end
+
+    for (keyword, field) in mapping
+        _xml__write_element(io, level, keyword, getfield(section, field))
     end
 
     return nothing
 end
 
 """
-    _xml_omm__add_section_tags!(
-        node::XML.Node,
+    _xml_omm__section_is_empty(
         section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix},
         mapping::Vector{Pair{String, Symbol}},
         comments::Vector{String}
-    ) -> Nothing
+    ) -> Bool
 
-Add the tags of the OMM `section` to the XML `node`. The added tags and their fields are
-given by `mapping`, whose order is preserved in the output, and the section `comments` are
-added before the fields.
-
-Fields whose value is `nothing` are omitted from the output.
+Check if the OMM `section` has no comments and every field in `mapping` is `nothing`, in
+which case the section is omitted from the output.
 """
-function _xml_omm__add_section_tags!(
-    node::XML.Node,
+function _xml_omm__section_is_empty(
     section::Union{OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix},
     mapping::Vector{Pair{String, Symbol}},
     comments::Vector{String},
 )
-    foreach(comment -> _xml_add_tag!(node, "COMMENT", comment), comments)
-
-    for (keyword, field) in mapping
-        _xml_add_tag!(node, keyword, getfield(section, field))
-    end
-
-    return nothing
+    return isempty(comments) && all(p -> isnothing(getfield(section, last(p))), mapping)
 end

@@ -162,6 +162,33 @@
         @test occursin("my_value", out)
     end
 
+    # == Escaped Characters ================================================================
+
+    @testset "Escaped Characters" begin
+        omm_special = OrbitMeanElementsMessage(
+            omm;
+            header_comments = ["a < b & c > d \"quoted\""],
+            object_name = "SAT <1> & \"2\"",
+            classification_type = '<',
+            user_defined_parameters = ["A&B<>\"" => "left & right <x>"],
+        )
+
+        for messages in (omm_special, [omm_special, omm_special])
+            buf = IOBuffer()
+            write_omm(buf, messages)
+            out = String(take!(buf))
+
+            @test !occursin("<1>", out)
+            @test occursin("&lt;1&gt; &amp; &quot;2&quot;", out)
+            @test occursin("parameter=\"A&amp;B&lt;&gt;&quot;\"", out)
+            @test endswith(out, "\n")
+
+            reparsed = parse_omms(out)
+            @test all(==(omm_special), reparsed)
+            @test length(reparsed) == length(messages isa AbstractVector ? messages : [1])
+        end
+    end
+
     # == Compare Against Reference File ====================================================
 
     @testset "Compare Against Reference File" begin
