@@ -28,6 +28,12 @@ Version 0.2.0
   perform fewer allocations and keyword lookups.
 - ![Enhancement][badge-enhancement] Reduce the allocations and dynamic dispatches in the
   parsers, the writers, and the display code.
+- ![Enhancement][badge-enhancement] Print the messages with the tree helpers of
+  **SatelliteToolboxBase.jl** v2.1, which is now a dependency, so that the layout matches
+  the other types of the ecosystem: the header, the metadata, and the data are tree nodes,
+  and the data subsections are nested under the data. The faces `satellitetoolbox_odm_*`
+  were replaced by the `satellitetoolbox_base_*` faces registered by
+  **SatelliteToolboxBase.jl**.
 - ![Bugfix][badge-bugfix] Define `isequal` for the message types, fixing the behavior of
   messages containing `-0.0` or `NaN` values in `Set`s and `Dict`s.
 - ![Bugfix][badge-bugfix] `write_omm` and `write_odm` now validate the message before

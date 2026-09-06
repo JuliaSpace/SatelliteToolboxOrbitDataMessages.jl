@@ -18,49 +18,48 @@
 
     expected = """
 OrbitMeanElementsMessage:
-  Header
-    Comment       : GENERATED VIA SPACE-TRACK.ORG API
-    Creation Date : 2025-12-30T23:36:37
-    Originator    : 18 SPCS
-  Metadata
-    Object Name         : AMAZONIA 1
-    Object ID           : 2021-015A
-    Center Name         : EARTH
-    Ref. Frame          : TEME
-    Time System         : UTC
-    Mean Element Theory : SGP4
-  Data
-  ├─ Mean Keplerian Elements
-  │    Epoch              : 2025-12-30T18:12:04.533984
-  │    Mean Motion        : 14.40772474 rev/day
-  │    Eccentricity       : 0.0001124
-  │    Inclination        : 98.3721°
-  │    RA of Asc. Node    : 75.0877°
-  │    Arg. of Pericenter : 97.3772°
-  │    Mean Anomaly       : 262.7545°
-  ├─ TLE Related Parameters
-  │    Ephemeris Type      : 0
-  │    Classification Type : U
-  │    NORAD Cat ID        : 47699
-  │    Element Set Number  : 999
-  │    Rev at Epoch        : 25439
-  │    Bstar               : 0.0001533 1/ER
-  │    ∂(Mean Motion)/∂t   : 4.47e-6 rev/day²
-  │    ∂²(Mean Motion)/∂t² : 0.0 rev/day³
-  └─ User-Defined Parameters
-       SEMIMAJOR_AXIS : 7134.084
-       PERIOD         : 99.946
-       APOAPSIS       : 756.751
-       PERIAPSIS      : 755.147
-       OBJECT_TYPE    : PAYLOAD
-       RCS_SIZE       : LARGE
-       COUNTRY_CODE   : BRAZ
-       LAUNCH_DATE    : 2021-02-28
-       SITE           : SRI
-       DECAY_DATE     :
-       FILE           : 4946249
-       GP_ID          : 307230979
-"""
+  ├─ Header
+  │    Comment       : GENERATED VIA SPACE-TRACK.ORG API
+  │    Creation Date : 2025-12-30T23:36:37
+  │    Originator    : 18 SPCS
+  ├─ Metadata
+  │    Object Name         : AMAZONIA 1
+  │    Object ID           : 2021-015A
+  │    Center Name         : EARTH
+  │    Ref. Frame          : TEME
+  │    Time System         : UTC
+  │    Mean Element Theory : SGP4
+  └─ Data
+       ├─ Mean Keplerian Elements
+       │    Epoch              : 2025-12-30T18:12:04.533984
+       │    Mean Motion        : 14.40772474 rev/day
+       │    Eccentricity       : 0.0001124
+       │    Inclination        : 98.3721°
+       │    RA of Asc. Node    : 75.0877°
+       │    Arg. of Pericenter : 97.3772°
+       │    Mean Anomaly       : 262.7545°
+       ├─ TLE Related Parameters
+       │    Ephemeris Type      : 0
+       │    Classification Type : U
+       │    NORAD Cat ID        : 47699
+       │    Element Set Number  : 999
+       │    Rev at Epoch        : 25439
+       │    Bstar               : 0.0001533 1/ER
+       │    ∂(Mean Motion)/∂t   : 4.47e-6 rev/day²
+       │    ∂²(Mean Motion)/∂t² : 0.0 rev/day³
+       └─ User-Defined Parameters
+            SEMIMAJOR_AXIS : 7134.084
+            PERIOD         : 99.946
+            APOAPSIS       : 756.751
+            PERIAPSIS      : 755.147
+            OBJECT_TYPE    : PAYLOAD
+            RCS_SIZE       : LARGE
+            COUNTRY_CODE   : BRAZ
+            LAUNCH_DATE    : 2021-02-28
+            SITE           : SRI
+            DECAY_DATE     :
+            FILE           : 4946249
+            GP_ID          : 307230979"""
 
     result = sprint(show, MIME("text/plain"), omm)
     @test result == expected
@@ -255,7 +254,7 @@ OrbitMeanElementsMessage:
             "Message ID     : MESSAGE-1",
             "Comment             : Metadata comment",
             "Ref. Frame Epoch    : 2025-01-01T00:00:00.123456789",
-            "    Comment : Data comment\\nsecond line",
+            "       Comment : Data comment\\nsecond line",
             "Comment            : Mean elements comment",
             "Semi-Major Axis    : 7000.0 km",
             "GM                 : 398600.4418 km³/s²",
@@ -304,7 +303,10 @@ OrbitMeanElementsMessage:
         # ANSI escape codes should be present when color is enabled.
         @test occursin("\e[", result)
 
-        # The field names must keep their bold styling all the way to the output.
+        # The field names must keep their bold styling all the way to the output, and the
+        # decorations must not change the text.
         @test occursin("\e[1mObject Name", result)
+        plain = sprint(show, MIME("text/plain"), omm)
+        @test replace(result, r"\e\[[0-9;]*m" => "") == plain
     end
 end

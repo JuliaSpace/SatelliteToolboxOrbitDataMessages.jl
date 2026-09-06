@@ -14,13 +14,12 @@ using HTTP
 using PrecompileTools
 using Scratch
 using Serialization
-using StyledStrings
 using URIs
 using XML
 
 import Base: ==
 import NanoDates: NanoDate
-import StyledStrings: annotatedstring
+import SatelliteToolboxBase
 
 ############################################################################################
 #                                          Types                                           #
@@ -37,7 +36,6 @@ include("./api.jl")
 
 include("./misc.jl")
 include("./kvn.jl")
-include("./printing.jl")
 include("./show.jl")
 include("./xml.jl")
 
@@ -63,14 +61,5 @@ include("./write/xml/odm.jl")
 include("./write/xml/omm.jl")
 
 include("./precompile.jl")
-
-############################################################################################
-#                                        Initialize                                        #
-############################################################################################
-
-function __init__()
-    _register_faces()
-    return nothing
-end
 
 end # module SatelliteToolboxOrbitDataMessages

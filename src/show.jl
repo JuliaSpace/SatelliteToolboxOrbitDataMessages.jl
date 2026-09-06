@@ -2,6 +2,10 @@
 #
 # Show methods.
 #
+# The rich representation is a tree drawn with the helpers of SatelliteToolboxBase.jl: the
+# header, the metadata, and the data are sections, and the data subsections are nested
+# under the data.
+#
 ############################################################################################
 
 # == OrbitMeanElementsMessage ==============================================================
@@ -22,13 +26,20 @@ function Base.show(io::IO, omm::OrbitMeanElementsMessage)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
+    SatelliteToolboxBase.print_tree(io, "OrbitMeanElementsMessage", omm)
+    return nothing
+end
+
+# The body of the rich representation is overloaded so that other types can print it under
+# their own header.
+function SatelliteToolboxBase.print_tree_body(io::IO, omm::OrbitMeanElementsMessage)
     _po! = _push_output!
 
     # == Header ============================================================================
 
     header = omm.header
 
-    header_fields = NTuple{3, String}[]
+    header_fields = SatelliteToolboxBase.PrintedField[]
     for comment in header.comments
         _po!(header_fields, "Comment", comment, "")
     end
@@ -41,7 +52,7 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     metadata = omm.metadata
 
-    metadata_fields = NTuple{3, String}[]
+    metadata_fields = SatelliteToolboxBase.PrintedField[]
     for comment in metadata.comments
         _po!(metadata_fields, "Comment", comment, "")
     end
@@ -57,14 +68,14 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     data = omm.data
 
-    data_fields = NTuple{3, String}[]
+    data_fields = SatelliteToolboxBase.PrintedField[]
     for comment in data.comments
         _po!(data_fields, "Comment", comment, "")
     end
 
     # -- Mean Keplerian Elements -----------------------------------------------------------
 
-    mean_elements_fields = NTuple{3, String}[]
+    mean_elements_fields = SatelliteToolboxBase.PrintedField[]
     for comment in data.mean_elements_comments
         _po!(mean_elements_fields, "Comment", comment, "")
     end
@@ -80,7 +91,7 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     # -- Spacecraft Parameters -------------------------------------------------------------
 
-    spacecraft_fields = NTuple{3, String}[]
+    spacecraft_fields = SatelliteToolboxBase.PrintedField[]
     for comment in data.spacecraft_parameters_comments
         _po!(spacecraft_fields, "Comment", comment, "")
     end
@@ -92,7 +103,7 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     # -- TLE Related Parameters ------------------------------------------------------------
 
-    tle_fields = NTuple{3, String}[]
+    tle_fields = SatelliteToolboxBase.PrintedField[]
     for comment in data.tle_parameters_comments
         _po!(tle_fields, "Comment", comment, "")
     end
@@ -110,7 +121,7 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
     # -- Covariance Matrix -----------------------------------------------------------------
 
     # Binding the `Union` field to a local lets the `isnothing` check narrow its type.
-    cov_fields = NTuple{3, String}[]
+    cov_fields = SatelliteToolboxBase.PrintedField[]
     cov        = data.covariance_matrix
     if !isnothing(cov)
         for comment in cov.comments
@@ -142,7 +153,7 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     # -- User-Defined Parameters -----------------------------------------------------------
 
-    user_fields             = NTuple{3, String}[]
+    user_fields             = SatelliteToolboxBase.PrintedField[]
     user_defined_parameters = data.user_defined_parameters
     if !isnothing(user_defined_parameters)
         for (k, v) in user_defined_parameters
@@ -152,47 +163,69 @@ function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
 
     # == Print Output ======================================================================
 
-    # Rail used to draw the tree of data subsections under the `Data` section.
-    data_rail = "  "
+    # Only the data subsections with at least one field are printed.
+    data_sections = SatelliteToolboxBase.PrintedSection[]
 
-    _print_node(io, "OrbitMeanElementsMessage:", "", "", :satellitetoolbox_odm_title)
-
-    # -- Header (top-level heading, drawn without a connector) --------------------------
-
-    _print_node(io, "Header", "  ", "", :satellitetoolbox_odm_section)
-    _print_fields(io, header_fields, "    ")
-
-    # -- Metadata --------------------------------------------------------------------------
-
-    _print_node(io, "Metadata", "  ", "", :satellitetoolbox_odm_section)
-    _print_fields(io, metadata_fields, "    ")
-
-    # -- Data ------------------------------------------------------------------------------
-
-    _print_node(io, "Data", "  ", "", :satellitetoolbox_odm_section)
-    _print_fields(io, data_fields, "    ")
-
-    # Build the list of present data subsections so the last one is closed with `└─`.
-    # Filtering a tuple returns a tuple, avoiding two vector allocations.
-    data_sections = filter(
-        s -> !isempty(s[2]),
-        (
-            ("Mean Keplerian Elements", mean_elements_fields),
-            ("Spacecraft Parameters", spacecraft_fields),
-            ("TLE Related Parameters", tle_fields),
-            ("Covariance Matrix", cov_fields),
-            ("User-Defined Parameters", user_fields),
-        ),
+    for (name, fields) in (
+        ("Mean Keplerian Elements", mean_elements_fields),
+        ("Spacecraft Parameters",   spacecraft_fields),
+        ("TLE Related Parameters",  tle_fields),
+        ("Covariance Matrix",       cov_fields),
+        ("User-Defined Parameters", user_fields),
     )
-
-    for (i, (title, fields)) in enumerate(data_sections)
-        is_last = i == length(data_sections)
-        connector = is_last ? "└─ " : "├─ "
-        field_rail = data_rail * (is_last ? "     " : "│    ")
-
-        _print_node(io, title, data_rail, connector, :satellitetoolbox_odm_node)
-        _print_fields(io, fields, field_rail)
+        isempty(fields) && continue
+        push!(data_sections, SatelliteToolboxBase.PrintedSection(name, fields))
     end
 
+    sections = SatelliteToolboxBase.PrintedSection[
+        SatelliteToolboxBase.PrintedSection("Header",   header_fields),
+        SatelliteToolboxBase.PrintedSection("Metadata", metadata_fields),
+        SatelliteToolboxBase.PrintedSection("Data",     data_fields, data_sections),
+    ]
+
+    SatelliteToolboxBase.print_tree_body(io, SatelliteToolboxBase.PrintedField[], sections)
+
+    return nothing
+end
+
+############################################################################################
+#                                    Private Functions                                     #
+############################################################################################
+
+"""
+    _format_value(value) -> String
+
+Convert `value` to its display `String`. This function is the single formatting seam for
+field values, allowing consistent formatting across every message.
+
+The default method uses `string`, which for `AbstractFloat` yields the shortest
+representation that round-trips exactly (e.g., `7134.084`, `4.47e-6`), avoiding any loss of
+precision in the orbital elements.
+"""
+_format_value(value) = string(value)
+
+"""
+    _push_output!(
+        vector::AbstractVector{SatelliteToolboxBase.PrintedField},
+        name::String,
+        value::Any,
+        unit::String
+    ) -> Nothing
+
+Push to `vector` the field `(name, value, unit)` if `value` is not `nothing`. The `value`
+is converted to a string using [`_format_value`](@ref) and escaped.
+
+Passing the field components as positional arguments lets the compiler specialize on the
+value type, avoiding the tuple conversion and boxing of a `Tuple{String, Any, String}`
+argument.
+"""
+function _push_output!(
+    vector::AbstractVector{SatelliteToolboxBase.PrintedField},
+    name::String,
+    value::Any,
+    unit::String
+)
+    isnothing(value) && return nothing
+    push!(vector, (name, escape_string(_format_value(value)), unit))
     return nothing
 end
