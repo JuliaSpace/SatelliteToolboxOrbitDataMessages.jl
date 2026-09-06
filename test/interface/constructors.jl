@@ -223,6 +223,76 @@
         @test OrbitMeanElementsMessage(omm) == omm
     end
 
+    @testset "Sectioned Constructor" begin
+        header = OmmHeader(; creation_date, originator = "TEST")
+        metadata = OmmMetadata(;
+            object_name         = "TEST SAT",
+            object_id           = "2025-001A",
+            center_name         = "EARTH",
+            ref_frame           = "TEME",
+            time_system         = "UTC",
+            mean_element_theory = "SGP4",
+        )
+        data = OmmData(;
+            epoch,
+            mean_motion       = 15.0,
+            eccentricity      = 0.001,
+            inclination       = 45.0,
+            raan              = 100.0,
+            arg_of_pericenter = 50.0,
+            mean_anomaly      = 200.0,
+        )
+
+        omm = OrbitMeanElementsMessage(header, metadata, data)
+        @test omm.version == v"3.0"
+        @test omm.header === header
+        @test omm.metadata === metadata
+        @test omm.data === data
+
+        # The sectioned message equals the one built with the flat constructor.
+        @test omm == OrbitMeanElementsMessage(;
+            creation_date,
+            originator          = "TEST",
+            object_name         = "TEST SAT",
+            object_id           = "2025-001A",
+            center_name         = "EARTH",
+            ref_frame           = "TEME",
+            time_system         = "UTC",
+            mean_element_theory = "SGP4",
+            epoch,
+            mean_motion         = 15.0,
+            eccentricity        = 0.001,
+            inclination         = 45.0,
+            raan                = 100.0,
+            arg_of_pericenter   = 50.0,
+            mean_anomaly        = 200.0,
+        )
+
+        @test OrbitMeanElementsMessage(header, metadata, data; version = v"2.0").version ==
+            v"2.0"
+        @test_throws ArgumentError OrbitMeanElementsMessage(
+            header, metadata, data; version = v"1.0"
+        )
+
+        # The rules relating the data fields are checked by every constructor.
+        bad_data = OmmData(data; semi_major_axis = 7000.0)
+        @test_throws ArgumentError OrbitMeanElementsMessage(header, metadata, bad_data)
+        @test_throws ArgumentError OrbitMeanElementsMessage(
+            v"3.0", header, metadata, bad_data
+        )
+
+        tle_data = OmmData(data; bstar = 1e-4)
+        @test_throws ArgumentError OrbitMeanElementsMessage(header, metadata, tle_data)
+    end
+
+    @testset "OMM Alias" begin
+        @test OMM === OrbitMeanElementsMessage
+        @test :OMM in names(SatelliteToolboxOrbitDataMessages)
+        @test :OmmHeader in names(SatelliteToolboxOrbitDataMessages)
+        @test :OmmMetadata in names(SatelliteToolboxOrbitDataMessages)
+        @test :OmmData in names(SatelliteToolboxOrbitDataMessages)
+    end
+
     @testset "Exactly One Mean-Motion Representation" begin
         kwargs = (;
             creation_date,

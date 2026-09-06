@@ -9,7 +9,8 @@
 #
 ############################################################################################
 
-export OrbitMeanElementsMessage, OmmCovarianceMatrix
+export OrbitMeanElementsMessage, OMM
+export OmmHeader, OmmMetadata, OmmData, OmmCovarianceMatrix
 
 # == Types =================================================================================
 
@@ -19,7 +20,8 @@ export OrbitMeanElementsMessage, OmmCovarianceMatrix
     struct OmmHeader
 
 Header section of an Orbit Mean-Elements Message (OMM) as defined by the CCSDS 502.0-B-3
-standard.
+standard. Create it with the keyword constructor `OmmHeader(; kwargs...)`, whose keywords
+are the fields below.
 
 # Fields
 
@@ -49,7 +51,8 @@ end
     struct OmmMetadata
 
 Metadata section of an Orbit Mean-Elements Message (OMM) as defined by the CCSDS 502.0-B-3
-standard.
+standard. Create it with the keyword constructor `OmmMetadata(; kwargs...)`, whose
+keywords are the fields below.
 
 # Fields
 
@@ -86,7 +89,8 @@ standard.
 
 The matrix is symmetric, so only the lower-triangular 21 elements are stored. The elements
 follow the CCSDS naming convention where `CX_X` is the (1,1) entry, `CY_X` is the (2,1)
-entry, etc.
+entry, etc. Create it with the keyword constructor `OmmCovarianceMatrix(; kwargs...)`,
+whose keywords are the fields below.
 
 # Fields
 
@@ -147,7 +151,10 @@ end
 
 Data section of an Orbit Mean-Elements Message (OMM) as defined by the CCSDS 502.0-B-3
 standard, containing the mean Keplerian elements and the optional spacecraft parameters,
-TLE-related parameters, covariance matrix, and user-defined parameters.
+TLE-related parameters, covariance matrix, and user-defined parameters. Create it with the
+keyword constructor `OmmData(; kwargs...)`, whose keywords are the fields below. The rules
+relating the fields (e.g. exactly one of `semi_major_axis` and `mean_motion`) are checked
+when the section is assembled into an [`OrbitMeanElementsMessage`](@ref).
 
 # Fields
 
@@ -272,8 +279,12 @@ The structure contains the three sections defined by the standard: a `header`, a
 `metadata`, and a `data` section. The individual fields can be accessed directly through
 these sections, for example `omm.metadata.object_name` or `omm.data.epoch`.
 
-To create a message, use the keyword constructor `OrbitMeanElementsMessage(; kwargs...)`,
-which assembles all the internal sections automatically.
+To create a message, use the flat keyword constructor `OrbitMeanElementsMessage(; kwargs...)`,
+which assembles all the internal sections automatically, or build the sections with
+[`OmmHeader`](@ref), [`OmmMetadata`](@ref), and [`OmmData`](@ref) and pass them to
+`OrbitMeanElementsMessage(header, metadata, data; version)`. Every constructor checks the
+rules relating the fields, throwing an `ArgumentError` if they are violated. The alias
+[`OMM`](@ref) can be used instead of the full name.
 
 # Fields
 
@@ -287,7 +298,21 @@ struct OrbitMeanElementsMessage <: OrbitDataMessage
     header::OmmHeader
     metadata::OmmMetadata
     data::OmmData
+
+    function OrbitMeanElementsMessage(
+        version::VersionNumber, header::OmmHeader, metadata::OmmMetadata, data::OmmData
+    )
+        _omm_check_rules(version, data)
+        return new(version, header, metadata, data)
+    end
 end
+
+"""
+    const OMM = OrbitMeanElementsMessage
+
+Short alias of [`OrbitMeanElementsMessage`](@ref).
+"""
+const OMM = OrbitMeanElementsMessage
 
 # == Equality and Hashing ==================================================================
 
@@ -343,7 +368,8 @@ provided. The required keywords are the message creation date, the originator, t
 identification, the reference frame and time system, and the mean Keplerian elements. All
 angular quantities (`inclination`, `raan`, `arg_of_pericenter`, and `mean_anomaly`) are
 expressed in **degrees**. An `ArgumentError` is thrown if the keyword combination violates
-the message rules (see the extended help).
+the message rules (see the extended help). The sections can also be built individually
+and assembled with `OrbitMeanElementsMessage(header, metadata, data; version)`.
 
 The date keywords (`creation_date`, `epoch`, and `ref_frame_epoch`) must be provided as
 `NanoDate` objects so that the sub-second precision is preserved.
@@ -521,48 +547,6 @@ function OrbitMeanElementsMessage(;
 
     user_defined_parameters::Vector{Pair{String, String}} = Pair{String, String}[],
 )
-    version ∈ (v"2.0", v"3.0") ||
-        throw(ArgumentError("Unsupported OMM version: $version."))
-
-    (isnothing(semi_major_axis) == isnothing(mean_motion)) && throw(
-        ArgumentError(
-            "Exactly one of `semi_major_axis` and `mean_motion` must be provided."
-        ),
-    )
-
-    has_tle_parameters =
-        !isempty(tle_parameters_comments) || any(
-            !isnothing,
-            (
-                ephemeris_type,
-                classification_type,
-                norad_cat_id,
-                element_set_number,
-                rev_at_epoch,
-                bstar,
-                bterm,
-                mean_motion_dot,
-                mean_motion_ddot,
-                agom,
-            ),
-        )
-
-    if has_tle_parameters
-        (isnothing(bstar) == isnothing(bterm)) && throw(
-            ArgumentError(
-                "Exactly one of `bstar` and `bterm` is required in TLE parameters."
-            ),
-        )
-        isnothing(mean_motion_dot) &&
-            throw(ArgumentError("`mean_motion_dot` is required in TLE parameters."))
-        (isnothing(mean_motion_ddot) == isnothing(agom)) && throw(
-            ArgumentError(
-                "Exactly one of `mean_motion_ddot` and `agom` is required in TLE " *
-                "parameters.",
-            ),
-        )
-    end
-
     header = OmmHeader(;
         comments = copy(header_comments),
         classification,
@@ -620,6 +604,25 @@ end
 
 """
     OrbitMeanElementsMessage(
+        header::OmmHeader,
+        metadata::OmmMetadata,
+        data::OmmData;
+        version::VersionNumber = v"3.0"
+    ) -> OrbitMeanElementsMessage
+
+Create an Orbit Mean-Elements Message (OMM) with `version` from its `header`, `metadata`,
+and `data` sections. An `ArgumentError` is thrown if `version` is not `v"2.0"` or `v"3.0"`
+or the data section violates the message rules (see the extended help of the keyword
+constructor).
+"""
+function OrbitMeanElementsMessage(
+    header::OmmHeader, metadata::OmmMetadata, data::OmmData; version::VersionNumber = v"3.0"
+)
+    return OrbitMeanElementsMessage(version, header, metadata, data)
+end
+
+"""
+    OrbitMeanElementsMessage(
         omm::OrbitMeanElementsMessage;
         kwargs...
     ) -> OrbitMeanElementsMessage
@@ -629,79 +632,107 @@ accepted by the keyword constructor can be used; the remaining fields, including
 message version, are copied from `omm`.
 """
 function OrbitMeanElementsMessage(omm::OrbitMeanElementsMessage; kwargs...)
-    return OrbitMeanElementsMessage(;
-        # == Version =======================================================================
+    return OrbitMeanElementsMessage(; _omm_keywords(omm)..., kwargs...)
+end
 
-        version = omm.version,
-
-        # == Header ========================================================================
-
-        header_comments = omm.header.comments,
-        classification = omm.header.classification,
-        creation_date = omm.header.creation_date,
-        originator = omm.header.originator,
-        message_id = omm.header.message_id,
-
-        # == Metadata ======================================================================
-
-        metadata_comments   = omm.metadata.comments,
-        object_name         = omm.metadata.object_name,
-        object_id           = omm.metadata.object_id,
-        center_name         = omm.metadata.center_name,
-        ref_frame           = omm.metadata.ref_frame,
-        ref_frame_epoch     = omm.metadata.ref_frame_epoch,
-        time_system         = omm.metadata.time_system,
-        mean_element_theory = omm.metadata.mean_element_theory,
-
-        # == Data ==========================================================================
-
-        # -- Mean Keplerian Elements -------------------------------------------------------
-
-        data_comments          = omm.data.comments,
-        mean_elements_comments = omm.data.mean_elements_comments,
-        epoch                  = omm.data.epoch,
-        semi_major_axis        = omm.data.semi_major_axis,
-        mean_motion            = omm.data.mean_motion,
-        eccentricity           = omm.data.eccentricity,
-        inclination            = omm.data.inclination,
-        raan                   = omm.data.raan,
-        arg_of_pericenter      = omm.data.arg_of_pericenter,
-        mean_anomaly           = omm.data.mean_anomaly,
-        GM                     = omm.data.GM,
-
-        # -- Spacecraft Data ---------------------------------------------------------------
-
-        spacecraft_parameters_comments = omm.data.spacecraft_parameters_comments,
-        mass                           = omm.data.mass,
-        solar_rad_area                 = omm.data.solar_rad_area,
-        solar_rad_coeff                = omm.data.solar_rad_coeff,
-        drag_area                      = omm.data.drag_area,
-        drag_coeff                     = omm.data.drag_coeff,
-
-        # -- TLE Related Parameters --------------------------------------------------------
-
-        tle_parameters_comments = omm.data.tle_parameters_comments,
-        ephemeris_type          = omm.data.ephemeris_type,
-        classification_type     = omm.data.classification_type,
-        norad_cat_id            = omm.data.norad_cat_id,
-        element_set_number      = omm.data.element_set_number,
-        rev_at_epoch            = omm.data.rev_at_epoch,
-        bstar                   = omm.data.bstar,
-        bterm                   = omm.data.bterm,
-        mean_motion_dot         = omm.data.mean_motion_dot,
-        mean_motion_ddot        = omm.data.mean_motion_ddot,
-        agom                    = omm.data.agom,
-
-        # -- Covariance Matrix -------------------------------------------------------------
-
-        covariance_matrix = omm.data.covariance_matrix,
-
-        # -- User-Defined Parameters -------------------------------------------------------
-
-        user_defined_parameters = omm.data.user_defined_parameters,
-
-        kwargs...,
+# Generate `_omm_keywords`, which converts a message to the keywords of the flat keyword
+# constructor. The section fields keep their names, except the comments, which are
+# prefixed by the section name.
+let keywords = Expr[:(version = omm.version)]
+    for (section, T, comments) in (
+        (:header, OmmHeader, :header_comments),
+        (:metadata, OmmMetadata, :metadata_comments),
+        (:data, OmmData, :data_comments),
     )
+        for field in fieldnames(T)
+            keyword = field === :comments ? comments : field
+            push!(keywords, :($keyword = omm.$section.$field))
+        end
+    end
+
+    @eval begin
+        """
+            _omm_keywords(omm::OrbitMeanElementsMessage) -> NamedTuple
+
+        Return the keywords of the flat keyword constructor that reproduce `omm`.
+        """
+        _omm_keywords(omm::OrbitMeanElementsMessage) = (; $(keywords...))
+    end
+end
+
+# Generate the copy constructors of the sections, which mirror the one of the message.
+for T in (OmmHeader, OmmMetadata, OmmCovarianceMatrix, OmmData)
+    name     = nameof(T)
+    keywords = [:($field = section.$field) for field in fieldnames(T)]
+    docstr   = """
+            $name(section::$name; kwargs...) -> $name
+
+        Create a copy of `section`, overriding the fields specified in `kwargs...`.
+        """
+
+    @eval @doc $docstr function $name(section::$name; kwargs...)
+        return $name(; $(keywords...), kwargs...)
+    end
+end
+
+# == Validation ============================================================================
+
+"""
+    _omm_check_rules(version::VersionNumber, data::OmmData) -> Nothing
+
+Check the rules relating the fields of an Orbit Mean-Elements Message (OMM) with `version`
+and data section `data`, throwing an `ArgumentError` if they are violated: the version
+must be 2.0 or 3.0, exactly one of `semi_major_axis` and `mean_motion` must be set, and
+the TLE-related parameters section, when present, must contain `mean_motion_dot` and
+exactly one of `bstar` and `bterm` and of `mean_motion_ddot` and `agom`.
+
+The TLE-related parameters section is present when any of its fields or comments is set.
+The predicate must match the one used by the parsers.
+"""
+function _omm_check_rules(version::VersionNumber, data::OmmData)
+    version ∈ (v"2.0", v"3.0") ||
+        throw(ArgumentError("Unsupported OMM version: $version."))
+
+    (isnothing(data.semi_major_axis) == isnothing(data.mean_motion)) && throw(
+        ArgumentError(
+            "Exactly one of `semi_major_axis` and `mean_motion` must be provided."
+        ),
+    )
+
+    has_tle_parameters =
+        !isempty(data.tle_parameters_comments) || any(
+            !isnothing,
+            (
+                data.ephemeris_type,
+                data.classification_type,
+                data.norad_cat_id,
+                data.element_set_number,
+                data.rev_at_epoch,
+                data.bstar,
+                data.bterm,
+                data.mean_motion_dot,
+                data.mean_motion_ddot,
+                data.agom,
+            ),
+        )
+
+    if has_tle_parameters
+        (isnothing(data.bstar) == isnothing(data.bterm)) && throw(
+            ArgumentError(
+                "Exactly one of `bstar` and `bterm` is required in TLE parameters."
+            ),
+        )
+        isnothing(data.mean_motion_dot) &&
+            throw(ArgumentError("`mean_motion_dot` is required in TLE parameters."))
+        (isnothing(data.mean_motion_ddot) == isnothing(data.agom)) && throw(
+            ArgumentError(
+                "Exactly one of `mean_motion_ddot` and `agom` is required in TLE " *
+                "parameters.",
+            ),
+        )
+    end
+
+    return nothing
 end
 
 # == Fetchers ==============================================================================

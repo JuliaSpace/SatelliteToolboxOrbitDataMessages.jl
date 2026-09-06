@@ -119,6 +119,53 @@ omm = OrbitMeanElementsMessage(;
 )
 ```
 
+## Building the Sections Individually
+
+The sections can also be created one at a time with the keyword constructors of
+[`OmmHeader`](@ref), [`OmmMetadata`](@ref), and [`OmmData`](@ref), whose keywords are the
+section fields, and then assembled into the message. This form is convenient when the
+sections come from different sources or are reused across messages:
+
+```@repl creating
+header = OmmHeader(;
+    creation_date = NanoDate("2025-12-30T23:36:37"),
+    originator    = "18 SPCS",
+)
+
+metadata = OmmMetadata(;
+    object_name         = "AMAZONIA 1",
+    object_id           = "2021-015A",
+    center_name         = "EARTH",
+    ref_frame           = "TEME",
+    time_system         = "UTC",
+    mean_element_theory = "SGP4",
+)
+
+data = OmmData(;
+    epoch             = NanoDate("2025-12-30T18:12:04.533984"),
+    mean_motion       = 14.40772474,
+    eccentricity      = 0.00011240,
+    inclination       = 98.3721,
+    raan              = 75.0877,
+    arg_of_pericenter = 97.3772,
+    mean_anomaly      = 262.7545,
+)
+
+omm = OrbitMeanElementsMessage(header, metadata, data)
+```
+
+The rules relating the fields (for example, exactly one of `semi_major_axis` and
+`mean_motion`) are checked when the message is assembled, so an invalid section is
+rejected at that point. Each section also has a copy constructor that overrides selected
+fields, e.g. `OmmData(data; mean_motion = 14.5)`.
+
+The type name is long, so the package exports the alias [`OMM`](@ref), which can be used
+wherever `OrbitMeanElementsMessage` is expected:
+
+```@repl creating
+OMM === OrbitMeanElementsMessage
+```
+
 ## Copying and Modifying a Message
 
 Since `OrbitMeanElementsMessage` is immutable, we can create a modified copy of an existing
