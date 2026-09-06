@@ -164,9 +164,9 @@ fails, an [`OdmFetchError`](@ref) is thrown.
     (**Default**: `nothing`)
 - `predicates::Union{Nothing, Vector{Pair{String, Any}}}`: A vector of `Pair{String, Any}`
     with the query predicates to filter the OMMs. The first element of each `Pair` is the
-    field name whereas the second is the field value. See the extended help for more
-    details. If the field value is of type `HTML{String}`, it is used as is. Otherwise, it
-    is converted to a string and URL-encoded.
+    field name whereas the second is the field value, which is converted to a string and
+    URL-encoded, keeping the characters used by the Space-Track operators (see the
+    extended help for more details).
     (**Default**: `nothing`)
 - `query_limits::Union{Nothing, Int, UnitRange{Int}}`: The maximum number of OMMs to fetch.
     If an `Int` is provided, it is used as the limit. If a `UnitRange{Int}` is provided, it
@@ -345,126 +345,14 @@ function fetch_omms(
         ),
     )
 
-    space_data ∉ (:gp, :gp_history) && throw(
-        ArgumentError(
-            "Invalid space data: `$space_data`. It must be either `:gp` or `:gp_history`.",
-        ),
-    )
-
-    # == Query Predicates ==================================================================
-
-    query_predicates = Pair{String, Union{HTML{String}, String}}[]
-
-    # -- Time Interval ---------------------------------------------------------------------
-
-    if !isnothing(interval)
-        start_date = DateTime(first(interval))
-        end_date   = DateTime(last(interval))
-
-        start_date >= end_date &&
-            throw(ArgumentError("The start date must be earlier than the end date."))
-
-        v =
-            Dates.format(start_date, "YYYY-mm-dd%20HH:MM:SS") *
-            "--" *
-            Dates.format(end_date, "YYYY-mm-dd%20HH:MM:SS")
-
-        push!(query_predicates, "EPOCH" => HTML{String}(v))
-
-        # If the interval is specified and the space data is "gp", we switch to
-        # "gp_history".
-        if space_data == :gp
-            @debug "Changed space data to `:gp_history` because an interval was specified."
-            space_data = :gp_history
-        end
-    end
-
-    # -- Order By --------------------------------------------------------------------------
-
-    if !isnothing(order_by)
-        order_by_components = String[]
-
-        for (field, direction) in order_by
-            direction ∉ (:ascending, :descending) && throw(ArgumentError("""
-                Invalid order direction (`$direction`) for the field `$field`. It must be
-                either `:ascending` or `:descending`.
-                """))
-
-            dir_str = direction == :ascending ? "asc" : "desc"
-            push!(order_by_components, "$field $dir_str")
-        end
-
-        order_by_predicate = join(order_by_components, ',')
-        !isempty(order_by_predicate) &&
-            push!(query_predicates, "orderby" => HTML{String}(order_by_predicate))
-    end
-
-    # -- Query Limits ----------------------------------------------------------------------
-
-    if !isnothing(query_limits)
-        if query_limits isa UnitRange
-            l₀ = query_limits.start
-            l₀ < 1 && throw(
-                ArgumentError(
-                    "The start of the query limits must be greater than or equal to 1."
-                ),
-            )
-
-            Δl = length(query_limits)
-            Δl <= 0 && throw(
-                ArgumentError(
-                    "The end of the query limits must be greater than or equal to the " *
-                    "start.",
-                ),
-            )
-
-            v = "$Δl,$(l₀ - 1)"
-            push!(query_predicates, "limit" => HTML{String}(v))
-        else
-            query_limits < 1 &&
-                throw(ArgumentError("The query limits must be greater than or equal to 1."))
-
-            push!(query_predicates, "limit" => HTML{String}(string(query_limits)))
-        end
-    end
-
-    # -- Satellite Name / Number -----------------------------------------------------------
-
-    if !isnothing(satellite_number)
-        # The satellite number must be positive.
-        satellite_number <= 0 &&
-            throw(ArgumentError("The satellite number must be positive."))
-
-        push!(query_predicates, "NORAD_CAT_ID" => string(satellite_number))
-
-    elseif !isnothing(satellite_name)
-        isempty(satellite_name) && throw(ArgumentError("The satellite name is empty."))
-
-        push!(query_predicates, "OBJECT_NAME" => satellite_name)
-    end
-
-    # -- Other Predicates ------------------------------------------------------------------
-
-    !isnothing(predicates) && for (k, v) in predicates
-        push!(query_predicates, k => v isa HTML{String} ? v : string(v))
-    end
-
-    # == Build Query URL ===================================================================
-
-    query_components = map(query_predicates) do (key, value)
-        v = value isa HTML{String} ? value.content : URIs.escapeuri(string(value))
-        return "/$key/$v"
-    end
-    raw_query = join(query_components)
-
-    isempty(raw_query) &&
-        throw(ArgumentError("At least one query parameter must be provided."))
-
-    space_data_str = string(space_data)
-
-    query_url = string(
-        _SPACETRACK__URL, "/basicspacedata/query/class/", space_data_str, raw_query,
-        "/format/xml",
+    query_url = _spacetrack__query_url(;
+        interval,
+        order_by,
+        predicates,
+        query_limits,
+        satellite_name,
+        satellite_number,
+        space_data,
     )
 
     @debug "Query URL: $query_url"
@@ -517,6 +405,149 @@ end
 ############################################################################################
 #                                    Private Functions                                     #
 ############################################################################################
+
+"""
+    _spacetrack__escape(value::AbstractString) -> String
+
+URL-encode `value` for a Space-Track query, keeping the characters used by its operators
+(the comma of the `OR` operator and the colon of the time tags) so that they are
+interpreted by the service.
+"""
+function _spacetrack__escape(value::AbstractString)
+    return URIs.escapeuri(value, c -> URIs.issafe(c) || (c == ',') || (c == ':'))
+end
+
+"""
+    _spacetrack__query_url(; kwargs...) -> String
+
+Build the Space-Track query URL from the keywords of [`fetch_omms`](@ref), validating them.
+"""
+function _spacetrack__query_url(;
+    interval::Union{Nothing, Tuple{D1, D2}} = nothing,
+    order_by::Union{Nothing, Vector{Pair{String, Symbol}}} = nothing,
+    predicates::Union{Nothing, Vector{Pair{String, P}}} = nothing,
+    query_limits::Union{Nothing, Int, UnitRange{Int}} = nothing,
+    satellite_name::Union{Nothing, AbstractString} = nothing,
+    satellite_number::Union{Nothing, Integer} = nothing,
+    space_data::Symbol = :gp,
+) where {D1 <: Union{Date, DateTime}, D2 <: Union{Date, DateTime}, P}
+    space_data ∉ (:gp, :gp_history) && throw(
+        ArgumentError(
+            "Invalid space data: `$space_data`. It must be either `:gp` or `:gp_history`.",
+        ),
+    )
+
+    # == Query Predicates ==================================================================
+
+    query_predicates = Pair{String, String}[]
+
+    # -- Time Interval ---------------------------------------------------------------------
+
+    if !isnothing(interval)
+        start_date = DateTime(first(interval))
+        end_date   = DateTime(last(interval))
+
+        start_date >= end_date &&
+            throw(ArgumentError("The start date must be earlier than the end date."))
+
+        v =
+            Dates.format(start_date, "YYYY-mm-dd HH:MM:SS") *
+            "--" *
+            Dates.format(end_date, "YYYY-mm-dd HH:MM:SS")
+
+        push!(query_predicates, "EPOCH" => v)
+
+        # If the interval is specified and the space data is "gp", we switch to
+        # "gp_history".
+        if space_data == :gp
+            @debug "Changed space data to `:gp_history` because an interval was specified."
+            space_data = :gp_history
+        end
+    end
+
+    # -- Order By --------------------------------------------------------------------------
+
+    if !isnothing(order_by)
+        order_by_components = String[]
+
+        for (field, direction) in order_by
+            direction ∉ (:ascending, :descending) && throw(ArgumentError("""
+                Invalid order direction (`$direction`) for the field `$field`. It must be
+                either `:ascending` or `:descending`.
+                """))
+
+            dir_str = direction == :ascending ? "asc" : "desc"
+            push!(order_by_components, "$field $dir_str")
+        end
+
+        order_by_predicate = join(order_by_components, ',')
+        !isempty(order_by_predicate) &&
+            push!(query_predicates, "orderby" => order_by_predicate)
+    end
+
+    # -- Query Limits ----------------------------------------------------------------------
+
+    if !isnothing(query_limits)
+        if query_limits isa UnitRange
+            l₀ = query_limits.start
+            l₀ < 1 && throw(
+                ArgumentError(
+                    "The start of the query limits must be greater than or equal to 1."
+                ),
+            )
+
+            Δl = length(query_limits)
+            Δl <= 0 && throw(
+                ArgumentError(
+                    "The end of the query limits must be greater than or equal to the " *
+                    "start.",
+                ),
+            )
+
+            push!(query_predicates, "limit" => "$Δl,$(l₀ - 1)")
+        else
+            query_limits < 1 &&
+                throw(ArgumentError("The query limits must be greater than or equal to 1."))
+
+            push!(query_predicates, "limit" => string(query_limits))
+        end
+    end
+
+    # -- Satellite Name / Number -----------------------------------------------------------
+
+    if !isnothing(satellite_number)
+        # The satellite number must be positive.
+        satellite_number <= 0 &&
+            throw(ArgumentError("The satellite number must be positive."))
+
+        push!(query_predicates, "NORAD_CAT_ID" => string(satellite_number))
+
+    elseif !isnothing(satellite_name)
+        isempty(satellite_name) && throw(ArgumentError("The satellite name is empty."))
+
+        push!(query_predicates, "OBJECT_NAME" => String(satellite_name))
+    end
+
+    # -- Other Predicates ------------------------------------------------------------------
+
+    !isnothing(predicates) && for (k, v) in predicates
+        push!(query_predicates, k => string(v))
+    end
+
+    # == Build Query URL ===================================================================
+
+    isempty(query_predicates) &&
+        throw(ArgumentError("At least one query parameter must be provided."))
+
+    raw_query = join(
+        "/" * key * "/" * _spacetrack__escape(value) for (key, value) in query_predicates
+    )
+
+    return string(
+        _SPACETRACK__URL, "/basicspacedata/query/class/", space_data, raw_query,
+        "/format/xml",
+    )
+end
 
 """
     _spacetrack__cookie_expire_date(cookiejar::HTTP.CookieJar) -> Union{DateTime, Nothing}

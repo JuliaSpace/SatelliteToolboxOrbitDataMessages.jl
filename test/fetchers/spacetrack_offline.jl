@@ -73,6 +73,46 @@ end
         )
     end
 
+    # == Query URL =========================================================================
+
+    @testset "Query URL" begin
+        query_url = SatelliteToolboxOrbitDataMessages._spacetrack__query_url
+        base      = "https://www.space-track.org/basicspacedata/query/class/"
+
+        # The interval switches the space data to `gp_history`, and the spaces are
+        # escaped whereas the colons are kept.
+        @test query_url(;
+            satellite_name = "SCD 1", interval = (Date(2024, 6, 19), Date(2024, 6, 20))
+        ) ==
+            base * "gp_history/EPOCH/2024-06-19%2000:00:00--2024-06-20%2000:00:00" *
+            "/OBJECT_NAME/SCD%201/format/xml"
+
+        # The satellite number takes precedence over the name.
+        @test query_url(; satellite_name = "SCD 1", satellite_number = 20439) ==
+            base * "gp/NORAD_CAT_ID/20439/format/xml"
+
+        # The operators survive the escaping, and the commas are kept.
+        @test query_url(;
+            predicates = [
+                "NORAD_CAT_ID" => "40000--40100",
+                "MEAN_MOTION"  => "<14.9",
+                "OBJECT_NAME"  => "^STARLINK",
+                "DECAY_DATE"   => "<>null-val",
+                "EPOCH"        => "now-7--now",
+                "OBJECT_ID"    => "2021-015A,2021-015B",
+            ],
+            order_by = ["EPOCH" => :descending, "NORAD_CAT_ID" => :ascending],
+            query_limits = 2:5,
+            space_data = :gp_history,
+        ) ==
+            base * "gp_history/orderby/EPOCH%20desc,NORAD_CAT_ID%20asc/limit/4,1" *
+            "/NORAD_CAT_ID/40000--40100/MEAN_MOTION/%3C14.9/OBJECT_NAME/%5ESTARLINK" *
+            "/DECAY_DATE/%3C%3Enull-val/EPOCH/now-7--now/OBJECT_ID/2021-015A,2021-015B" *
+            "/format/xml"
+
+        @test query_url(; query_limits = 3) == base * "gp/limit/3/format/xml"
+    end
+
     # == _spacetrack__is_cookie_valid(nothing) =============================================
 
     @testset "Cookie Validity (nothing)" begin
