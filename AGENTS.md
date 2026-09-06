@@ -8,7 +8,7 @@
 - `ext/SatelliteToolboxTleExt` is a package extension that loads only when `SatelliteToolboxTle` is loaded; it provides `convert(TLE, omm)`.
 - Tests are included unconditionally from `test/runtests.jl` and are organized by area (`test/parsing/`, `test/interface/`, `test/serialization/`, `test/fetchers/`, `test/extensions/`, `test/regressions/`); they do not mirror `src/` files one-to-one. Shared fixtures live in `test/helpers.jl`.
 - Test-only dependencies are declared in `[extras]` + `[targets]` in `Project.toml` (`Random`, `Test`, `SatelliteToolboxTle`). `Manifest.toml` is gitignored.
-- `src/show.jl` prints the messages with the public tree helpers of **SatelliteToolboxBase.jl** v2.1 (`print_tree`, `print_tree_body`, `PrintedField`, `PrintedSection`), called with the module prefix, and overloads `SatelliteToolboxBase.print_tree_body` so that other types can print a message body under their own header. The values keep their exact string representation.
+- `src/show.jl` prints the messages with the public tree helpers of **SatelliteToolboxBase.jl** v2.1 (`print_tree`, `print_tree_body`, `PrintedField`, `PrintedSection`), imported by name in the module entrypoint, and overloads `SatelliteToolboxBase.print_tree_body` so that other types can print a message body under their own header. The values keep their exact string representation.
 - `src/precompile.jl` holds a PrecompileTools `@compile_workload` covering parse, write (XML and KVN), and show; keep it exercising the public API when it changes.
 
 ## Commands

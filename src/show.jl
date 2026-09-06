@@ -26,20 +26,20 @@ function Base.show(io::IO, omm::OrbitMeanElementsMessage)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", omm::OrbitMeanElementsMessage)
-    SatelliteToolboxBase.print_tree(io, "OrbitMeanElementsMessage", omm)
+    print_tree(io, "OrbitMeanElementsMessage", omm)
     return nothing
 end
 
 # The body of the rich representation is overloaded so that other types can print it under
 # their own header.
-function SatelliteToolboxBase.print_tree_body(io::IO, omm::OrbitMeanElementsMessage)
+function print_tree_body(io::IO, omm::OrbitMeanElementsMessage)
     _po! = _push_output!
 
     # == Header ============================================================================
 
     header = omm.header
 
-    header_fields = SatelliteToolboxBase.PrintedField[]
+    header_fields = PrintedField[]
     for comment in header.comments
         _po!(header_fields, "Comment", comment, "")
     end
@@ -52,7 +52,7 @@ function SatelliteToolboxBase.print_tree_body(io::IO, omm::OrbitMeanElementsMess
 
     metadata = omm.metadata
 
-    metadata_fields = SatelliteToolboxBase.PrintedField[]
+    metadata_fields = PrintedField[]
     for comment in metadata.comments
         _po!(metadata_fields, "Comment", comment, "")
     end
@@ -68,14 +68,14 @@ function SatelliteToolboxBase.print_tree_body(io::IO, omm::OrbitMeanElementsMess
 
     data = omm.data
 
-    data_fields = SatelliteToolboxBase.PrintedField[]
+    data_fields = PrintedField[]
     for comment in data.comments
         _po!(data_fields, "Comment", comment, "")
     end
 
     # -- Mean Keplerian Elements -----------------------------------------------------------
 
-    mean_elements_fields = SatelliteToolboxBase.PrintedField[]
+    mean_elements_fields = PrintedField[]
     for comment in data.mean_elements_comments
         _po!(mean_elements_fields, "Comment", comment, "")
     end
@@ -91,7 +91,7 @@ function SatelliteToolboxBase.print_tree_body(io::IO, omm::OrbitMeanElementsMess
 
     # -- Spacecraft Parameters -------------------------------------------------------------
 
-    spacecraft_fields = SatelliteToolboxBase.PrintedField[]
+    spacecraft_fields = PrintedField[]
     for comment in data.spacecraft_parameters_comments
         _po!(spacecraft_fields, "Comment", comment, "")
     end
@@ -103,7 +103,7 @@ function SatelliteToolboxBase.print_tree_body(io::IO, omm::OrbitMeanElementsMess
 
     # -- TLE Related Parameters ------------------------------------------------------------
 
-    tle_fields = SatelliteToolboxBase.PrintedField[]
+    tle_fields = PrintedField[]
     for comment in data.tle_parameters_comments
         _po!(tle_fields, "Comment", comment, "")
     end
@@ -112,7 +112,7 @@ function SatelliteToolboxBase.print_tree_body(io::IO, omm::OrbitMeanElementsMess
     _po!(tle_fields, "NORAD Cat ID", data.norad_cat_id, "")
     _po!(tle_fields, "Element Set Number", data.element_set_number, "")
     _po!(tle_fields, "Rev at Epoch", data.rev_at_epoch, "")
-    _po!(tle_fields, "Bstar", data.bstar, "1/ER")
+    _po!(tle_fields, "B*", data.bstar, "1/ER")
     _po!(tle_fields, "Bterm", data.bterm, "m²/kg")
     _po!(tle_fields, "∂(Mean Motion)/∂t", data.mean_motion_dot, "rev/day²")
     _po!(tle_fields, "∂²(Mean Motion)/∂t²", data.mean_motion_ddot, "rev/day³")
@@ -121,7 +121,7 @@ function SatelliteToolboxBase.print_tree_body(io::IO, omm::OrbitMeanElementsMess
     # -- Covariance Matrix -----------------------------------------------------------------
 
     # Binding the `Union` field to a local lets the `isnothing` check narrow its type.
-    cov_fields = SatelliteToolboxBase.PrintedField[]
+    cov_fields = PrintedField[]
     cov        = data.covariance_matrix
     if !isnothing(cov)
         for comment in cov.comments
@@ -153,7 +153,7 @@ function SatelliteToolboxBase.print_tree_body(io::IO, omm::OrbitMeanElementsMess
 
     # -- User-Defined Parameters -----------------------------------------------------------
 
-    user_fields             = SatelliteToolboxBase.PrintedField[]
+    user_fields             = PrintedField[]
     user_defined_parameters = data.user_defined_parameters
     if !isnothing(user_defined_parameters)
         for (k, v) in user_defined_parameters
@@ -164,7 +164,7 @@ function SatelliteToolboxBase.print_tree_body(io::IO, omm::OrbitMeanElementsMess
     # == Print Output ======================================================================
 
     # Only the data subsections with at least one field are printed.
-    data_sections = SatelliteToolboxBase.PrintedSection[]
+    data_sections = PrintedSection[]
 
     for (name, fields) in (
         ("Mean Keplerian Elements", mean_elements_fields),
@@ -174,16 +174,16 @@ function SatelliteToolboxBase.print_tree_body(io::IO, omm::OrbitMeanElementsMess
         ("User-Defined Parameters", user_fields),
     )
         isempty(fields) && continue
-        push!(data_sections, SatelliteToolboxBase.PrintedSection(name, fields))
+        push!(data_sections, PrintedSection(name, fields))
     end
 
-    sections = SatelliteToolboxBase.PrintedSection[
-        SatelliteToolboxBase.PrintedSection("Header",   header_fields),
-        SatelliteToolboxBase.PrintedSection("Metadata", metadata_fields),
-        SatelliteToolboxBase.PrintedSection("Data",     data_fields, data_sections),
+    sections = PrintedSection[
+        PrintedSection("Header",   header_fields),
+        PrintedSection("Metadata", metadata_fields),
+        PrintedSection("Data",     data_fields, data_sections),
     ]
 
-    SatelliteToolboxBase.print_tree_body(io, SatelliteToolboxBase.PrintedField[], sections)
+    print_tree_body(io, PrintedField[], sections)
 
     return nothing
 end
@@ -206,7 +206,7 @@ _format_value(value) = string(value)
 
 """
     _push_output!(
-        vector::AbstractVector{SatelliteToolboxBase.PrintedField},
+        vector::AbstractVector{PrintedField},
         name::String,
         value::Any,
         unit::String
@@ -220,7 +220,7 @@ value type, avoiding the tuple conversion and boxing of a `Tuple{String, Any, St
 argument.
 """
 function _push_output!(
-    vector::AbstractVector{SatelliteToolboxBase.PrintedField},
+    vector::AbstractVector{PrintedField},
     name::String,
     value::Any,
     unit::String

@@ -19,7 +19,7 @@ using XML
 
 import Base: ==
 import NanoDates: NanoDate
-import SatelliteToolboxBase
+import SatelliteToolboxBase: PrintedField, PrintedSection, print_tree, print_tree_body
 
 ############################################################################################
 #                                          Types                                           #
