@@ -253,7 +253,7 @@ end
 
 Write the line `keyword = value` to the provided `io` stream in KVN format. The `keyword`
 is padded to `keyword_width` characters to align the values, and the `value` is rendered
-with [`_ndm_render_value`](@ref). If a `unit` is provided, it is appended in square
+with [`_ndm_print_value`](@ref). If a `unit` is provided, it is appended in square
 brackets, padding the value to `_KVN_OMM__VALUE_WIDTH` characters to align the units.
 """
 function _kvn_omm__write_element(
@@ -263,16 +263,16 @@ function _kvn_omm__write_element(
     keyword_width::Int,
     unit::Union{Nothing, String} = nothing,
 )
-    rendered_value = _ndm_render_value(value)
-
     if isnothing(unit)
-        println(io, rpad(keyword, keyword_width), " = ", rendered_value)
+        print(io, rpad(keyword, keyword_width), " = ")
+        _ndm_print_value(io, value)
+        println(io)
     else
         println(
             io,
             rpad(keyword, keyword_width),
             " = ",
-            rpad(rendered_value, _KVN_OMM__VALUE_WIDTH),
+            rpad(_ndm_render_value(value), _KVN_OMM__VALUE_WIDTH),
             " [",
             unit,
             "]",

@@ -56,22 +56,67 @@ function _odm_check_output_format(format::Symbol)
 end
 
 """
-    _ndm_render_value(value::String) -> String
-    _ndm_render_value(value::NanoDate) -> String
-    _ndm_render_value(value::Any) -> String
+    _ndm_print_value(io::IO, value::Any) -> Nothing
 
-Render the given `value` as a string suitable for NDM outputs (e.g. XML or KVN).
+Print the given `value` to `io` in the representation used by the NDM outputs (e.g. XML or
+KVN).
 
-`NanoDate` values are rendered with nanosecond precision
+`NanoDate` values are printed with nanosecond precision
 (`yyyy-mm-ddTHH:MM:SS.sssssssss`), whereas the other types use their default string
 representation. Notice that, for `AbstractFloat`, this representation is the shortest one
 that round-trips exactly, avoiding any loss of precision.
 """
-_ndm_render_value(value::String) = value
-_ndm_render_value(value::Any) = string(value)
+function _ndm_print_value(io::IO, value::Any)
+    print(io, value)
+    return nothing
+end
 
-function _ndm_render_value(value::NanoDate)
-    return Dates.format(value, dateformat"yyyy-mm-ddTHH:MM:SS.sssssssss")
+function _ndm_print_value(io::IO, value::NanoDate)
+    # The digits are written directly, which is far cheaper than `Dates.format`.
+    _print_padded(io, year(value), 4)
+    write(io, UInt8('-'))
+    _print_padded(io, month(value), 2)
+    write(io, UInt8('-'))
+    _print_padded(io, day(value), 2)
+    write(io, UInt8('T'))
+    _print_padded(io, hour(value), 2)
+    write(io, UInt8(':'))
+    _print_padded(io, minute(value), 2)
+    write(io, UInt8(':'))
+    _print_padded(io, second(value), 2)
+    write(io, UInt8('.'))
+
+    nanoseconds =
+        1_000_000 * millisecond(value) + 1_000 * microsecond(value) + nanosecond(value)
+    _print_padded(io, nanoseconds, 9)
+
+    return nothing
+end
+
+"""
+    _ndm_render_value(value::Any) -> String
+
+Render the given `value` as a string using [`_ndm_print_value`](@ref). Strings are
+returned as they are.
+"""
+_ndm_render_value(value::String) = value
+_ndm_render_value(value::Any) = sprint(_ndm_print_value, value)
+
+"""
+    _print_padded(io::IO, x::Integer, width::Int) -> Nothing
+
+Print the non-negative integer `x` to `io` with exactly `width` digits, padding it with
+leading zeros. Digits beyond `width` are dropped.
+"""
+function _print_padded(io::IO, x::Integer, width::Int)
+    p = 10^(width - 1)
+
+    while p > 0
+        write(io, UInt8('0') + UInt8((x ÷ p) % 10))
+        p ÷= 10
+    end
+
+    return nothing
 end
 
 """
@@ -122,38 +167,168 @@ end
     _parse_ndm_date(str::AbstractString) -> Union{Nothing, NanoDate}
 
 Parse an NDM date/time string into a `NanoDate`, returning `nothing` if `str` is empty or
-contains only whitespace. An `ArgumentError` is thrown if the date is malformed or the
-ordinal day is outside the year.
+contains only whitespace. An `ArgumentError` is thrown if the date is malformed or any of
+its components is out of range.
 
 The CCSDS 502.0-B-3 standard allows two formats for absolute time tags and epochs:
 
   - `YYYY-MM-DDThh:mm:ss[.d→d][Z]` (calendar date)
   - `YYYY-DDDThh:mm:ss[.d→d][Z]` (ordinal day-of-year)
 
-`NanoDate` natively handles the calendar form (including the optional trailing `Z`), so this
-function only needs to convert the ordinal form before delegating to `NanoDate`.
+The parser additionally accepts a space as the date/time separator and an omitted time,
+seconds, or fraction, which appear in some real-world files. The fraction is truncated to
+nanoseconds.
 """
 function _parse_ndm_date(str::AbstractString)
     sstr = strip(str)
     isempty(sstr) && return nothing
 
-    # Check for the ordinal day-of-year format. If it does not match, fall back to the
-    # calendar format (the common case), which `NanoDate` handles natively.
-    m = match(r"^(\d{4})-(\d{3})T(.*)$", sstr)
+    date = _try_parse_ndm_date(sstr)
+    isnothing(date) && throw(ArgumentError("Invalid NDM date: \"$sstr\"."))
 
-    isnothing(m) && return NanoDate(sstr)
+    return date
+end
 
-    # Ordinal day-of-year form: convert DDD → MM-DD.
-    year      = parse(Int, m[1])
-    day_of_yr = parse(Int, m[2])
-    rest      = m[3]
+"""
+    _try_parse_ndm_date(str::AbstractString) -> Union{Nothing, NanoDate}
 
-    1 <= day_of_yr <= daysinyear(year) ||
-        throw(ArgumentError("Invalid ordinal day $day_of_yr for year $year."))
+Parse the NDM date/time string `str`, which must not have surrounding whitespace, returning
+`nothing` if it is malformed. See [`_parse_ndm_date`](@ref) for the accepted formats.
 
-    # Build the calendar date from the year and day-of-year.
-    date = Date(year, 1, 1) + Day(day_of_yr - 1)
-    cal  = Dates.format(date, dateformat"yyyy-mm-dd")
+The digits are read directly from the code units, avoiding the regular expressions and
+the intermediate strings of a `DateFormat`-based parser.
+"""
+function _try_parse_ndm_date(str::AbstractString)
+    cu = codeunits(str)
+    n  = length(cu)
 
-    return NanoDate("$(cal)T$(rest)")
+    # == Date ==============================================================================
+
+    year, i = _read_digits(cu, 1, 4)
+    year < 0 && return nothing
+
+    _read_char(cu, i, '-') || return nothing
+    i += 1
+
+    # The calendar form has a `-` after the two-digit month, whereas the ordinal form has
+    # three digits.
+    if (i + 2 <= n) && (cu[i + 2] == UInt8('-'))
+        month, i = _read_digits(cu, i, 2)
+        month < 0 && return nothing
+        i += 1
+
+        day, i = _read_digits(cu, i, 2)
+        day < 0 && return nothing
+
+        (1 <= month <= 12) && (1 <= day <= daysinmonth(year, month)) || return nothing
+    else
+        day_of_year, i = _read_digits(cu, i, 3)
+        day_of_year < 0 && return nothing
+
+        (1 <= day_of_year <= daysinyear(year)) || return nothing
+
+        date  = Date(year, 1, 1) + Day(day_of_year - 1)
+        month = Dates.month(date)
+        day   = Dates.day(date)
+    end
+
+    # == Time ==============================================================================
+
+    hour = minute = second = nanoseconds = 0
+
+    if i <= n
+        (_read_char(cu, i, 'T') || _read_char(cu, i, ' ')) || return nothing
+        i += 1
+
+        hour, i = _read_digits(cu, i, 2)
+        hour < 0 && return nothing
+
+        _read_char(cu, i, ':') || return nothing
+        i += 1
+
+        minute, i = _read_digits(cu, i, 2)
+        minute < 0 && return nothing
+
+        if _read_char(cu, i, ':')
+            i += 1
+
+            second, i = _read_digits(cu, i, 2)
+            second < 0 && return nothing
+
+            if _read_char(cu, i, '.')
+                i += 1
+
+                nanoseconds, i = _read_fraction(cu, i)
+                nanoseconds < 0 && return nothing
+            end
+        end
+
+        (hour <= 23) && (minute <= 59) && (second <= 59) || return nothing
+
+        _read_char(cu, i, 'Z') && (i += 1)
+    end
+
+    # The whole string must have been consumed.
+    i == n + 1 || return nothing
+
+    datetime = DateTime(year, month, day, hour, minute, second)
+
+    return NanoDate(datetime, Nanosecond(nanoseconds))
+end
+
+"""
+    _read_char(cu::AbstractVector{UInt8}, i::Int, c::Char) -> Bool
+
+Check if the code unit at index `i` of `cu` exists and is the ASCII character `c`.
+"""
+function _read_char(cu::AbstractVector{UInt8}, i::Int, c::Char)
+    return (i <= length(cu)) && (cu[i] == UInt8(c))
+end
+
+"""
+    _read_digits(cu::AbstractVector{UInt8}, i::Int, k::Int) -> Tuple{Int, Int}
+
+Read exactly `k` decimal digits starting at index `i` of the code units `cu`, returning
+the parsed value and the index after the digits. If the digits are not available, the
+value is `-1`.
+"""
+function _read_digits(cu::AbstractVector{UInt8}, i::Int, k::Int)
+    value = 0
+
+    for j in i:(i + k - 1)
+        j <= length(cu) || return -1, i
+        c = cu[j]
+        (UInt8('0') <= c <= UInt8('9')) || return -1, i
+        value = 10 * value + Int(c - UInt8('0'))
+    end
+
+    return value, i + k
+end
+
+"""
+    _read_fraction(cu::AbstractVector{UInt8}, i::Int) -> Tuple{Int, Int}
+
+Read the fractional second digits starting at index `i` of the code units `cu`, returning
+the value in nanoseconds and the index after the digits. Digits beyond the ninth are
+consumed but ignored. If there is no digit, the value is `-1`.
+"""
+function _read_fraction(cu::AbstractVector{UInt8}, i::Int)
+    nanoseconds = 0
+    count       = 0
+
+    while (i <= length(cu)) && (UInt8('0') <= cu[i] <= UInt8('9'))
+        (count < 9) && (nanoseconds = 10 * nanoseconds + Int(cu[i] - UInt8('0')))
+        count += 1
+        i     += 1
+    end
+
+    count == 0 && return -1, i
+
+    # Scale the value to nanoseconds if fewer than nine digits were read.
+    while count < 9
+        nanoseconds *= 10
+        count       += 1
+    end
+
+    return nanoseconds, i
 end

@@ -140,6 +140,49 @@
         @test omm_reparsed.data.epoch == omm.data.epoch
     end
 
+    @testset "Accepted and Rejected Forms" begin
+        parse_date(str) = parse_omm(_minimal_omm_xml(; epoch = str)).data.epoch
+
+        # Forms found in real-world files beyond the CCSDS grammar.
+        @test parse_date("2025-12-30 18:12:04") == NanoDate("2025-12-30T18:12:04")
+        @test parse_date("2025-12-30T18:12") == NanoDate("2025-12-30T18:12:00")
+        @test parse_date("2025-12-30") == NanoDate("2025-12-30T00:00:00")
+        @test parse_date("2025-365") == NanoDate("2025-12-31T00:00:00")
+        @test parse_date("  2025-12-30T18:12:04.5Z  ") == NanoDate("2025-12-30T18:12:04.5")
+
+        # The fraction is truncated to nanoseconds.
+        @test parse_date("2025-12-30T18:12:04.1234567891") ==
+            NanoDate("2025-12-30T18:12:04.123456789")
+
+        for invalid in (
+            "2025-13-01T00:00:00",
+            "2025-02-30T00:00:00",
+            "2025-12-30T24:00:00",
+            "2025-12-30T18:60:00",
+            "2025-12-30T18:12:60",
+            "2025-12-30T18:12:04.",
+            "2025-12-30T18:12:04Zx",
+            "2025-12-30T18",
+            "2025-12-3T18:12:04",
+            "25-12-30T18:12:04",
+            "2025-12-30X18:12:04",
+        )
+            @test_throws OdmParseError parse_date(invalid)
+        end
+    end
+
+    @testset "Written Date Format" begin
+        omm = parse_omm(_minimal_omm_xml(; epoch = "2025-01-02T03:04:05"))
+
+        buf = IOBuffer()
+        write_omm(buf, omm)
+        @test occursin("<EPOCH>2025-01-02T03:04:05.000000000</EPOCH>", String(take!(buf)))
+
+        epoch = NanoDate("0999-01-02T03:04:05.000000001")
+        write_omm(buf, OrbitMeanElementsMessage(omm; epoch))
+        @test occursin("<EPOCH>0999-01-02T03:04:05.000000001</EPOCH>", String(take!(buf)))
+    end
+
     @testset "Nanosecond Round-Trip" begin
         epoch = NanoDate("2025-12-30T18:12:04.123456789")
         omm = parse_omm(_minimal_omm_xml(epoch = string(epoch)))
