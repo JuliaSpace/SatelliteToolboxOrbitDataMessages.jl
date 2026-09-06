@@ -156,6 +156,41 @@
         @test cov1.cz_dot_z_dot == cov2.cz_dot_z_dot
     end
 
+    @testset "Matrix Conversions" begin
+        omm = parse_omm(_minimal_omm_xml(; covariance_matrix_xml = _COV_XML))
+        cov = omm.data.covariance_matrix
+
+        # The lower triangle holds the elements 1 to 21 in row-major order.
+        expected = zeros(6, 6)
+        k = 0
+        for i in 1:6, j in 1:i
+            k += 1
+            expected[i, j] = expected[j, i] = k
+        end
+
+        @test Matrix(cov) == expected
+        @test Matrix(cov) isa Matrix{Float64}
+        @test SMatrix(cov) == expected
+        @test SMatrix(cov) isa SMatrix{6, 6, Float64, 36}
+        @test Matrix(cov)[4, 1] == cov.cx_dot_x
+        @test Matrix(cov)[6, 5] == cov.cz_dot_y_dot
+
+        # A section built from the matrix equals the parsed one.
+        @test OmmCovarianceMatrix(
+            expected; comments = cov.comments, cov_ref_frame = cov.cov_ref_frame
+        ) == cov
+        @test OmmCovarianceMatrix(SMatrix(cov)).cz_dot_z_dot == 21.0
+        @test isempty(OmmCovarianceMatrix(expected).comments)
+        @test isnothing(OmmCovarianceMatrix(expected).cov_ref_frame)
+
+        # Only the lower triangle is read.
+        asymmetric = copy(expected)
+        asymmetric[1, 2] = 100.0
+        @test OmmCovarianceMatrix(asymmetric) == OmmCovarianceMatrix(expected)
+
+        @test_throws ArgumentError OmmCovarianceMatrix(zeros(3, 3))
+    end
+
     @testset "Write Without Covariance Matrix" begin
         xml = _minimal_omm_xml()
         omm = parse_omm(xml)

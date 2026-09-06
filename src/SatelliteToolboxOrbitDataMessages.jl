@@ -20,6 +20,7 @@ using XML
 import Base: ==
 import NanoDates: NanoDate
 import SatelliteToolboxBase: PrintedField, PrintedSection, print_tree, print_tree_body
+import StaticArrays: SMatrix
 
 ############################################################################################
 #                                          Types                                           #

@@ -89,8 +89,10 @@ standard.
 
 The matrix is symmetric, so only the lower-triangular 21 elements are stored. The elements
 follow the CCSDS naming convention where `CX_X` is the (1,1) entry, `CY_X` is the (2,1)
-entry, etc. Create it with the keyword constructor `OmmCovarianceMatrix(; kwargs...)`,
-whose keywords are the fields below.
+entry, etc., with the rows and columns ordered as `(x, y, z, ẋ, ẏ, ż)`. Create it with the
+keyword constructor `OmmCovarianceMatrix(; kwargs...)`, whose keywords are the fields
+below, or from a 6×6 matrix with `OmmCovarianceMatrix(matrix; kwargs...)`. The full
+matrix is obtained with `Matrix(cov)` or `SMatrix(cov)`.
 
 # Fields
 
@@ -266,6 +268,96 @@ when the section is assembled into an [`OrbitMeanElementsMessage`](@ref).
     # == User-Defined Parameters ===========================================================
 
     user_defined_parameters::Vector{Pair{String, String}} = Pair{String, String}[]
+end
+
+# Fields with the 21 elements of the OMM covariance matrix, in the field order of
+# `OmmCovarianceMatrix`, which is the row-major order of the lower triangle. The CCSDS
+# keyword is the uppercase version of the field name.
+const _OMM_COVARIANCE_MATRIX_FIELDS = (
+    :cx_x,
+    :cy_x,
+    :cy_y,
+    :cz_x,
+    :cz_y,
+    :cz_z,
+    :cx_dot_x,
+    :cx_dot_y,
+    :cx_dot_z,
+    :cx_dot_x_dot,
+    :cy_dot_x,
+    :cy_dot_y,
+    :cy_dot_z,
+    :cy_dot_x_dot,
+    :cy_dot_y_dot,
+    :cz_dot_x,
+    :cz_dot_y,
+    :cz_dot_z,
+    :cz_dot_x_dot,
+    :cz_dot_y_dot,
+    :cz_dot_z_dot,
+)
+
+# Position `(row, column)` in the 6×6 matrix of each element in
+# `_OMM_COVARIANCE_MATRIX_FIELDS`.
+const _OMM_COVARIANCE_MATRIX_POSITIONS = Tuple((i, j) for i in 1:6 for j in 1:i)
+
+# Generate the conversions between the covariance matrix section and 6×6 matrices. The
+# element of each matrix position is resolved at code-generation time, so the conversions
+# are plain field accesses.
+let field_at(i, j) = _OMM_COVARIANCE_MATRIX_FIELDS[findfirst(
+        ==((max(i, j), min(i, j))), _OMM_COVARIANCE_MATRIX_POSITIONS
+    )]
+
+    # Elements of the full matrix in column-major order.
+    elements = [:(cov.$(field_at(i, j))) for j in 1:6 for i in 1:6]
+
+    # Lower-triangular elements read from a matrix, in the field order.
+    lower = [:(Float64(matrix[$i, $j])) for (i, j) in _OMM_COVARIANCE_MATRIX_POSITIONS]
+
+    @eval begin
+        """
+            SMatrix(cov::OmmCovarianceMatrix) -> SMatrix{6, 6, Float64, 36}
+
+        Return the full, symmetric 6×6 covariance matrix of `cov` as a static matrix, with
+        the rows and columns ordered as `(x, y, z, ẋ, ẏ, ż)`.
+        """
+        SMatrix(cov::OmmCovarianceMatrix) = SMatrix{6, 6, Float64, 36}(($(elements...),))
+
+        """
+            Matrix(cov::OmmCovarianceMatrix) -> Matrix{Float64}
+
+        Return the full, symmetric 6×6 covariance matrix of `cov`, with the rows and columns
+        ordered as `(x, y, z, ẋ, ẏ, ż)`.
+        """
+        Base.Matrix(cov::OmmCovarianceMatrix) = Matrix(SMatrix(cov))
+
+        """
+            OmmCovarianceMatrix(matrix::AbstractMatrix; kwargs...) -> OmmCovarianceMatrix
+
+        Create the covariance matrix section from the 6×6 `matrix`, whose rows and columns
+        must be ordered as `(x, y, z, ẋ, ẏ, ż)`. Only the lower triangle of `matrix` is
+        read, since the section stores a symmetric matrix. An `ArgumentError` is thrown if
+        `matrix` is not 6×6.
+
+        # Keywords
+
+        - `comments::Vector{String}`: Comments for the covariance matrix section.
+            (**Default**: `String[]`)
+        - `cov_ref_frame::Union{String, Nothing}`: Reference frame of the covariance
+            matrix.
+            (**Default**: `nothing`)
+        """
+        function OmmCovarianceMatrix(
+            matrix::AbstractMatrix;
+            comments::Vector{String} = String[],
+            cov_ref_frame::Union{String, Nothing} = nothing,
+        )
+            size(matrix) == (6, 6) ||
+                throw(ArgumentError("The covariance matrix must be 6×6."))
+
+            return OmmCovarianceMatrix(comments, cov_ref_frame, $(lower...))
+        end
+    end
 end
 
 # -- OMM -----------------------------------------------------------------------------------

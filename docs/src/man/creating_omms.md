@@ -166,6 +166,22 @@ wherever `OrbitMeanElementsMessage` is expected:
 OMM === OrbitMeanElementsMessage
 ```
 
+## Covariance Matrix
+
+The covariance matrix section, [`OmmCovarianceMatrix`](@ref), stores the 21 elements of
+the lower triangle with their CCSDS names (`cx_x`, `cy_x`, etc.). It can be created from
+a 6×6 matrix whose rows and columns are ordered as `(x, y, z, ẋ, ẏ, ż)`, and the full
+matrix is recovered with `Matrix` or `SMatrix`:
+
+```@repl creating
+using StaticArrays
+matrix = [i == j ? 1.0 : 0.1 for i in 1:6, j in 1:6]
+cov = OmmCovarianceMatrix(matrix; cov_ref_frame = "RTN")
+cov.cy_x
+Matrix(cov)
+SMatrix(cov)
+```
+
 ## Copying and Modifying a Message
 
 Since `OrbitMeanElementsMessage` is immutable, we can create a modified copy of an existing

@@ -97,32 +97,6 @@ const _OMM_MANDATORY_MEAN_ELEMENTS_FIELDS = (
     (:mean_anomaly, "MEAN_ANOMALY"),
 )
 
-# Fields with the 21 elements of the OMM covariance matrix, in the field order of
-# `OmmCovarianceMatrix`. The CCSDS keyword is the uppercase version of the field name.
-const _OMM_COVARIANCE_MATRIX_FIELDS = (
-    :cx_x,
-    :cy_x,
-    :cy_y,
-    :cz_x,
-    :cz_y,
-    :cz_z,
-    :cx_dot_x,
-    :cx_dot_y,
-    :cx_dot_z,
-    :cx_dot_x_dot,
-    :cy_dot_x,
-    :cy_dot_y,
-    :cy_dot_z,
-    :cy_dot_x_dot,
-    :cy_dot_y_dot,
-    :cz_dot_x,
-    :cz_dot_y,
-    :cz_dot_z,
-    :cz_dot_x_dot,
-    :cz_dot_y_dot,
-    :cz_dot_z_dot,
-)
-
 # == Keyword Mappings ======================================================================
 
 # The following constants map the CCSDS keywords of each OMM section to the corresponding

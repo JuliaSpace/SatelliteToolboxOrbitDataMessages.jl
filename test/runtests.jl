@@ -6,6 +6,7 @@ using NanoDates
 using Random
 using SatelliteToolboxOrbitDataMessages
 using SatelliteToolboxTle
+using StaticArrays
 using XML
 
 include("helpers.jl")
