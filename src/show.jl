@@ -4,8 +4,76 @@
 #
 # The rich representation is a tree drawn with the helpers of SatelliteToolboxBase.jl: the
 # header, the metadata, and the data are sections, and the data subsections are nested
-# under the data.
+# under the data. The rows of each section are generated from the label tables below, so
+# adding a field only requires a new label.
 #
+############################################################################################
+
+############################################################################################
+#                                        Constants                                         #
+############################################################################################
+
+# Labels of the fields displayed in each section, in the display order. The units are
+# obtained from `_OMM_FIELD_UNIT` (see `_display_unit`), and the comments are always
+# displayed first with the label `Comment`.
+
+const _SHOW_HEADER_LABELS = (
+    :classification => "Classification",
+    :creation_date  => "Creation Date",
+    :originator     => "Originator",
+    :message_id     => "Message ID",
+)
+
+const _SHOW_METADATA_LABELS = (
+    :object_name         => "Object Name",
+    :object_id           => "Object ID",
+    :center_name         => "Center Name",
+    :ref_frame           => "Ref. Frame",
+    :ref_frame_epoch     => "Ref. Frame Epoch",
+    :time_system         => "Time System",
+    :mean_element_theory => "Mean Element Theory",
+)
+
+const _SHOW_MEAN_ELEMENTS_LABELS = (
+    :epoch             => "Epoch",
+    :semi_major_axis   => "Semi-Major Axis",
+    :mean_motion       => "Mean Motion",
+    :eccentricity      => "Eccentricity",
+    :inclination       => "Inclination",
+    :raan              => "RA of Asc. Node",
+    :arg_of_pericenter => "Arg. of Pericenter",
+    :mean_anomaly      => "Mean Anomaly",
+    :GM                => "GM",
+)
+
+const _SHOW_SPACECRAFT_PARAMETERS_LABELS = (
+    :mass            => "Mass",
+    :solar_rad_area  => "Solar Rad. Area",
+    :solar_rad_coeff => "Solar Rad. Coeff.",
+    :drag_area       => "Drag Area",
+    :drag_coeff      => "Drag Coefficient",
+)
+
+const _SHOW_TLE_PARAMETERS_LABELS = (
+    :ephemeris_type      => "Ephemeris Type",
+    :classification_type => "Classification Type",
+    :norad_cat_id        => "NORAD Cat ID",
+    :element_set_number  => "Element Set Number",
+    :rev_at_epoch        => "Rev at Epoch",
+    :bstar               => "B*",
+    :bterm               => "Bterm",
+    :mean_motion_dot     => "∂(Mean Motion)/∂t",
+    :mean_motion_ddot    => "∂²(Mean Motion)/∂t²",
+    :agom                => "AGOM",
+)
+
+const _SHOW_COVARIANCE_MATRIX_LABELS = (
+    :cov_ref_frame => "Ref. Frame",
+    (field => uppercase(String(field)) for field in _OMM_COVARIANCE_MATRIX_FIELDS)...,
+)
+
+############################################################################################
+#                                        Julia API                                        #
 ############################################################################################
 
 # == OrbitMeanElementsMessage ==============================================================
@@ -33,129 +101,42 @@ end
 # The body of the rich representation is overloaded so that other types can print it under
 # their own header.
 function print_tree_body(io::IO, omm::OrbitMeanElementsMessage)
-    _po! = _push_output!
+    data = omm.data
 
-    # == Header ============================================================================
-
-    header = omm.header
+    # == Header and Metadata ===============================================================
 
     header_fields = PrintedField[]
-    for comment in header.comments
-        _po!(header_fields, "Comment", comment, "")
-    end
-    _po!(header_fields, "Classification", header.classification, "")
-    _po!(header_fields, "Creation Date", header.creation_date, "")
-    _po!(header_fields, "Originator", header.originator, "")
-    _po!(header_fields, "Message ID", header.message_id, "")
-
-    # == Metadata ==========================================================================
-
-    metadata = omm.metadata
+    _push_header_fields!(header_fields, omm.header, omm.header.comments)
 
     metadata_fields = PrintedField[]
-    for comment in metadata.comments
-        _po!(metadata_fields, "Comment", comment, "")
-    end
-    _po!(metadata_fields, "Object Name", metadata.object_name, "")
-    _po!(metadata_fields, "Object ID", metadata.object_id, "")
-    _po!(metadata_fields, "Center Name", metadata.center_name, "")
-    _po!(metadata_fields, "Ref. Frame", metadata.ref_frame, "")
-    _po!(metadata_fields, "Ref. Frame Epoch", metadata.ref_frame_epoch, "")
-    _po!(metadata_fields, "Time System", metadata.time_system, "")
-    _po!(metadata_fields, "Mean Element Theory", metadata.mean_element_theory, "")
+    _push_metadata_fields!(metadata_fields, omm.metadata, omm.metadata.comments)
 
     # == Data ==============================================================================
 
-    data = omm.data
-
     data_fields = PrintedField[]
     for comment in data.comments
-        _po!(data_fields, "Comment", comment, "")
+        _push_output!(data_fields, "Comment", comment, "")
     end
-
-    # -- Mean Keplerian Elements -----------------------------------------------------------
 
     mean_elements_fields = PrintedField[]
-    for comment in data.mean_elements_comments
-        _po!(mean_elements_fields, "Comment", comment, "")
-    end
-    _po!(mean_elements_fields, "Epoch", data.epoch, "")
-    _po!(mean_elements_fields, "Semi-Major Axis", data.semi_major_axis, "km")
-    _po!(mean_elements_fields, "Mean Motion", data.mean_motion, "rev/day")
-    _po!(mean_elements_fields, "Eccentricity", data.eccentricity, "")
-    _po!(mean_elements_fields, "Inclination", data.inclination, "°")
-    _po!(mean_elements_fields, "RA of Asc. Node", data.raan, "°")
-    _po!(mean_elements_fields, "Arg. of Pericenter", data.arg_of_pericenter, "°")
-    _po!(mean_elements_fields, "Mean Anomaly", data.mean_anomaly, "°")
-    _po!(mean_elements_fields, "GM", data.GM, "km³/s²")
-
-    # -- Spacecraft Parameters -------------------------------------------------------------
+    _push_mean_elements_fields!(mean_elements_fields, data, data.mean_elements_comments)
 
     spacecraft_fields = PrintedField[]
-    for comment in data.spacecraft_parameters_comments
-        _po!(spacecraft_fields, "Comment", comment, "")
-    end
-    _po!(spacecraft_fields, "Mass", data.mass, "kg")
-    _po!(spacecraft_fields, "Solar Rad. Area", data.solar_rad_area, "m²")
-    _po!(spacecraft_fields, "Solar Rad. Coeff.", data.solar_rad_coeff, "")
-    _po!(spacecraft_fields, "Drag Area", data.drag_area, "m²")
-    _po!(spacecraft_fields, "Drag Coefficient", data.drag_coeff, "")
-
-    # -- TLE Related Parameters ------------------------------------------------------------
+    _push_spacecraft_parameters_fields!(
+        spacecraft_fields, data, data.spacecraft_parameters_comments
+    )
 
     tle_fields = PrintedField[]
-    for comment in data.tle_parameters_comments
-        _po!(tle_fields, "Comment", comment, "")
-    end
-    _po!(tle_fields, "Ephemeris Type", data.ephemeris_type, "")
-    _po!(tle_fields, "Classification Type", data.classification_type, "")
-    _po!(tle_fields, "NORAD Cat ID", data.norad_cat_id, "")
-    _po!(tle_fields, "Element Set Number", data.element_set_number, "")
-    _po!(tle_fields, "Rev at Epoch", data.rev_at_epoch, "")
-    _po!(tle_fields, "B*", data.bstar, "1/ER")
-    _po!(tle_fields, "Bterm", data.bterm, "m²/kg")
-    _po!(tle_fields, "∂(Mean Motion)/∂t", data.mean_motion_dot, "rev/day²")
-    _po!(tle_fields, "∂²(Mean Motion)/∂t²", data.mean_motion_ddot, "rev/day³")
-    _po!(tle_fields, "AGOM", data.agom, "m²/kg")
-
-    # -- Covariance Matrix -----------------------------------------------------------------
+    _push_tle_parameters_fields!(tle_fields, data, data.tle_parameters_comments)
 
     # Binding the `Union` field to a local lets the `isnothing` check narrow its type.
     cov_fields = PrintedField[]
     cov        = data.covariance_matrix
-    if !isnothing(cov)
-        for comment in cov.comments
-            _po!(cov_fields, "Comment", comment, "")
-        end
-        _po!(cov_fields, "Ref. Frame", cov.cov_ref_frame, "")
-        _po!(cov_fields, "CX_X", cov.cx_x, "km²")
-        _po!(cov_fields, "CY_X", cov.cy_x, "km²")
-        _po!(cov_fields, "CY_Y", cov.cy_y, "km²")
-        _po!(cov_fields, "CZ_X", cov.cz_x, "km²")
-        _po!(cov_fields, "CZ_Y", cov.cz_y, "km²")
-        _po!(cov_fields, "CZ_Z", cov.cz_z, "km²")
-        _po!(cov_fields, "CX_DOT_X", cov.cx_dot_x, "km²/s")
-        _po!(cov_fields, "CX_DOT_Y", cov.cx_dot_y, "km²/s")
-        _po!(cov_fields, "CX_DOT_Z", cov.cx_dot_z, "km²/s")
-        _po!(cov_fields, "CX_DOT_X_DOT", cov.cx_dot_x_dot, "km²/s²")
-        _po!(cov_fields, "CY_DOT_X", cov.cy_dot_x, "km²/s")
-        _po!(cov_fields, "CY_DOT_Y", cov.cy_dot_y, "km²/s")
-        _po!(cov_fields, "CY_DOT_Z", cov.cy_dot_z, "km²/s")
-        _po!(cov_fields, "CY_DOT_X_DOT", cov.cy_dot_x_dot, "km²/s²")
-        _po!(cov_fields, "CY_DOT_Y_DOT", cov.cy_dot_y_dot, "km²/s²")
-        _po!(cov_fields, "CZ_DOT_X", cov.cz_dot_x, "km²/s")
-        _po!(cov_fields, "CZ_DOT_Y", cov.cz_dot_y, "km²/s")
-        _po!(cov_fields, "CZ_DOT_Z", cov.cz_dot_z, "km²/s")
-        _po!(cov_fields, "CZ_DOT_X_DOT", cov.cz_dot_x_dot, "km²/s²")
-        _po!(cov_fields, "CZ_DOT_Y_DOT", cov.cz_dot_y_dot, "km²/s²")
-        _po!(cov_fields, "CZ_DOT_Z_DOT", cov.cz_dot_z_dot, "km²/s²")
-    end
-
-    # -- User-Defined Parameters -----------------------------------------------------------
+    isnothing(cov) || _push_covariance_matrix_fields!(cov_fields, cov, cov.comments)
 
     user_fields = PrintedField[]
     for (k, v) in data.user_defined_parameters
-        _po!(user_fields, k, v, "")
+        _push_output!(user_fields, k, v, "")
     end
 
     # == Print Output ======================================================================
@@ -188,6 +169,20 @@ end
 ############################################################################################
 #                                    Private Functions                                     #
 ############################################################################################
+
+"""
+    _display_unit(field::Symbol) -> String
+
+Return the unit of the OMM `field` for display: the CCSDS unit of `_OMM_FIELD_UNIT` with
+the exponents as superscripts and the degrees as `°`, or an empty string if the field is
+dimensionless.
+"""
+function _display_unit(field::Symbol)
+    unit = _omm_field_unit(field)
+    isnothing(unit) && return ""
+    unit == "deg" && return "°"
+    return replace(unit, "**2" => "²", "**3" => "³")
+end
 
 """
     _format_value(value) -> String
@@ -225,4 +220,46 @@ function _push_output!(
     isnothing(value) && return nothing
     push!(vector, (name, escape_string(_format_value(value)), unit))
     return nothing
+end
+
+# Generate one function per label table (e.g. `_push_header_fields!`) that pushes the
+# comments of a section, labeled `Comment`, followed by its labeled fields with the units
+# given by `_display_unit`. The field accesses are unrolled at code-generation time, so
+# they are static and the values are not boxed.
+for (name, labels) in (
+    (:header, _SHOW_HEADER_LABELS),
+    (:metadata, _SHOW_METADATA_LABELS),
+    (:mean_elements, _SHOW_MEAN_ELEMENTS_LABELS),
+    (:spacecraft_parameters, _SHOW_SPACECRAFT_PARAMETERS_LABELS),
+    (:tle_parameters, _SHOW_TLE_PARAMETERS_LABELS),
+    (:covariance_matrix, _SHOW_COVARIANCE_MATRIX_LABELS),
+)
+    fname  = Symbol("_push_", name, "_fields!")
+    pushes = [
+        :(_push_output!(vector, $label, section.$field, $(_display_unit(field)))) for
+        (field, label) in labels
+    ]
+    docstr = """
+            $fname(
+                vector::AbstractVector{PrintedField},
+                section,
+                comments::Vector{String}
+            ) -> Nothing
+
+        Push to `vector` the `comments` of the OMM `section`, labeled `Comment`, followed by
+        the fields listed in `_SHOW_$(uppercase(String(name)))_LABELS`. Fields whose value
+        is `nothing` are skipped.
+        """
+
+    @eval @doc $docstr function $fname(
+        vector::AbstractVector{PrintedField}, section, comments::Vector{String}
+    )
+        for comment in comments
+            _push_output!(vector, "Comment", comment, "")
+        end
+
+        $(pushes...)
+
+        return nothing
+    end
 end

@@ -35,7 +35,6 @@ include("./types/omm.jl")
 
 include("./misc.jl")
 include("./kvn.jl")
-include("./show.jl")
 include("./xml.jl")
 
 include("./fetcher/api.jl")
@@ -51,6 +50,9 @@ include("./parse/kvn/omms.jl")
 include("./parse/xml/odm.jl")
 include("./parse/xml/omm.jl")
 include("./parse/xml/omms.jl")
+
+# The display code needs the unit table of the parsers.
+include("./show.jl")
 
 include("./read/odm.jl")
 include("./read/omm.jl")
