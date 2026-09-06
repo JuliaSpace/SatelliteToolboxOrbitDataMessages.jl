@@ -276,11 +276,14 @@ end
 Orbit Mean-Elements Message (OMM) as defined by the CCSDS 502.0-B-3 standard.
 
 The structure contains the three sections defined by the standard: a `header`, a
-`metadata`, and a `data` section. The individual fields can be accessed directly through
-these sections, for example `omm.metadata.object_name` or `omm.data.epoch`.
+`metadata`, and a `data` section. The individual fields can be accessed through these
+sections, for example `omm.metadata.object_name` or `omm.data.epoch`, or directly as
+properties of the message, for example `omm.object_name` or `omm.epoch` (see the extended
+help).
 
-To create a message, use the flat keyword constructor `OrbitMeanElementsMessage(; kwargs...)`,
-which assembles all the internal sections automatically, or build the sections with
+To create a message, use the flat keyword constructor
+`OrbitMeanElementsMessage(; kwargs...)`, which assembles all the internal sections
+automatically, or build the sections with
 [`OmmHeader`](@ref), [`OmmMetadata`](@ref), and [`OmmData`](@ref) and pass them to
 `OrbitMeanElementsMessage(header, metadata, data; version)`. Every constructor checks the
 rules relating the fields, throwing an `ArgumentError` if they are violated. The alias
@@ -292,6 +295,16 @@ rules relating the fields, throwing an `ArgumentError` if they are violated. The
 - `header::OmmHeader`: Message header (creation date, originator, etc.).
 - `metadata::OmmMetadata`: Message metadata (object identification, reference frame, etc.).
 - `data::OmmData`: Mean elements data (mean Keplerian elements, TLE parameters, etc.).
+
+# Extended help
+
+## Properties
+
+Every field of the header, metadata, and data sections is also available as a property of
+the message with the same name, so `omm.epoch` is equivalent to `omm.data.epoch`. The only
+exception is the `comments` field, which exists in every section and must be accessed
+through the section, e.g. `omm.header.comments`. The complete list is returned by
+`propertynames(omm)`.
 """
 struct OrbitMeanElementsMessage <: OrbitDataMessage
     version::VersionNumber
@@ -733,6 +746,38 @@ function _omm_check_rules(version::VersionNumber, data::OmmData)
     end
 
     return nothing
+end
+
+# == Property Forwarding ===================================================================
+
+# Forward the section fields as properties of the message, so that `omm.epoch` is
+# equivalent to `omm.data.epoch`. The `comments` field exists in every section, hence it is
+# not forwarded. The generated `getproperty` is a chain of `Symbol` comparisons, which the
+# compiler folds to a single field access for a literal property name.
+let forwarded = Pair{Symbol, Expr}[]
+    for (section, T) in ((:header, OmmHeader), (:metadata, OmmMetadata), (:data, OmmData))
+        for field in fieldnames(T)
+            field === :comments && continue
+            section_expr = :(getfield(omm, $(QuoteNode(section))))
+            push!(forwarded, field => :(getfield($section_expr, $(QuoteNode(field)))))
+        end
+    end
+
+    branches = foldr(
+        (p, acc) -> :(name === $(QuoteNode(first(p))) ? $(last(p)) : $acc),
+        forwarded;
+        init = :(getfield(omm, name)),
+    )
+
+    property_names = (fieldnames(OrbitMeanElementsMessage)..., first.(forwarded)...)
+
+    @eval begin
+        function Base.getproperty(omm::OrbitMeanElementsMessage, name::Symbol)
+            return $branches
+        end
+
+        Base.propertynames(::OrbitMeanElementsMessage, ::Bool = false) = $property_names
+    end
 end
 
 # == Fetchers ==============================================================================

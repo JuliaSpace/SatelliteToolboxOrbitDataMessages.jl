@@ -28,8 +28,6 @@ import SatelliteToolboxBase: PrintedField, PrintedSection, print_tree, print_tre
 include("./types/odm.jl")
 include("./types/omm.jl")
 
-include("./api.jl")
-
 ############################################################################################
 #                                         Includes                                         #
 ############################################################################################

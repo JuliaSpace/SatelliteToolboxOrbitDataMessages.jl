@@ -32,8 +32,8 @@ include("helpers.jl")
         include("interface/equality.jl")
     end
 
-    @testset "Accessors" verbose = true begin
-        include("interface/accessors.jl")
+    @testset "Properties" verbose = true begin
+        include("interface/properties.jl")
     end
 
     @testset "Display" verbose = true begin

@@ -69,23 +69,19 @@ omm.data.epoch
 omm.data.inclination
 ```
 
-The package also provides accessor functions that flatten this hierarchy. They live in the
-[`ODM`](@ref) module to avoid polluting the namespace, so the most common fields can be
-obtained directly:
+Every field of the sections is also available as a property of the message itself, which
+flattens the hierarchy for the common fields:
 
 ```@repl quick_start
-ODM.originator(omm)
-
-ODM.object_name(omm)
-
-ODM.epoch(omm)
-
-ODM.inclination(omm)
+omm.originator
+omm.object_name
+omm.epoch
+omm.inclination
 ```
 
-Every field has a corresponding accessor (e.g., [`ODM.eccentricity`](@ref),
-[`ODM.mean_motion`](@ref), [`ODM.norad_cat_id`](@ref)). See the [Library](@ref) page for
-the complete list.
+The only exception is the `comments` field, which exists in every section and must be
+accessed through it (e.g. `omm.header.comments`). See [`OrbitMeanElementsMessage`](@ref)
+for the details.
 
 If the OMM is stored in a file, use [`read_omm`](@ref) instead:
 

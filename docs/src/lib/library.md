@@ -7,5 +7,6 @@ Pages = ["library.md"]
 ```
 
 ```@autodocs
-Modules = [SatelliteToolboxOrbitDataMessages, SatelliteToolboxOrbitDataMessages.ODM]
+Modules = [SatelliteToolboxOrbitDataMessages]
+Private = false
 ```
