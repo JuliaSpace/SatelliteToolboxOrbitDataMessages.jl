@@ -87,7 +87,7 @@ version and the mandatory fields are checked afterwards by [`_omm_assemble`](@re
 """
 function _xml_omm__parse_element(xml::XML.Cursor, strict::Bool)
     _xml_omm__tag(xml, strict) != "omm" &&
-        throw(ArgumentError("The provided XML does not contain an OMM element."))
+        throw(OdmParseError("The provided XML does not contain an OMM element."))
 
     # Extract the version attribute.
     id = get(xml, "id", nothing)
@@ -95,7 +95,7 @@ function _xml_omm__parse_element(xml::XML.Cursor, strict::Bool)
         !isnothing(id) &&
         (strict ? id == "CCSDS_OMM_VERS" : lowercase(id) == "ccsds_omm_vers")
     !valid_id && throw(
-        ArgumentError(
+        OdmParseError(
             "The OMM element is missing the required `id = CCSDS_OMM_VERS` attribute."
         ),
     )
@@ -107,7 +107,7 @@ function _xml_omm__parse_element(xml::XML.Cursor, strict::Bool)
         version = tryparse(Float64, version_attribute)
 
         isnothing(version) && throw(
-            ArgumentError(
+            OdmParseError(
                 "The OMM element has an invalid `version` attribute: " *
                 "\"$version_attribute\".",
             ),
@@ -140,7 +140,7 @@ function _xml_omm__parse_element(xml::XML.Cursor, strict::Bool)
     end
 
     (valid_children && (child_count == 2)) || throw(
-        ArgumentError(
+        OdmParseError(
             "The OMM element must contain exactly one `header` followed by one `body`."
         ),
     )
@@ -221,18 +221,18 @@ function _xml_omm__parse_section!(
         # The mapping is an ordered vector of pairs, so we perform a linear search. The
         # sections are small, hence the lookup cost is negligible.
         i = findfirst(p -> first(p) == lt, mapping)
-        isnothing(i) && throw(ArgumentError("Unknown OMM $description `$lt`."))
+        isnothing(i) && throw(OdmParseError("Unknown OMM $description `$lt`."))
 
         # Every mapping has at most 22 entries, so a bitmask over the mapping index
         # detects duplicates without allocating a `Set`.
         mask = UInt32(1) << (i - 1)
-        (seen & mask) != 0 && throw(ArgumentError("Duplicate OMM $description `$lt`."))
+        (seen & mask) != 0 && throw(OdmParseError("Duplicate OMM $description `$lt`."))
         seen |= mask
 
         field = last(mapping[i])
 
         if isempty(v)
-            strict && throw(ArgumentError("OMM $description `$lt` cannot be empty."))
+            strict && throw(OdmParseError("OMM $description `$lt` cannot be empty."))
             continue
         end
 
@@ -284,7 +284,7 @@ function _xml_omm__parse_body(xml::XML.Cursor, strict::Bool)
         nodetype(node) === Element || continue
 
         lt = _xml_omm__tag(node, strict)
-        lt == "segment" || throw(ArgumentError("Unknown OMM body element `$lt`."))
+        lt == "segment" || throw(OdmParseError("Unknown OMM body element `$lt`."))
 
         segment_count += 1
 
@@ -295,9 +295,9 @@ function _xml_omm__parse_body(xml::XML.Cursor, strict::Bool)
         end
     end
 
-    segment_count == 0 && throw(ArgumentError("The OMM body is missing the segment."))
+    segment_count == 0 && throw(OdmParseError("The OMM body is missing the segment."))
     segment_count > 1 && throw(
-        ArgumentError("The OMM body contains multiple segments, which is not supported."),
+        OdmParseError("The OMM body contains multiple segments, which is not supported."),
     )
 
     return segment
@@ -324,24 +324,24 @@ function _xml_omm__parse_segment(xml::XML.Cursor, strict::Bool)
 
         lt = _xml_omm__tag(node, strict)
         lt ∈ ("metadata", "data") ||
-            throw(ArgumentError("Unknown OMM segment element `$lt`."))
+            throw(OdmParseError("Unknown OMM segment element `$lt`."))
 
         if lt == "metadata"
             !isnothing(metadata) && throw(
-                ArgumentError("The OMM segment contains duplicate metadata sections.")
+                OdmParseError("The OMM segment contains duplicate metadata sections.")
             )
             metadata = _xml_omm__parse_metadata(node, strict)
         else
             !isnothing(data) &&
-                throw(ArgumentError("The OMM segment contains duplicate data sections."))
+                throw(OdmParseError("The OMM segment contains duplicate data sections."))
             data = _xml_omm__parse_data(node, strict)
         end
     end
 
     isnothing(metadata) &&
-        throw(ArgumentError("The OMM segment is missing the metadata section."))
+        throw(OdmParseError("The OMM segment is missing the metadata section."))
 
-    isnothing(data) && throw(ArgumentError("The OMM segment is missing the data section."))
+    isnothing(data) && throw(OdmParseError("The OMM segment is missing the data section."))
 
     return (metadata, data)
 end
@@ -387,12 +387,12 @@ function _xml_omm__parse_data(xml::XML.Cursor, strict::Bool)
         end
 
         i = findfirst(==(lt), _XML_OMM__DATA_SECTIONS)
-        isnothing(i) && throw(ArgumentError("Unknown OMM data section `$lt`."))
+        isnothing(i) && throw(OdmParseError("Unknown OMM data section `$lt`."))
 
         # A bitmask over the section index detects duplicates without allocating a `Set`.
         mask = UInt8(1) << (i - 1)
         (seen_sections & mask) != 0 &&
-            throw(ArgumentError("Duplicate OMM data section `$lt`."))
+            throw(OdmParseError("Duplicate OMM data section `$lt`."))
         seen_sections |= mask
 
         if lt == "meanElements"
@@ -457,7 +457,7 @@ end
     ) -> Vector{Pair{String, String}}
 
 Parse an OMM `userDefinedParameters` section at the cursor's current position, matching
-the tags case-insensitively when `strict` is `false`. An `ArgumentError` is thrown if the
+the tags case-insensitively when `strict` is `false`. An `OdmParseError` is thrown if the
 section contains an unknown element or a `USER_DEFINED` element without the `parameter`
 attribute.
 """
@@ -468,12 +468,12 @@ function _xml_omm__parse_user_defined_parameters(xml::XML.Cursor, strict::Bool)
         nodetype(node) === Element || continue
         lt = _xml_omm__tag(node, strict)
         lt == "USER_DEFINED" ||
-            throw(ArgumentError("Unknown user-defined parameter element `$lt`."))
+            throw(OdmParseError("Unknown user-defined parameter element `$lt`."))
 
         key = get(node, "parameter", nothing)
 
         isnothing(key) && throw(
-            ArgumentError(
+            OdmParseError(
                 "OMM `USER_DEFINED` element is missing required attribute `parameter`."
             ),
         )

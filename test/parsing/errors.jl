@@ -9,21 +9,21 @@
 
     @testset "Missing id Attribute" begin
         xml = replace(_minimal_omm_xml(), "id=\"CCSDS_OMM_VERS\" " => "")
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     # == Missing Required Header Fields ====================================================
 
     @testset "Missing Required Header Fields" begin
-        @test_throws ArgumentError parse_omm(_minimal_omm_xml(; creation_date = ""))
-        @test_throws ArgumentError parse_omm(_minimal_omm_xml(; originator = ""))
+        @test_throws OdmParseError parse_omm(_minimal_omm_xml(; creation_date = ""))
+        @test_throws OdmParseError parse_omm(_minimal_omm_xml(; originator = ""))
     end
 
     # == Unsupported Version ===============================================================
 
     @testset "Unsupported Version" begin
         xml = _minimal_omm_xml(omm_version = "1.0")
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     # == Version 2.0 Rules =================================================================
@@ -45,10 +45,10 @@
         @test omm.version == v"2.0"
 
         # `CLASSIFICATION` and `MESSAGE_ID` were introduced in version 3.0.
-        @test_throws ArgumentError parse_omm(
+        @test_throws OdmParseError parse_omm(
             _minimal_omm_xml(; omm_version = "2.0", classification = "UNCLASSIFIED")
         )
-        @test_throws ArgumentError parse_omm(
+        @test_throws OdmParseError parse_omm(
             _minimal_omm_xml(; omm_version = "2.0", message_id = "MESSAGE-1")
         )
 
@@ -83,7 +83,7 @@
 
         for tle_params_xml in
             (bterm_params, agom_params, missing_bstar_params, missing_ddot_params)
-            @test_throws ArgumentError parse_omm(
+            @test_throws OdmParseError parse_omm(
                 _minimal_omm_xml(; omm_version = "2.0", tle_params_xml)
             )
         end
@@ -113,7 +113,7 @@
           </meanElements></data></segment></body>
         </omm>
         """
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     # == Missing Body ======================================================================
@@ -128,7 +128,7 @@
           </header>
         </omm>
         """
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     # == Missing Segment ===================================================================
@@ -144,7 +144,7 @@
           <body></body>
         </omm>
         """
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     # == Multiple Segments =================================================================
@@ -177,33 +177,33 @@
           <body>$(seg)$(seg)</body>
         </omm>
         """
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     # == Missing OBJECT_NAME ===============================================================
 
     @testset "Missing OBJECT_NAME" begin
         xml = _minimal_omm_xml(object_name = "")
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     # == Missing EPOCH =====================================================================
 
     @testset "Missing EPOCH" begin
         xml = _minimal_omm_xml(epoch = "")
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     # == Missing Both SEMI_MAJOR_AXIS and MEAN_MOTION ======================================
 
     @testset "Missing SEMI_MAJOR_AXIS and MEAN_MOTION" begin
         xml = _minimal_omm_xml(semi_major_axis = "", mean_motion = "")
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     @testset "Both SEMI_MAJOR_AXIS and MEAN_MOTION" begin
         xml = _minimal_omm_xml(semi_major_axis = "7134.084")
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     @testset "Incomplete TLE Parameters" begin
@@ -215,8 +215,8 @@
         </tleParameters>
         """
 
-        @test_throws ArgumentError parse_omm(_minimal_omm_xml(tle_params_xml = bstar_only))
-        @test_throws ArgumentError parse_omm(
+        @test_throws OdmParseError parse_omm(_minimal_omm_xml(tle_params_xml = bstar_only))
+        @test_throws OdmParseError parse_omm(
             _minimal_omm_xml(tle_params_xml = missing_drag)
         )
 
@@ -232,8 +232,8 @@
           <MEAN_MOTION_DDOT>0</MEAN_MOTION_DDOT><AGOM>1e-4</AGOM>
         </tleParameters>
         """
-        @test_throws ArgumentError parse_omm(_minimal_omm_xml(tle_params_xml = both_drag))
-        @test_throws ArgumentError parse_omm(
+        @test_throws OdmParseError parse_omm(_minimal_omm_xml(tle_params_xml = both_drag))
+        @test_throws OdmParseError parse_omm(
             _minimal_omm_xml(tle_params_xml = both_second_derivatives)
         )
     end
@@ -245,7 +245,7 @@
         # matches the `OrbitMeanElementsMessage` constructor, which would otherwise reject
         # copying the parsed message.
         tle_xml = "<tleParameters><COMMENT>TLE section</COMMENT></tleParameters>"
-        @test_throws ArgumentError parse_omm(_minimal_omm_xml(; tle_params_xml = tle_xml))
+        @test_throws OdmParseError parse_omm(_minimal_omm_xml(; tle_params_xml = tle_xml))
     end
 
     # == Empty CLASSIFICATION_TYPE =========================================================
@@ -255,7 +255,7 @@
         <tleParameters><CLASSIFICATION_TYPE></CLASSIFICATION_TYPE></tleParameters>
         """
         xml = _minimal_omm_xml(tle_params_xml = tle_xml)
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     # == Empty KVN String Values ===========================================================
@@ -281,10 +281,10 @@
 
     @testset "Empty KVN String Values" begin
         # An empty value for a mandatory string field must be treated as absent.
-        @test_throws ArgumentError parse_omm(
+        @test_throws OdmParseError parse_omm(
             replace(kvn, "ORIGINATOR = 18 SPCS" => "ORIGINATOR ="); file_type = :kvn
         )
-        @test_throws ArgumentError parse_omm(
+        @test_throws OdmParseError parse_omm(
             replace(kvn, "OBJECT_NAME = AMAZONIA 1" => "OBJECT_NAME ="); file_type = :kvn
         )
 
@@ -304,7 +304,7 @@
         kvn_no_date = replace(kvn, "CREATION_DATE = 2025-12-30T23:36:37\n" => "")
 
         # The presence requirement applies to every format when parsing strictly.
-        @test_throws ArgumentError parse_omm(kvn_no_date; file_type = :kvn)
+        @test_throws OdmParseError parse_omm(kvn_no_date; file_type = :kvn)
 
         omm = parse_omm(kvn_no_date; file_type = :kvn, strict = false)
         @test omm.header.creation_date === nothing
@@ -322,8 +322,12 @@
             exception
         end
 
-        @test exception isa ArgumentError
+        @test exception isa OdmParseError
         @test occursin("Duplicate OMM keyword `INCLINATION`", exception.msg)
+        @test exception.keyword == "INCLINATION"
+        @test exception.line == 17
+        @test sprint(showerror, exception) ==
+            "OdmParseError: Duplicate OMM keyword `INCLINATION` in line 17. (line 17)"
     end
 
     # == Unknown Root Tag ==================================================================
@@ -333,8 +337,8 @@
         <?xml version="1.0" encoding="UTF-8"?>
         <foo><bar/></foo>
         """
-        @test_throws ArgumentError parse_odm(xml)
-        @test_throws ArgumentError parse_omms(xml)
+        @test_throws OdmParseError parse_odm(xml)
+        @test_throws OdmParseError parse_omms(xml)
         @test isnothing(parse_omm(xml))
     end
 
@@ -346,10 +350,10 @@
         <userDefinedParameters><UNKNOWN>value</UNKNOWN></userDefinedParameters>
         """
 
-        @test_throws ArgumentError parse_omm(
+        @test_throws OdmParseError parse_omm(
             _minimal_omm_xml(; covariance_matrix_xml = covariance_xml)
         )
-        @test_throws ArgumentError parse_omm(
+        @test_throws OdmParseError parse_omm(
             _minimal_omm_xml(; user_defined_xml = user_defined_xml)
         )
     end
@@ -364,8 +368,11 @@ end
         exception
     end
 
-    @test exception isa ArgumentError
+    @test exception isa OdmParseError
     @test occursin("MEAN_MOTION", exception.msg)
+    @test exception.keyword == "MEAN_MOTION"
+    @test isnothing(exception.line)
+    @test sprint(showerror, exception) == "OdmParseError: " * exception.msg
 
     exception = try
         parse_omm(_minimal_omm_xml(; tle_params_xml = """
@@ -381,7 +388,7 @@ end
         exception
     end
 
-    @test exception isa ArgumentError
+    @test exception isa OdmParseError
     @test occursin("NORAD_CAT_ID", exception.msg)
 end
 
@@ -395,7 +402,7 @@ end
             exception
         end
 
-        @test exception isa ArgumentError
+        @test exception isa OdmParseError
         @test occursin("EPOCH", exception.msg)
     end
 end

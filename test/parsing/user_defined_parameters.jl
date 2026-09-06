@@ -21,7 +21,7 @@
         <userDefinedParameters><USER_DEFINED>my_value</USER_DEFINED></userDefinedParameters>
         """
         xml = _minimal_omm_xml(user_defined_xml = ud_xml)
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     # == Duplicate Keys Preserved ==========================================================

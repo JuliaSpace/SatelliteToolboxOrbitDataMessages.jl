@@ -13,7 +13,8 @@ Parse an Orbit Mean-Elements Message (OMM) in the string `str` and return the pa
 message.
 
 If the XML is a Navigation Data Message (NDM), only the first OMM message is returned. If
-the file does not contain an OMM message, `nothing` is returned.
+the file does not contain an OMM message, `nothing` is returned. An [`OdmParseError`](@ref)
+is thrown if the input is malformed or violates the CCSDS 502.0-B-3 rules.
 
 # Keywords
 
@@ -59,9 +60,10 @@ parsed messages.
 
 For XML input, the document can be a stand-alone message or a Navigation Data Message
 (NDM): only the OMM messages are returned, and other message types (OPM, OEM, OCM) are
-skipped with a warning. If the root tag is not recognized, an `ArgumentError` is thrown.
-For KVN input, each message must begin with its `CCSDS_OMM_VERS` keyword. If the input
-does not contain an OMM message, an empty vector is returned.
+skipped with a warning. If the root tag is not recognized, an [`OdmParseError`](@ref) is
+thrown, as for any malformed input. For KVN input, each message must begin with its
+`CCSDS_OMM_VERS` keyword. If the input does not contain an OMM message, an empty vector is
+returned.
 
 # Keywords
 
@@ -335,7 +337,7 @@ _omm_field_unit(field::Symbol) = get(_OMM_FIELD_UNIT, field, nothing)
     ) -> Union{Nothing, T}
 
 Parse the raw `value` of the OMM field identified by the CCSDS `keyword` as type `T`,
-throwing an `ArgumentError` that names the keyword if the value is invalid. The `NanoDate`
+throwing an `OdmParseError` that names the keyword if the value is invalid. The `NanoDate`
 method returns `nothing` when `value` is empty or contains only whitespace.
 """
 _omm_parse_field(::Type{String}, value::AbstractString, keyword::AbstractString) =
@@ -346,13 +348,21 @@ function _omm_parse_field(::Type{NanoDate}, value::AbstractString, keyword::Abst
         return _parse_ndm_date(value)
     catch e
         e isa ArgumentError || rethrow()
-        throw(ArgumentError("OMM field `$keyword` contains an invalid date: \"$value\"."))
+        throw(
+            OdmParseError(
+                "OMM field `$keyword` contains an invalid date: \"$value\"."; keyword
+            ),
+        )
     end
 end
 
 function _omm_parse_field(::Type{Char}, value::AbstractString, keyword::AbstractString)
     length(value) == 1 ||
-        throw(ArgumentError("OMM field `$keyword` must contain exactly one character."))
+        throw(
+            OdmParseError(
+                "OMM field `$keyword` must contain exactly one character."; keyword
+            ),
+        )
 
     return only(value)
 end
@@ -363,7 +373,11 @@ function _omm_parse_field(
     number = tryparse(T, value)
 
     isnothing(number) &&
-        throw(ArgumentError("OMM field `$keyword` contains an invalid value: \"$value\"."))
+        throw(
+            OdmParseError(
+                "OMM field `$keyword` contains an invalid value: \"$value\"."; keyword
+            ),
+        )
 
     return number
 end
@@ -414,7 +428,7 @@ _omm_is_absent(value::AbstractString) = isempty(value)
 
 Check if all mandatory fields of an Orbit Mean-Elements Message (OMM) with `version` (2.0 or
 3.0) are present in the dictionaries `header_fields`, `metadata_fields`, and `data_fields`
-returned by a format-specific parser, throwing an `ArgumentError` otherwise. A field whose
+returned by a format-specific parser, throwing an `OdmParseError` otherwise. A field whose
 value is `nothing` or an empty string is treated as absent. If `strict` is `false`, the
 `CREATION_DATE` presence requirement is relaxed, allowing real-world files with an omitted
 creation date to be processed.
@@ -433,23 +447,23 @@ function _omm_check_mandatory_fields(
 
     # The `CREATION_DATE` presence requirement is relaxed when parsing leniently.
     strict && _omm_is_absent(get(header_fields, :creation_date, nothing)) &&
-        throw(ArgumentError("OMM header is missing required field `CREATION_DATE`."))
+        throw(OdmParseError("OMM header is missing required field `CREATION_DATE`."))
 
     # In OMM version 2.0, we allow a blank `ORIGINATOR` to accommodate real-world files
     # (e.g. from Celestrak) that omit its value.
     (version != v"2.0") && _omm_is_absent(get(header_fields, :originator, nothing)) &&
-        throw(ArgumentError("OMM header is missing required field `ORIGINATOR`."))
+        throw(OdmParseError("OMM header is missing required field `ORIGINATOR`."))
 
     if version == v"2.0"
         # The fields `CLASSIFICATION` and `MESSAGE_ID` were introduced in OMM version 3.0.
         !_omm_is_absent(get(header_fields, :classification, nothing)) && throw(
-            ArgumentError(
+            OdmParseError(
                 "OMM header field `CLASSIFICATION` is not valid in OMM version 2.0."
             ),
         )
 
         !_omm_is_absent(get(header_fields, :message_id, nothing)) && throw(
-            ArgumentError("OMM header field `MESSAGE_ID` is not valid in OMM version 2.0."),
+            OdmParseError("OMM header field `MESSAGE_ID` is not valid in OMM version 2.0."),
         )
     end
 
@@ -457,21 +471,21 @@ function _omm_check_mandatory_fields(
 
     for (field, keyword) in _OMM_MANDATORY_METADATA_FIELDS
         _omm_is_absent(get(metadata_fields, field, nothing)) &&
-            throw(ArgumentError("OMM metadata is missing required field `$keyword`."))
+            throw(OdmParseError("OMM metadata is missing required field `$keyword`."))
     end
 
     # == Mean Elements =====================================================================
 
     for (field, keyword) in _OMM_MANDATORY_MEAN_ELEMENTS_FIELDS
         _omm_is_absent(get(data_fields, field, nothing)) &&
-            throw(ArgumentError("OMM data is missing required field `$keyword`."))
+            throw(OdmParseError("OMM data is missing required field `$keyword`."))
     end
 
     semi_major_axis = get(data_fields, :semi_major_axis, nothing)
     mean_motion     = get(data_fields, :mean_motion, nothing)
 
     (isnothing(semi_major_axis) == isnothing(mean_motion)) && throw(
-        ArgumentError(
+        OdmParseError(
             "OMM data must contain exactly one of `SEMI_MAJOR_AXIS` and `MEAN_MOTION`."
         ),
     )
@@ -496,7 +510,7 @@ function _omm_check_mandatory_fields(
 
     if has_tle_parameters
         isnothing(mean_motion_dot) && throw(
-            ArgumentError(
+            OdmParseError(
                 "OMM TLE parameters are missing required field `MEAN_MOTION_DOT`."
             ),
         )
@@ -505,31 +519,31 @@ function _omm_check_mandatory_fields(
             # In OMM version 2.0, `BSTAR` and `MEAN_MOTION_DDOT` are required fields, and
             # `BTERM` and `AGOM` do not exist.
             !isnothing(bterm) && throw(
-                ArgumentError("OMM TLE parameter `BTERM` is not valid in OMM version 2.0."),
+                OdmParseError("OMM TLE parameter `BTERM` is not valid in OMM version 2.0."),
             )
 
             !isnothing(agom) && throw(
-                ArgumentError("OMM TLE parameter `AGOM` is not valid in OMM version 2.0."),
+                OdmParseError("OMM TLE parameter `AGOM` is not valid in OMM version 2.0."),
             )
 
             isnothing(bstar) && throw(
-                ArgumentError("OMM TLE parameters are missing required field `BSTAR`.")
+                OdmParseError("OMM TLE parameters are missing required field `BSTAR`.")
             )
 
             isnothing(mean_motion_ddot) && throw(
-                ArgumentError(
+                OdmParseError(
                     "OMM TLE parameters are missing required field `MEAN_MOTION_DDOT`."
                 ),
             )
         else
             (isnothing(bstar) == isnothing(bterm)) && throw(
-                ArgumentError(
+                OdmParseError(
                     "OMM TLE parameters must contain exactly one of `BSTAR` and `BTERM`.",
                 ),
             )
 
             (isnothing(mean_motion_ddot) == isnothing(agom)) && throw(
-                ArgumentError(
+                OdmParseError(
                     "OMM TLE parameters must contain exactly one of `MEAN_MOTION_DDOT` " *
                     "and `AGOM`.",
                 ),
@@ -544,7 +558,7 @@ function _omm_check_mandatory_fields(
     if !isnothing(covariance_fields)
         for field in _OMM_COVARIANCE_MATRIX_FIELDS
             isnothing(get(covariance_fields, field, nothing)) && throw(
-                ArgumentError(
+                OdmParseError(
                     "OMM covariance matrix is missing required element " *
                     "`$(uppercase(String(field)))`.",
                 ),
@@ -591,13 +605,13 @@ function _omm_assemble(
     # == Version ===========================================================================
 
     isnothing(version) && throw(
-        ArgumentError(
+        OdmParseError(
             "The OMM is missing the required format version (the KVN `CCSDS_OMM_VERS` " *
             "keyword or the XML `version` attribute).",
         ),
     )
 
-    version ∈ (2.0, 3.0) || throw(ArgumentError("Unsupported OMM version: $version."))
+    version ∈ (2.0, 3.0) || throw(OdmParseError("Unsupported OMM version: $version."))
 
     omm_version = version == 2.0 ? v"2.0" : v"3.0"
 

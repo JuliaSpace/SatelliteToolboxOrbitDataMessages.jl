@@ -13,7 +13,7 @@ with the parsed messages.
 The document can be a stand-alone message or a Navigation Data Message (NDM) wrapping
 multiple messages. Messages that are not OMMs are skipped, and unsupported message types
 (OPM, OEM, OCM) additionally emit a warning. If the root tag is not recognized, an
-`ArgumentError` is thrown.
+`OdmParseError` is thrown.
 """
 function _xml_omms__parse(str::AbstractString, strict::Bool)
     messages = _xml_odm__parse(str, strict)

@@ -60,7 +60,7 @@ function _kvn_omm__parse(str::AbstractString)
         km = _kvn__parse_keyword(sline)
 
         isnothing(km) &&
-            throw(ArgumentError("Invalid KVN keyword format in line $l: $line."))
+            throw(OdmParseError("Invalid KVN keyword format in line $l: $line."; line = l))
 
         key, value = km
 
@@ -77,9 +77,11 @@ function _kvn_omm__parse(str::AbstractString)
             version = tryparse(Float64, value)
 
             isnothing(version) && throw(
-                ArgumentError(
+                OdmParseError(
                     "Invalid value for the KVN keyword `CCSDS_OMM_VERS` in line $l: " *
-                    "$value.",
+                    "$value.";
+                    keyword = "CCSDS_OMM_VERS",
+                    line = l,
                 ),
             )
 
@@ -111,8 +113,9 @@ function _kvn_omm__parse(str::AbstractString)
         section, field       = section_and_field
         fields, comments_key = sections[section]
 
-        haskey(fields, field) &&
-            throw(ArgumentError("Duplicate OMM keyword `$key` in line $l."))
+        haskey(fields, field) && throw(
+            OdmParseError("Duplicate OMM keyword `$key` in line $l."; keyword = key, line = l)
+        )
 
         last_comments = flush_comments!(fields, comments_key)
 

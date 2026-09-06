@@ -112,7 +112,7 @@
         """
         xml = _minimal_omm_xml(; covariance_matrix_xml = cov_xml)
 
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     @testset "Write Covariance Matrix Round-Trip" begin

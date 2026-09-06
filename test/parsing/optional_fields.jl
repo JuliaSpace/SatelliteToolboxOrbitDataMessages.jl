@@ -103,7 +103,7 @@
 
         # The `ORIGINATOR` is still required in OMM version 3.0.
         xml = _minimal_omm_xml(; originator = "")
-        @test_throws ArgumentError parse_omm(xml)
+        @test_throws OdmParseError parse_omm(xml)
     end
 
     # == All Optional Scalar Fields Set ====================================================

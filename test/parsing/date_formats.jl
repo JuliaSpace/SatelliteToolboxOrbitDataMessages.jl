@@ -78,9 +78,9 @@
     end
 
     @testset "Invalid Ordinal Days" begin
-        @test_throws ArgumentError parse_omm(_minimal_omm_xml(epoch = "2025-000T00:00:00"))
-        @test_throws ArgumentError parse_omm(_minimal_omm_xml(epoch = "2025-366T00:00:00"))
-        @test_throws ArgumentError parse_omm(_minimal_omm_xml(epoch = "2024-367T00:00:00"))
+        @test_throws OdmParseError parse_omm(_minimal_omm_xml(epoch = "2025-000T00:00:00"))
+        @test_throws OdmParseError parse_omm(_minimal_omm_xml(epoch = "2025-366T00:00:00"))
+        @test_throws OdmParseError parse_omm(_minimal_omm_xml(epoch = "2024-367T00:00:00"))
     end
 
     @testset "Empty Dates" begin
@@ -93,8 +93,8 @@
             "<EPOCH>2025-12-30T18:12:04.533984</EPOCH>" => "<EPOCH></EPOCH>",
         )
 
-        @test_throws ArgumentError parse_omm(creation_xml)
-        @test_throws ArgumentError parse_omm(epoch_xml)
+        @test_throws OdmParseError parse_omm(creation_xml)
+        @test_throws OdmParseError parse_omm(epoch_xml)
 
         permissive_omm = parse_omm(creation_xml; strict = false)
         @test isnothing(permissive_omm.header.creation_date)

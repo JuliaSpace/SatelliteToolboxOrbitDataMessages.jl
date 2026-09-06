@@ -169,7 +169,7 @@ end
 
     @testset "Comment Keyword Boundary" begin
         # A keyword merely starting with `COMMENT` must not be absorbed as a comment.
-        @test_throws ArgumentError parse_omm(
+        @test_throws OdmParseError parse_omm(
             "CCSDS_OMM_VERS = 3.0\nCOMMENTARY IS FUN\n"; file_type = :kvn
         )
 

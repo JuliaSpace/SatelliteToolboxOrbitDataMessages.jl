@@ -29,7 +29,9 @@ case-insensitively. Permissive mode also preserves an empty OMM header creation 
 `nothing`, which accommodates known Celestrak OMM 2.0 output without inventing a timestamp.
 Additionally, a blank `ORIGINATOR` is allowed in OMM version 2.0 regardless of the parsing
 mode, defaulting to an empty string. Such incomplete messages cannot be written as OMM 3.0.
-Both modes otherwise reject unrecognized tags and malformed or incomplete OMM sections.
+Both modes otherwise reject unrecognized tags and malformed or incomplete OMM sections by
+throwing an [`OdmParseError`](@ref), which carries the related CCSDS keyword and, for KVN
+input, the line number.
 
 Throughout this page, we assume the variable `omm_xml` holds the XML string of a single OMM,
 and `ndm_xml` holds a Navigation Data Message (NDM) that bundles two OMMs (`AMAZONIA 1` and

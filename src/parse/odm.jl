@@ -16,7 +16,7 @@ The return value is always a `Vector{OrbitDataMessage}`: a single-element vector
 stand-alone message, or a multi-element vector for a Navigation Data Message (NDM) wrapping
 multiple messages. Unsupported message types (OPM, OEM, OCM) are skipped with a warning;
 if no supported message remains, an empty vector is returned. If the root tag is not
-recognized, an `ArgumentError` is thrown.
+recognized, an `OdmParseError` is thrown.
 
 # Keywords
 

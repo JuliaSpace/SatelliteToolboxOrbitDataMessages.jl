@@ -15,7 +15,7 @@ parsed messages.
 
 The document can be a stand-alone message or a Navigation Data Message (NDM) wrapping
 multiple messages. Unsupported message types (OPM, OEM, OCM) are skipped with a warning. If
-the root tag is not recognized, an `ArgumentError` is thrown.
+the root tag is not recognized, an `OdmParseError` is thrown.
 """
 function _xml_odm__parse(str::AbstractString, strict::Bool)
     # Open the XML file.
@@ -26,7 +26,7 @@ function _xml_odm__parse(str::AbstractString, strict::Bool)
     while !isnothing(root_node) && nodetype(root_node) !== Element
         root_node = next!(xml)
     end
-    isnothing(root_node) && throw(ArgumentError("The XML document has no root element."))
+    isnothing(root_node) && throw(OdmParseError("The XML document has no root element."))
 
     # Process the root node.
     t = _xml_omm__tag(root_node, strict)
@@ -36,7 +36,7 @@ function _xml_odm__parse(str::AbstractString, strict::Bool)
     # The raw tag is interpolated in the error message since `t` may have been uppercased
     # by the case-insensitive matching.
     t in _XML_ODM__TAGS || throw(
-        ArgumentError("The root tag `$(tag(root_node))` is not recognized."),
+        OdmParseError("The root tag `$(tag(root_node))` is not recognized."),
     )
 
     message = _xml_odm__parse_message(Val(Symbol(t)), root_node, strict)
