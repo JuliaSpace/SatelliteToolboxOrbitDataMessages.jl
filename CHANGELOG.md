@@ -37,6 +37,8 @@ Version 0.2.0
 - ![BREAKING][badge-breaking] The Space-Track fetcher always URL-encodes the predicate
   values, keeping the characters used by its operators, so the `HTML{String}` marker for
   raw values is no longer accepted.
+- ![BREAKING][badge-breaking] The **SatelliteToolboxTle.jl** extension now requires
+  version 2 of that package.
 - ![Feature][badge-feature] `parse_omm` and `parse_omms` now support the KVN format, which
   is automatically detected from the content or selected with the new `format` keyword.
   The comments are preserved and attributed to the corresponding message sections.
@@ -57,6 +59,13 @@ Version 0.2.0
   can be used instead of `OrbitMeanElementsMessage`.
 - ![Feature][badge-feature] `OmmCovarianceMatrix` can be created from a 6×6 matrix and
   converted back with `Matrix` or `SMatrix`.
+- ![Feature][badge-feature] Add the conversion from TLEs to OMMs to the
+  **SatelliteToolboxTle.jl** extension: `OrbitMeanElementsMessage(tle; kwargs...)` creates
+  a message from a TLE, accepting any keyword of the keyword constructor to override the
+  generated fields (e.g. the creation date and the originator), and
+  `convert(OrbitMeanElementsMessage, tle)` uses the default header. The two-digit years of
+  the TLE epoch and of the international designator are interpreted with the SGP4 pivot
+  (years from 57 to 99 refer to the 20th century).
 - ![Enhancement][badge-enhancement] The parsers and writers are several times faster and
   allocate a fraction of the memory: the fields are parsed into typed builders, the dates
   are read and written without `DateFormat`, the KVN lines are scanned without regular
@@ -73,6 +82,9 @@ Version 0.2.0
   **SatelliteToolboxBase.jl**. The B* parameter is labeled `B*`, as in the other packages.
 - ![Bugfix][badge-bugfix] Define `isequal` for the message types, fixing the behavior of
   messages containing `-0.0` or `NaN` values in `Set`s and `Dict`s.
+- ![Bugfix][badge-bugfix] `convert(TLE, omm)` now throws an error when the epoch year
+  cannot be represented by the two-digit TLE year (outside the interval from 1957 to 2056)
+  instead of silently wrapping it, and copies the OMM `EPHEMERIS_TYPE` into the TLE.
 - ![Bugfix][badge-bugfix] `write_omm` and `write_odm` now validate the message before
   opening the output file, so a failure no longer truncates an existing file.
 - ![Bugfix][badge-bugfix] The parsing functions now handle inputs with a leading
