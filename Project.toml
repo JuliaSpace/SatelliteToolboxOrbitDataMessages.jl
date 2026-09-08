@@ -24,7 +24,7 @@ SatelliteToolboxTleExt = "SatelliteToolboxTle"
 [compat]
 Dates = "1.10"
 HTTP = "1.10.17, 2"
-NanoDates = "1.0.3"
+NanoDates = "1.0.3, 2"
 PrecompileTools = "1"
 SatelliteToolboxBase = "2.1"
 SatelliteToolboxTle = "2"
