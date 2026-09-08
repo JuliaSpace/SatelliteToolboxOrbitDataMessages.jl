@@ -1,6 +1,6 @@
 name = "SatelliteToolboxOrbitDataMessages"
 uuid = "8a75e93c-a5f1-4885-96e0-0415d9bb1562"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Ronan Arraes Jardim Chagas <ronisbr@gmail.com>"]
 
 [deps]
