@@ -1,6 +1,11 @@
 SatelliteToolboxOrbitDataMessages.jl Changelog
 ==============================================
 
+Version 0.2.1
+-------------
+
+- ![Info][badge-info] Bump NanoDates.jl to v2.
+
 Version 0.2.0
 -------------
 
